@@ -193,6 +193,11 @@ fun MessagesView(
         state.eventSink(MessagesEvent.ToggleReaction(emoji, event.eventOrTransactionId))
     }
 
+    fun onMessageDoubleTap(event: TimelineItem.Event) {
+        Timber.v("onMessageDoubleTap= ${event.id}")
+        state.eventSink(MessagesEvent.ToggleReaction("\u2764", event.eventOrTransactionId))
+    }
+
     fun onEmojiReactionLongClick(emoji: String, event: TimelineItem.Event) {
         if (event.eventId == null) return
         state.reactionSummaryState.eventSink(ReactionSummaryEvent.ShowReactionSummary(event.eventId, event.reactionsState.reactions, emoji))
@@ -257,6 +262,7 @@ fun MessagesView(
                             state = state,
                             onContentClick = ::onContentClick,
                             onMessageLongClick = ::onMessageLongClick,
+                            onMessageDoubleTap = ::onMessageDoubleTap,
                             onUserDataClick = {
                                 hidingKeyboard {
                                     state.eventSink(MessagesEvent.OnUserClicked(it))
@@ -457,6 +463,7 @@ private fun MessagesViewContent(
     onMoreReactionsClick: (TimelineItem.Event) -> Unit,
     onReadReceiptClick: (TimelineItem.Event) -> Unit,
     onMessageLongClick: (TimelineItem.Event) -> Unit,
+    onMessageDoubleTap: (TimelineItem.Event) -> Unit,
     onSendLocationClick: () -> Unit,
     onCreatePollClick: () -> Unit,
     onViewAllPinnedMessagesClick: () -> Unit,
@@ -509,6 +516,7 @@ private fun MessagesViewContent(
                 onLinkClick = { link -> onLinkClick(link, false) },
                 onContentClick = onContentClick,
                 onMessageLongClick = onMessageLongClick,
+                onMessageDoubleTap = onMessageDoubleTap,
                 onSwipeToReply = onSwipeToReply,
                 onReactionClick = onReactionClick,
                 onReactionLongClick = onReactionLongClick,

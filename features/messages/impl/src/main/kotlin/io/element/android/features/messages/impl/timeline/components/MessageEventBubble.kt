@@ -8,7 +8,7 @@
 
 package io.element.android.features.messages.impl.timeline.components
 
-import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -17,9 +17,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithCache
@@ -28,9 +31,12 @@ import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.layer.CompositingStrategy
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
 import io.element.android.compound.theme.ElementTheme
 import io.element.android.features.messages.impl.timeline.model.TimelineItemGroupPosition
 import io.element.android.features.messages.impl.timeline.model.bubble.BubbleState
@@ -61,19 +67,40 @@ fun MessageEventBubble(
     interactionSource: MutableInteractionSource,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
+    onDoubleTap: () -> Unit,
     modifier: Modifier = Modifier,
     content: @Composable BoxScope.() -> Unit = {},
 ) {
+    val view = LocalView.current
+    val coroutineScope = rememberCoroutineScope()
+    var pendingSingleTap by remember { mutableStateOf(true) }
+
     val clickableModifier = if (isTalkbackActive()) {
         Modifier
     } else {
         Modifier
-            .combinedClickable(
-                onClick = onClick,
-                onLongClick = onLongClick,
-                indication = ripple(),
-                interactionSource = interactionSource
-            )
+            .pointerInput(state) {
+                detectTapGestures(
+                    onDoubleTap = {
+                        pendingSingleTap = false
+                        view.performHapticFeedback(android.view.HapticFeedbackConstants.CONFIRM)
+                        onDoubleTap()
+                    },
+                    onLongPress = {
+                        pendingSingleTap = false
+                        onLongClick()
+                    },
+                    onPress = {
+                        coroutineScope.launch {
+                            tryAwaitRelease()
+                            if (pendingSingleTap) {
+                                onClick()
+                            }
+                            pendingSingleTap = true
+                        }
+                    },
+                )
+            }
             .onKeyboardContextMenuAction(onLongClick)
     }
 
@@ -194,6 +221,7 @@ internal fun MessageEventBubblePreview(@PreviewParameter(BubbleStateProvider::cl
             interactionSource = remember { MutableInteractionSource() },
             onClick = {},
             onLongClick = {},
+            onDoubleTap = {},
         ) {
             // Render the state as a text to better understand the previews
             Box(

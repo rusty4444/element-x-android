@@ -36,6 +36,7 @@ internal fun ATimelineItemEventRow(
     displayThreadSummaries = displayThreadSummaries,
     onEventClick = {},
     onLongClick = {},
+    onDoubleTap = {},
     onLinkClick = {},
     onLinkLongClick = {},
     onUserDataClick = {},

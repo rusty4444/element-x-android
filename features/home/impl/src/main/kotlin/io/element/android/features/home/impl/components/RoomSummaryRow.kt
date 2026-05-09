@@ -457,12 +457,16 @@ private fun UnreadCountBadge(
         Box(
             modifier = Modifier
                 .height(16.dp)
-                .padding(start = 2.dp),
+                .padding(start = 2.dp)
+                .semantics { this.contentDescription = contentDescription },
             contentAlignment = Alignment.Center,
         ) {
-            androidx.compose.foundation.background(
-                color = color,
-                shape = androidx.compose.foundation.shape.CircleShape,
+            Box(
+                modifier = Modifier
+                    .background(
+                        color = color,
+                        shape = androidx.compose.foundation.shape.CircleShape,
+                    ),
             )
             Text(
                 text = if (count > 99) "99+" else count.toString(),

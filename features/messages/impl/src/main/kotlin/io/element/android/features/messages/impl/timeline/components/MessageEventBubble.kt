@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -30,10 +29,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.layer.CompositingStrategy
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.semantics.clickAction
-import androidx.compose.ui.semantics.clickable
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.traversalIndex
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
@@ -82,8 +81,9 @@ fun MessageEventBubble(
     } else {
         Modifier
             .semantics(mergeDescendants = false) {
-                // Preserve click semantics for accessibility / keyboard
-                this.clickable = true
+                // Properly expose click semantics for accessibility / keyboard / tests
+                onClick(label = "Open message", action = { true })
+                stateDescription = "Message"
             }
             .pointerInput(Unit) {
                 detectTapGestures(

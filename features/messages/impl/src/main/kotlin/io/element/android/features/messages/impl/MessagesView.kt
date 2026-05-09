@@ -194,6 +194,10 @@ fun MessagesView(
     }
 
     fun onMessageDoubleTap(event: TimelineItem.Event) {
+        // Only react if the user can send reactions in this room
+        if (!state.timelineState.timelineRoomInfo.userHasPermissionToSendReaction) {
+            return
+        }
         Timber.v("onMessageDoubleTap= ${event.id}")
         state.eventSink(MessagesEvent.ToggleReaction("\u2764", event.eventOrTransactionId))
     }

@@ -359,10 +359,18 @@ private fun MessagePreviewAndIndicatorRow(
                 MentionIndicatorAtom()
             }
             if (room.hasNewContent) {
-                val contentDescription = stringResource(CommonStrings.a11y_notifications_new_messages)
-                UnreadIndicatorAtom(
+                val unreadCount = room.numberOfUnreadMessages.takeIf { it > 0 }
+                    ?: room.numberOfUnreadNotifications.takeIf { it > 0 }
+                val contentDescription = if (unreadCount != null) {
+                    stringResource(CommonStrings.a11y_notifications_new_messages) + ": $unreadCount"
+                } else {
+                    stringResource(CommonStrings.a11y_notifications_new_messages)
+                }
+                UnreadCountBadge(
+                    count = unreadCount,
                     color = tint,
                     contentDescription = contentDescription,
+                    isMarkedUnread = room.isMarkedUnread,
                 )
             }
         }
@@ -430,6 +438,46 @@ private fun MentionIndicatorAtom() {
         imageVector = CompoundIcons.Mention(),
         tint = ElementTheme.colors.unreadIndicator,
     )
+}
+
+/**
+ * Beeper-style unread count badge.
+ * Shows a numeric count when available, otherwise shows a dot.
+ * Falls back to a dot for manually marked-unread rooms.
+ */
+@Composable
+private fun UnreadCountBadge(
+    count: Long?,
+    color: Color,
+    contentDescription: String,
+    isMarkedUnread: Boolean,
+) {
+    val hasCount = count != null && !isMarkedUnread
+    if (hasCount) {
+        Box(
+            modifier = Modifier
+                .height(16.dp)
+                .padding(start = 2.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            androidx.compose.foundation.background(
+                color = color,
+                shape = androidx.compose.foundation.shape.CircleShape,
+            )
+            Text(
+                text = if (count > 99) "99+" else count.toString(),
+                color = Color.White,
+                style = ElementTheme.typography.fontCaption1Regular,
+                modifier = Modifier.padding(horizontal = 4.dp),
+            )
+        }
+    } else {
+        // Dot for marked-unread or when no count available
+        UnreadIndicatorAtom(
+            color = color,
+            contentDescription = contentDescription,
+        )
+    }
 }
 
 @PreviewsDayNight

@@ -72,9 +72,9 @@ fun MessageEventBubble(
 ) {
     // Use rememberUpdatedState to avoid stale captured callbacks when
     // the same BubbleState remains equal across recompositions.
-    val onClickState by rememberUpdatedState(onClick)
-    val onLongClickState by rememberUpdatedState(onLongClick)
-    val onDoubleTapState by rememberUpdatedState(onDoubleTap)
+    val onClickState = rememberUpdatedState(onClick)
+    val onLongClickState = rememberUpdatedState(onLongClick)
+    val onDoubleTapState = rememberUpdatedState(onDoubleTap)
 
     val clickableModifier = if (isTalkbackActive()) {
         Modifier
@@ -88,17 +88,17 @@ fun MessageEventBubble(
             .pointerInput(Unit) {
                 detectTapGestures(
                     onDoubleTap = {
-                        onDoubleTapState()
+                        onDoubleTapState.value()
                     },
                     onLongPress = {
-                        onLongClickState()
+                        onLongClickState.value()
                     },
                     onTap = {
-                        onClickState()
+                        onClickState.value()
                     },
                 )
             }
-            .onKeyboardContextMenuAction(onLongClickState)
+            .onKeyboardContextMenuAction(onLongClickState.value)
     }
 
     val cutTopStart = state.cutTopStart

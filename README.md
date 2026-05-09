@@ -12,6 +12,18 @@ Element X Android is the next-generation [Matrix](https://matrix.org/) client pr
 
 Compared to the previous-generation [Element Classic](https://github.com/element-hq/element-android), the application is a total rewrite, using the [Matrix Rust SDK](https://github.com/matrix-org/matrix-rust-sdk) underneath and targeting devices running Android 7+. The UI layer is written using [Jetpack Compose](https://developer.android.com/jetpack/compose), and the navigation is managed using [Appyx](https://github.com/bumble-tech/appyx).
 
+This fork adds quality-of-life features inspired by [Beeper](https://www.beeper.com/).
+
+## Features (fork)
+
+### Double-tap-to-react
+
+Double-tap on any message bubble to quickly add a ❤️ reaction — matching the UX of WhatsApp, iMessage, and Discord. Includes haptic feedback and respects room permissions (won't react when the user can't send reactions or on redacted content).
+
+### Unread count badges
+
+Room list items now show a numeric badge with the actual unread message count instead of a simple dot. Caps at "99+" for high counts. Falls back to a dot for manually marked-unread rooms.
+
 [<img src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" alt="Get it on Google Play" height="80">](https://play.google.com/store/apps/details?id=io.element.android.x)[<img src="https://fdroid.gitlab.io/artwork/badge/get-it-on.png" alt="Get it on F-Droid" height="80">](https://f-droid.org/packages/io.element.android.x)
 
 ## Table of contents

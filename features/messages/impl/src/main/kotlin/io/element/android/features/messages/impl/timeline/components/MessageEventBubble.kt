@@ -18,11 +18,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithCache
@@ -36,7 +32,6 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.launch
 import io.element.android.compound.theme.ElementTheme
 import io.element.android.features.messages.impl.timeline.model.TimelineItemGroupPosition
 import io.element.android.features.messages.impl.timeline.model.bubble.BubbleState
@@ -72,9 +67,6 @@ fun MessageEventBubble(
     content: @Composable BoxScope.() -> Unit = {},
 ) {
     val view = LocalView.current
-    val coroutineScope = rememberCoroutineScope()
-    var pendingSingleTap by remember { mutableStateOf(true) }
-
     val clickableModifier = if (isTalkbackActive()) {
         Modifier
     } else {
@@ -82,22 +74,14 @@ fun MessageEventBubble(
             .pointerInput(state) {
                 detectTapGestures(
                     onDoubleTap = {
-                        pendingSingleTap = false
                         view.performHapticFeedback(android.view.HapticFeedbackConstants.CONFIRM)
                         onDoubleTap()
                     },
                     onLongPress = {
-                        pendingSingleTap = false
                         onLongClick()
                     },
-                    onPress = {
-                        coroutineScope.launch {
-                            tryAwaitRelease()
-                            if (pendingSingleTap) {
-                                onClick()
-                            }
-                            pendingSingleTap = true
-                        }
+                    onTap = {
+                        onClick()
                     },
                 )
             }

@@ -8,6 +8,7 @@
 
 package io.element.android.features.home.impl.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -37,6 +38,8 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.zIndex
 import io.element.android.compound.theme.ElementTheme
 import io.element.android.compound.tokens.generated.CompoundIcons
@@ -471,7 +474,7 @@ private fun UnreadCountBadge(
             Text(
                 text = if (count > 99) "99+" else count.toString(),
                 color = Color.White,
-                style = ElementTheme.typography.fontCaption1Regular,
+                style = ElementTheme.typography.fontBodySmMedium,
                 modifier = Modifier.padding(horizontal = 4.dp),
             )
         }

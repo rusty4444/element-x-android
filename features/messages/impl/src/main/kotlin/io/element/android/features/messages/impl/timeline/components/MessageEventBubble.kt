@@ -17,8 +17,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithCache
@@ -28,6 +30,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.layer.CompositingStrategy
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.semantics.clickAction
+import androidx.compose.ui.semantics.clickable
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
@@ -65,24 +71,34 @@ fun MessageEventBubble(
     modifier: Modifier = Modifier,
     content: @Composable BoxScope.() -> Unit = {},
 ) {
+    // Use rememberUpdatedState to avoid stale captured callbacks when
+    // the same BubbleState remains equal across recompositions.
+    val onClickState by rememberUpdatedState(onClick)
+    val onLongClickState by rememberUpdatedState(onLongClick)
+    val onDoubleTapState by rememberUpdatedState(onDoubleTap)
+
     val clickableModifier = if (isTalkbackActive()) {
         Modifier
     } else {
         Modifier
-            .pointerInput(state) {
+            .semantics(mergeDescendants = false) {
+                // Preserve click semantics for accessibility / keyboard
+                this.clickable = true
+            }
+            .pointerInput(Unit) {
                 detectTapGestures(
                     onDoubleTap = {
-                        onDoubleTap()
+                        onDoubleTapState()
                     },
                     onLongPress = {
-                        onLongClick()
+                        onLongClickState()
                     },
                     onTap = {
-                        onClick()
+                        onClickState()
                     },
                 )
             }
-            .onKeyboardContextMenuAction(onLongClick)
+            .onKeyboardContextMenuAction(onLongClickState)
     }
 
     val cutTopStart = state.cutTopStart

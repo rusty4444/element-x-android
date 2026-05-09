@@ -89,6 +89,7 @@ import io.element.android.features.messages.impl.timeline.model.TimelineItem
 import io.element.android.features.messages.impl.timeline.model.TimelineItemGroupPosition
 import io.element.android.features.messages.impl.timeline.model.event.aTimelineItemStateEventContent
 import io.element.android.features.messages.impl.timeline.model.event.aTimelineItemTextContent
+import io.element.android.features.messages.impl.timeline.model.event.canReact
 import io.element.android.features.messages.impl.topbars.MessagesViewTopBar
 import io.element.android.features.messages.impl.topbars.ThreadTopBar
 import io.element.android.features.messages.impl.voicemessages.composer.VoiceMessagePermissionRationaleDialog
@@ -194,12 +195,17 @@ fun MessagesView(
     }
 
     fun onMessageDoubleTap(event: TimelineItem.Event) {
-        // Only react if the user can send reactions in this room
+        // Only react if the user can send reactions and the content is reactable
         if (!state.timelineState.timelineRoomInfo.userHasPermissionToSendReaction) {
             return
         }
+        if (!event.content.canReact()) {
+            return
+        }
+        localView.performHapticFeedback(android.view.HapticFeedbackConstants.CONFIRM)
         Timber.v("onMessageDoubleTap= ${event.id}")
-        state.eventSink(MessagesEvent.ToggleReaction("\u2764", event.eventOrTransactionId))
+        // Use the same heart emoji as the suggested reactions so they aggregate
+        state.eventSink(MessagesEvent.ToggleReaction("❤️", event.eventOrTransactionId))
     }
 
     fun onEmojiReactionLongClick(emoji: String, event: TimelineItem.Event) {

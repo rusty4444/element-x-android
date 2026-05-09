@@ -28,7 +28,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.layer.CompositingStrategy
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
@@ -66,7 +65,6 @@ fun MessageEventBubble(
     modifier: Modifier = Modifier,
     content: @Composable BoxScope.() -> Unit = {},
 ) {
-    val view = LocalView.current
     val clickableModifier = if (isTalkbackActive()) {
         Modifier
     } else {
@@ -74,7 +72,6 @@ fun MessageEventBubble(
             .pointerInput(state) {
                 detectTapGestures(
                     onDoubleTap = {
-                        view.performHapticFeedback(android.view.HapticFeedbackConstants.CONFIRM)
                         onDoubleTap()
                     },
                     onLongPress = {

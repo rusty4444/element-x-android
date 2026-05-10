@@ -344,7 +344,7 @@ private fun MessagePreviewAndIndicatorRow(
         // Call and unread
         Row(
             modifier = Modifier
-                .height(16.dp)
+                .heightIn(min = 20.dp)
                 // Used to force this line to be read aloud earlier than the latest event when using Talkback
                 .zIndex(-1f),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -458,12 +458,16 @@ private fun UnreadCountBadge(
 ) {
     val hasCount = count != null && !isMarkedUnread
     if (hasCount) {
+        // Use a vibrant green for the badge background so it's visible in both light and dark themes.
+        // The default unreadIndicator theme color (iconAccentTertiary / colorGreen800) is too
+        // dark to work as a badge fill — it reads as black-on-black in dark mode.
+        val badgeColor = Color(0xFF25D366)
         Box(
             modifier = Modifier
                 .padding(start = 2.dp)
-                .sizeIn(minWidth = 16.dp, minHeight = 16.dp)
+                .heightIn(min = 18.dp)
                 .background(
-                    color = color,
+                    color = badgeColor,
                     shape = androidx.compose.foundation.shape.RoundedCornerShape(10.dp),
                 )
                 .semantics { this.contentDescription = contentDescription },

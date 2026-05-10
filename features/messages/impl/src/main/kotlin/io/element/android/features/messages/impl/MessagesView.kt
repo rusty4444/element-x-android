@@ -175,6 +175,7 @@ fun MessagesView(
     }
 
     fun onMessageLongClick(event: TimelineItem.Event) {
+        localView.performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS)
         Timber.v("OnMessageLongClicked= ${event.id}")
         hidingKeyboard {
             state.actionListState.eventSink(

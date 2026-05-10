@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
@@ -445,7 +446,7 @@ private fun MentionIndicatorAtom() {
 
 /**
  * Beeper-style unread count badge.
- * Shows a numeric count when available, otherwise shows a dot.
+ * Shows a numeric count inside a colored pill when available, otherwise shows a dot.
  * Falls back to a dot for manually marked-unread rooms.
  */
 @Composable
@@ -459,23 +460,20 @@ private fun UnreadCountBadge(
     if (hasCount) {
         Box(
             modifier = Modifier
-                .height(16.dp)
                 .padding(start = 2.dp)
+                .sizeIn(minWidth = 16.dp, minHeight = 16.dp)
+                .background(
+                    color = color,
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(10.dp),
+                )
                 .semantics { this.contentDescription = contentDescription },
             contentAlignment = Alignment.Center,
         ) {
-            Box(
-                modifier = Modifier
-                    .background(
-                        color = color,
-                        shape = androidx.compose.foundation.shape.CircleShape,
-                    ),
-            )
             Text(
                 text = if (count > 99) "99+" else count.toString(),
                 color = Color.White,
                 style = ElementTheme.typography.fontBodySmMedium,
-                modifier = Modifier.padding(horizontal = 4.dp),
+                modifier = Modifier.padding(horizontal = 5.dp),
             )
         }
     } else {

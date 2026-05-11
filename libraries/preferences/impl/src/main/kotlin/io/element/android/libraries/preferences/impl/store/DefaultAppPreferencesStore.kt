@@ -30,6 +30,7 @@ private val hideInviteAvatarsKey = booleanPreferencesKey("hideInviteAvatars")
 private val timelineMediaPreviewValueKey = stringPreferencesKey("timelineMediaPreviewValue")
 private val logLevelKey = stringPreferencesKey("logLevel")
 private val traceLogPacksKey = stringPreferencesKey("traceLogPacks")
+private val accentColorKey = stringPreferencesKey("accentColor")
 
 @ContributesBinding(AppScope::class)
 class DefaultAppPreferencesStore(
@@ -141,6 +142,18 @@ class DefaultAppPreferencesStore(
                 ?.mapNotNull { value -> TraceLogPack.entries.find { it.key == value } }
                 ?.toSet()
                 ?: emptySet()
+        }
+    }
+
+    override suspend fun setAccentColor(accentColor: String) {
+        store.edit { prefs ->
+            prefs[accentColorKey] = accentColor
+        }
+    }
+
+    override fun getAccentColorFlow(): Flow<String?> {
+        return store.data.map { prefs ->
+            prefs[accentColorKey]
         }
     }
 

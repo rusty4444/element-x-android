@@ -21,12 +21,14 @@ class InMemoryAppPreferencesStore(
     hideInviteAvatars: Boolean? = null,
     timelineMediaPreviewValue: MediaPreviewValue? = null,
     theme: String? = null,
+    accentColor: String? = null,
     logLevel: LogLevel = LogLevel.INFO,
     traceLockPacks: Set<TraceLogPack> = emptySet(),
 ) : AppPreferencesStore {
     private val isDeveloperModeEnabled = MutableStateFlow(isDeveloperModeEnabled)
     private val customElementCallBaseUrl = MutableStateFlow(customElementCallBaseUrl)
     private val theme = MutableStateFlow(theme)
+    private val accentColor = MutableStateFlow(accentColor)
     private val logLevel = MutableStateFlow(logLevel)
     private val tracingLogPacks = MutableStateFlow(traceLockPacks)
     private val hideInviteAvatars = MutableStateFlow(hideInviteAvatars)
@@ -82,6 +84,14 @@ class InMemoryAppPreferencesStore(
 
     override fun getTracingLogLevelFlow(): Flow<LogLevel> {
         return logLevel
+    }
+
+    override suspend fun setAccentColor(accentColor: String) {
+        this.accentColor.value = accentColor
+    }
+
+    override fun getAccentColorFlow(): Flow<String?> {
+        return accentColor
     }
 
     override suspend fun setTracingLogPacks(targets: Set<TraceLogPack>) {

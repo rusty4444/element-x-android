@@ -39,6 +39,8 @@ fun aAdvancedSettingsState(
     mediaOptimizationState: MediaOptimizationState = MediaOptimizationState.AllMedia(isEnabled = false),
     theme: ThemeOption = ThemeOption.System,
     availableThemeOptions: ImmutableList<ThemeOption> = ThemeOption.entries.toImmutableList(),
+    accentColor: AccentColorOption = AccentColorOption.Green,
+    availableAccentColorOptions: ImmutableList<AccentColorOption> = AccentColorOption.entries.toImmutableList(),
     hideInviteAvatars: Boolean = false,
     timelineMediaPreviewValue: MediaPreviewValue = MediaPreviewValue.On,
     setTimelineMediaPreviewAction: AsyncAction<Unit> = AsyncAction.Uninitialized,
@@ -50,6 +52,8 @@ fun aAdvancedSettingsState(
     mediaOptimizationState = mediaOptimizationState,
     theme = theme,
     availableThemeOptions = availableThemeOptions,
+    accentColor = accentColor,
+    availableAccentColorOptions = availableAccentColorOptions,
     mediaPreviewConfigState = MediaPreviewConfigState(
         hideInviteAvatars = hideInviteAvatars,
         timelineMediaPreviewValue = timelineMediaPreviewValue,

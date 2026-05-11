@@ -7,4 +7,15 @@
 
 <resources>
     <string name="common_black">"Black"</string>
+
+    <!-- Accent color names for theme picker -->
+    <string name="common_accent_color_green">"Green"</string>
+    <string name="common_accent_color_purple">"Purple"</string>
+    <string name="common_accent_color_orange">"Orange"</string>
+    <string name="common_accent_color_blue">"Blue"</string>
+    <string name="common_accent_color_pink">"Pink"</string>
+    <string name="common_accent_color_teal">"Teal"</string>
+
+    <!-- Advanced settings -->
+    <string name="screen_advanced_settings_accent_color">"Accent color"</string>
 </resources>

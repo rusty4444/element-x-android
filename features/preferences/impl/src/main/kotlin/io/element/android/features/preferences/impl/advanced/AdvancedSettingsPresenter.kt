@@ -15,6 +15,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import dev.zacsweers.metro.Inject
+import io.element.android.compound.theme.AccentColor
 import io.element.android.compound.theme.Theme
 import io.element.android.compound.theme.mapToTheme
 import io.element.android.libraries.architecture.Presenter
@@ -27,6 +28,7 @@ import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 @Inject
@@ -66,6 +68,17 @@ class AdvancedSettingsPresenter(
             }
         }
 
+        val accentColor by remember {
+            appPreferencesStore.getAccentColorFlow().map { name ->
+                name?.let { runCatching { AccentColor.valueOf(it) }.getOrDefault(AccentColor.Green) }
+                    ?: AccentColor.Green
+            }
+        }.collectAsState(initial = AccentColor.Green)
+
+        val accentColorOption by remember {
+            derivedStateOf { AccentColorOption.fromAccentColor(accentColor) }
+        }
+
         val hasSplitMediaQualityOptions by produceState<Boolean?>(null) {
             value = featureFlagService.isFeatureEnabled(FeatureFlags.SelectableMediaQuality)
         }
@@ -76,6 +89,10 @@ class AdvancedSettingsPresenter(
             } else {
                 ThemeOption.entries.filterNot { it == ThemeOption.Black }
             }.toImmutableList()
+        }
+
+        val availableAccentColorOptions = remember {
+            AccentColorOption.entries.toImmutableList()
         }
 
         val mediaOptimizationState by produceState<MediaOptimizationState?>(null) {
@@ -115,6 +132,9 @@ class AdvancedSettingsPresenter(
                         ThemeOption.Light -> appPreferencesStore.setTheme(Theme.Light.name)
                     }
                 }
+                is AdvancedSettingsEvents.SetAccentColor -> sessionCoroutineScope.launch {
+                    appPreferencesStore.setAccentColor(event.accentColor.toAccentColor().name)
+                }
                 is AdvancedSettingsEvents.SetHideInviteAvatars -> mediaPreviewConfigStateStore.setHideInviteAvatars(event.value)
                 is AdvancedSettingsEvents.SetTimelineMediaPreviewValue -> mediaPreviewConfigStateStore.setTimelineMediaPreviewValue(event.value)
                 is AdvancedSettingsEvents.SetCompressImages -> sessionCoroutineScope.launch {
@@ -132,6 +152,8 @@ class AdvancedSettingsPresenter(
             mediaOptimizationState = mediaOptimizationState,
             theme = themeOption,
             availableThemeOptions = availableThemeOptions,
+            accentColor = accentColorOption,
+            availableAccentColorOptions = availableAccentColorOptions,
             mediaPreviewConfigState = mediaPreviewConfigState,
             eventSink = ::handleEvent,
         )

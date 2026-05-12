@@ -24,6 +24,22 @@ Double-tap on any message bubble to quickly add a ❤️ reaction — matching t
 
 Room list items now show a numeric badge with the actual unread message count instead of a simple dot. Caps at "99+" for high counts. Falls back to a dot for manually marked-unread rooms.
 
+### Accent themes and message bubbles
+
+Choose from Default, Orange, Purple, Blue, Teal, Pink, Red, Green, Indigo, and Amber accent colours. The accent updates badges, primary actions, borders, icons, gradients, and outgoing message bubbles, with dark-mode-specific subtle surfaces for readability.
+
+### Multi-image attachment picker
+
+The composer has one Image entry that supports multi-select. Selected images open in a horizontal preview carousel with page indicator dots, then send sequentially in order from a single send action.
+
+### Group avatars with participants
+
+Rooms without a custom avatar use up to four participant avatars instead of a single letter fallback. This is used in open-room headers and on the main chats screen for visible room rows.
+
+### Home screen polish
+
+The coloured heading bar now has clearer spacing before the room filter chips, and the fork keeps its gplay package id (`io.element.android.x.fork`) so it can be installed side-by-side with official Element X.
+
 [<img src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" alt="Get it on Google Play" height="80">](https://play.google.com/store/apps/details?id=io.element.android.x)[<img src="https://fdroid.gitlab.io/artwork/badge/get-it-on.png" alt="Get it on F-Droid" height="80">](https://f-droid.org/packages/io.element.android.x)
 
 ## Table of contents

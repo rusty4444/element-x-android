@@ -15,15 +15,21 @@ import io.element.android.libraries.androidutils.diff.DiffCacheUpdater
 import io.element.android.libraries.androidutils.diff.MutableListDiffCache
 import io.element.android.libraries.androidutils.system.DateTimeObserver
 import io.element.android.libraries.core.coroutine.CoroutineDispatchers
+import io.element.android.libraries.designsystem.components.avatar.AvatarData
+import io.element.android.libraries.designsystem.components.avatar.AvatarSize
 import io.element.android.libraries.di.SessionScope
 import io.element.android.libraries.di.annotations.SessionCoroutineScope
+import io.element.android.libraries.matrix.api.MatrixClient
 import io.element.android.libraries.matrix.api.core.RoomId
 import io.element.android.libraries.matrix.api.notificationsettings.NotificationSettingsService
+import io.element.android.libraries.matrix.api.room.RoomMembershipState
+import io.element.android.libraries.matrix.api.room.isDm
 import io.element.android.libraries.matrix.api.roomlist.RoomList
 import io.element.android.libraries.matrix.api.roomlist.RoomListFilter
 import io.element.android.libraries.matrix.api.roomlist.RoomListService
 import io.element.android.libraries.matrix.api.roomlist.RoomSummary
 import io.element.android.libraries.matrix.api.roomlist.updateVisibleRange
+import io.element.android.libraries.matrix.ui.model.getAvatarData
 import io.element.android.services.analytics.api.AnalyticsService
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
@@ -52,6 +58,7 @@ private const val PAGINATION_THRESHOLD = 3 * PAGE_SIZE
 @Inject
 @SingleIn(SessionScope::class)
 class RoomListDataSource(
+    private val matrixClient: MatrixClient,
     private val roomListService: RoomListService,
     private val roomListRoomSummaryFactory: RoomListRoomSummaryFactory,
     private val coroutineDispatchers: CoroutineDispatchers,
@@ -121,6 +128,7 @@ class RoomListDataSource(
                 currentRoomList.getOrNull(index)?.roomId
             }
             roomListService.subscribeToVisibleRooms(roomIds)
+            rebuildAllRoomSummaries()
         }
     }
 
@@ -165,7 +173,11 @@ class RoomListDataSource(
                     val pairs = cachingResults.getOrDefault(cachedItem.roomId, mutableListOf())
                     pairs.add(CacheResult(index, fromCache = true))
                     cachingResults[cachedItem.roomId] = pairs
-                    cachedItem
+                    if (cachedItem.heroes.isEmpty()) {
+                        buildAndCacheItem(roomSummaries, index) ?: cachedItem
+                    } else {
+                        cachedItem
+                    }
                 } ?: run {
                     roomSummaries.getOrNull(index)?.roomId?.let {
                         // Add the non-cached item to the caching results
@@ -203,10 +215,29 @@ class RoomListDataSource(
         }
     }
 
-    private fun buildAndCacheItem(roomSummaries: List<RoomSummary>, index: Int): RoomListRoomSummary? {
-        val roomListSummary = roomSummaries.getOrNull(index)?.let { roomListRoomSummaryFactory.create(it) }
+    private suspend fun buildAndCacheItem(roomSummaries: List<RoomSummary>, index: Int): RoomListRoomSummary? {
+        val roomListSummary = roomSummaries.getOrNull(index)?.let { summary ->
+            roomListRoomSummaryFactory.create(summary, summary.participantHeroes())
+        }
         diffCache[index] = roomListSummary
         return roomListSummary
+    }
+
+    private suspend fun RoomSummary.participantHeroes(): List<AvatarData> {
+        val roomInfo = info
+        if (roomInfo.avatarUrl != null || roomInfo.isDm || roomInfo.isSpace || roomInfo.activeMembersCount <= 1) {
+            return emptyList()
+        }
+        return matrixClient.getJoinedRoom(roomId)
+            ?.getMembers(limit = 5)
+            ?.getOrNull()
+            .orEmpty()
+            .asSequence()
+            .filter { member -> member.membership == RoomMembershipState.JOIN && member.userId != matrixClient.sessionId }
+            .sortedWith(compareByDescending { member -> member.avatarUrl != null })
+            .take(4)
+            .map { member -> member.getAvatarData(size = AvatarSize.RoomListItem) }
+            .toList()
     }
 
     private suspend fun rebuildAllRoomSummaries() {

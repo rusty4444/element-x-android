@@ -152,7 +152,7 @@ fun HomeTopBar(
             TopAppBarScrollBehaviorLayout(scrollBehavior = scrollBehavior) {
                 RoomListFiltersView(
                     state = filtersState,
-                    modifier = Modifier.padding(top = 2.dp, bottom = 16.dp)
+                    modifier = Modifier.padding(top = 14.dp, bottom = 16.dp)
                 )
             }
         }

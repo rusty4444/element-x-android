@@ -14,6 +14,7 @@ import io.element.android.features.home.impl.FakeDateTimeObserver
 import io.element.android.libraries.androidutils.system.DateTimeObserver
 import io.element.android.libraries.dateformatter.test.FakeDateFormatter
 import io.element.android.libraries.matrix.api.roomlist.RoomListService
+import io.element.android.libraries.matrix.test.FakeMatrixClient
 import io.element.android.libraries.matrix.test.notificationsettings.FakeNotificationSettingsService
 import io.element.android.libraries.matrix.test.room.aRoomSummary
 import io.element.android.libraries.matrix.test.roomlist.FakeDynamicRoomList
@@ -106,6 +107,7 @@ class RoomListDataSourceTest {
         notificationSettingsService: FakeNotificationSettingsService = FakeNotificationSettingsService(),
         dateTimeObserver: FakeDateTimeObserver = FakeDateTimeObserver(),
     ) = RoomListDataSource(
+        matrixClient = FakeMatrixClient(),
         roomListService = roomListService,
         roomListRoomSummaryFactory = roomListRoomSummaryFactory,
         coroutineDispatchers = testCoroutineDispatchers(),

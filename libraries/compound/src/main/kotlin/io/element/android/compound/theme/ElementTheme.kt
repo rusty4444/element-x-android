@@ -107,11 +107,11 @@ fun ElementTheme(
     val darkTheme = theme.isDark()
     val currentCompoundColor = when {
         darkTheme -> if (theme == Theme.Black) {
-            compoundDark.copy(bgCanvasDefault = Color.Black).withAccentColor(accentColor)
+            compoundDark.copy(bgCanvasDefault = Color.Black).withAccentColor(accentColor, isDark = true)
         } else {
-            compoundDark.withAccentColor(accentColor)
+            compoundDark.withAccentColor(accentColor, isDark = true)
         }
-        else -> compoundLight.withAccentColor(accentColor)
+        else -> compoundLight.withAccentColor(accentColor, isDark = false)
     }
 
     val colorScheme = when {

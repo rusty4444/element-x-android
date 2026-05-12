@@ -46,8 +46,7 @@ internal fun RoomAvatar(
         }
         else -> {
             AvatarCluster(
-                // Keep only the first hero for now
-                avatars = avatarType.heroes.take(1).toImmutableList(),
+                avatars = avatarType.heroes.take(4).toImmutableList(),
                 // Note: even for a room avatar, we use AvatarType.User here to display the avatar of heroes
                 avatarType = AvatarType.User,
                 modifier = modifier,

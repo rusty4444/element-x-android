@@ -76,6 +76,7 @@ import io.element.android.libraries.matrix.api.permalink.PermalinkParser
 import io.element.android.libraries.matrix.api.room.JoinedRoom
 import io.element.android.libraries.matrix.api.room.RoomInfo
 import io.element.android.libraries.matrix.api.room.RoomMembersState
+import io.element.android.libraries.matrix.api.room.activeRoomMembers
 import io.element.android.libraries.matrix.api.room.history.RoomHistoryVisibility
 import io.element.android.libraries.matrix.api.room.isDm
 import io.element.android.libraries.matrix.api.room.powerlevels.permissionsAsState
@@ -180,8 +181,9 @@ class MessagesPresenter(
         val roomAvatar by remember {
             derivedStateOf { roomInfo.avatarData() }
         }
+        val membersState by room.membersStateFlow.collectAsState()
         val heroes by remember {
-            derivedStateOf { roomInfo.heroes().toImmutableList() }
+            derivedStateOf { roomInfo.heroes(membersState).toImmutableList() }
         }
 
         var hasDismissedInviteDialog by rememberSaveable {
@@ -213,7 +215,6 @@ class MessagesPresenter(
 
         var dmUserVerificationState by remember { mutableStateOf<IdentityState?>(null) }
 
-        val membersState by room.membersStateFlow.collectAsState()
         val dmRoomMember by room.getDirectRoomMember(membersState)
         val roomMemberIdentityStateChanges = identityChangeState.roomMemberIdentityStateChanges
 
@@ -336,7 +337,16 @@ class MessagesPresenter(
         )
     }
 
-    private fun RoomInfo.heroes(): List<AvatarData> {
+    private fun RoomInfo.heroes(membersState: RoomMembersState): List<AvatarData> {
+        val activeMembers = membersState.activeRoomMembers()
+        val useParticipantAvatars = avatarUrl == null && !isDm && activeMembers.size > 1
+        if (useParticipantAvatars) {
+            return activeMembers
+                .sortedWith(compareByDescending { it.avatarUrl != null })
+                .map { member ->
+                    member.getAvatarData(size = AvatarSize.TimelineRoom)
+                }
+        }
         return heroes.map { user ->
             user.getAvatarData(size = AvatarSize.TimelineRoom)
         }

@@ -132,11 +132,26 @@ enum class AccentColor(
  * Returns a new SemanticColors instance with overridden accent tokens.
  */
 fun SemanticColors.withAccentColor(accent: AccentColor): SemanticColors {
-    if (accent == AccentColor.Default) return this
     return copy(
         // Background accent
+        bgAccentHovered = accent.primaryHover,
+        bgAccentPressed = accent.primaryPressed,
         bgAccentRest = accent.primary,
         bgAccentSelected = accent.primary,
+        // Badge - unread count bubbles, notification badges
+        bgBadgeAccent = accent.primary,
+        textBadgeAccent = accent.onPrimary,
+        // Subtle surfaces for chat bubbles with accent tint
+        bgSubtlePrimary = accent.subtle,
+        bgSubtleSecondary = accent.subtle.copy(alpha = 0.7f),
+        bgSubtleSecondaryLevel0 = accent.subtle.copy(alpha = 0.5f),
+        // Gradient tokens for message bubbles and bloom effects
+        gradientSubtleStop1 = accent.primaryAlpha,
+        gradientSubtleStop2 = accent.subtle,
+        gradientSubtleStop3 = accent.primary.copy(alpha = 0.3f),
+        gradientSubtleStop4 = accent.primary.copy(alpha = 0.15f),
+        gradientSubtleStop5 = accent.subtle.copy(alpha = 0.6f),
+        gradientSubtleStop6 = accent.primary.copy(alpha = 0.2f),
         // Primary action backgrounds
         bgActionPrimaryDisabled = Color.Gray.copy(alpha = 0.5f),
         bgActionPrimaryHovered = accent.primaryHover,
@@ -147,9 +162,10 @@ fun SemanticColors.withAccentColor(accent: AccentColor): SemanticColors {
         bgActionSecondaryRest = accent.subtle,
         // Border colors
         borderAccentPrimary = accent.primary,
-        // Text accent colors
+        borderAccentSubtle = accent.subtle,
+        // Icon and text accent colors
         iconAccentPrimary = accent.primary,
+        iconAccentTertiary = accent.primary.copy(alpha = 0.6f),
         textActionAccent = accent.primary,
-
     )
 }

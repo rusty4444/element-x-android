@@ -71,10 +71,10 @@ fun ElementThemeApp(
     }.collectAsState(initial = Theme.System)
     val accentColor by remember {
         appPreferencesStore.getAccentColorFlow().map { name ->
-            name?.let { runCatching { AccentColor.valueOf(it) }.getOrDefault(AccentColor.Green) }
-                ?: AccentColor.Green
+            name?.let { runCatching { AccentColor.valueOf(it) }.getOrDefault(AccentColor.Default) }
+                ?: AccentColor.Default
         }
-    }.collectAsState(initial = AccentColor.Green)
+    }.collectAsState(initial = AccentColor.Default)
     LaunchedEffect(theme) {
         AppCompatDelegate.setDefaultNightMode(
             when (theme) {

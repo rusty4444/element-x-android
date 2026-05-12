@@ -23,8 +23,7 @@ sealed interface MessageComposerEvent {
     data object AddAttachment : MessageComposerEvent
     data object DismissAttachmentMenu : MessageComposerEvent
     sealed interface PickAttachmentSource : MessageComposerEvent {
-        data object FromGallery : PickAttachmentSource
-        data object MultipleImages : PickAttachmentSource
+        data object Image : PickAttachmentSource
         data object FromFiles : PickAttachmentSource
         data object PhotoFromCamera : PickAttachmentSource
         data object VideoFromCamera : PickAttachmentSource

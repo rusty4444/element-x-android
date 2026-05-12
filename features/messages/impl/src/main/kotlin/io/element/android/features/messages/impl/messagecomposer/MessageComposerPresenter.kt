@@ -176,9 +176,6 @@ class MessageComposerPresenter(
             canShareLocation.value = locationService.isServiceAvailable()
         }
 
-        val galleryMediaPicker = mediaPickerProvider.registerGalleryPicker { uri, mimeType ->
-            handlePickedMedia(uri, mimeType)
-        }
         val filesPicker = mediaPickerProvider.registerFilePicker(AnyMimeTypes) { uri, mimeType ->
             handlePickedMedia(uri, mimeType ?: MimeTypes.OctetStream)
         }
@@ -309,9 +306,9 @@ class MessageComposerPresenter(
                     showAttachmentSourcePicker = true
                 }
                 MessageComposerEvent.DismissAttachmentMenu -> showAttachmentSourcePicker = false
-                MessageComposerEvent.PickAttachmentSource.FromGallery -> localCoroutineScope.launch {
+                MessageComposerEvent.PickAttachmentSource.Image -> localCoroutineScope.launch {
                     showAttachmentSourcePicker = false
-                    galleryMediaPicker.launch()
+                    multiImagePicker.launch()
                 }
                 MessageComposerEvent.PickAttachmentSource.FromFiles -> localCoroutineScope.launch {
                     showAttachmentSourcePicker = false
@@ -334,10 +331,6 @@ class MessageComposerPresenter(
                         pendingEvent = event
                         cameraPermissionState.eventSink(PermissionsEvent.RequestPermissions)
                     }
-                }
-                MessageComposerEvent.PickAttachmentSource.MultipleImages -> localCoroutineScope.launch {
-                    showAttachmentSourcePicker = false
-                    multiImagePicker.launch()
                 }
                 MessageComposerEvent.PickAttachmentSource.Location -> {
                     showAttachmentSourcePicker = false

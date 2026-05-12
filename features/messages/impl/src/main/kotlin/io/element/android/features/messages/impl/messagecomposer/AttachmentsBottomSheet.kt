@@ -115,15 +115,9 @@ private fun AttachmentSourcePickerMenu(
             style = ListItemStyle.Primary,
         )
         ListItem(
-            modifier = Modifier.clickable { state.eventSink(MessageComposerEvent.PickAttachmentSource.FromGallery) },
+            modifier = Modifier.clickable { state.eventSink(MessageComposerEvent.PickAttachmentSource.Image) },
             leadingContent = ListItemContent.Icon(IconSource.Vector(CompoundIcons.Image())),
             headlineContent = { Text(stringResource(R.string.screen_room_attachment_source_gallery)) },
-            style = ListItemStyle.Primary,
-        )
-        ListItem(
-            modifier = Modifier.clickable { state.eventSink(MessageComposerEvent.PickAttachmentSource.MultipleImages) },
-            leadingContent = ListItemContent.Icon(IconSource.Vector(CompoundIcons.Image())),
-            headlineContent = { Text(stringResource(R.string.screen_room_attachment_source_multiple_images)) },
             style = ListItemStyle.Primary,
         )
         ListItem(

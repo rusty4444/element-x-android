@@ -101,7 +101,7 @@ fun ElementTheme(
     materialColorsLight: ColorScheme = compoundLight.toMaterialColorScheme(),
     materialColorsDark: ColorScheme = compoundDark.toMaterialColorScheme(),
     typography: Typography = compoundTypography,
-    accentColor: AccentColor = AccentColor.Green,
+    accentColor: AccentColor = AccentColor.Default,
     content: @Composable () -> Unit,
 ) {
     val darkTheme = theme.isDark()

@@ -458,20 +458,14 @@ private fun UnreadCountBadge(
 ) {
     val hasCount = count != null && !isMarkedUnread
     if (hasCount) {
-        // Use a brighter green for the badge background than the theme's unreadIndicator
-        // (colorGreen800) which is too dark to be noticeable as a badge fill in dark mode.
-        val badgeColor = if (ElementTheme.colors.isLight) {
-            Color(0xFF008268)
-        } else {
-            Color(0xFF37C998)
-        }
+        // Use the accent color from the theme for the badge background
         Box(
             modifier = Modifier
                 .padding(start = 2.dp)
                 .heightIn(min = 18.dp)
                 .widthIn(min = 18.dp)
                 .background(
-                    color = badgeColor,
+                    color = ElementTheme.colors.bgBadgeAccent,
                     shape = androidx.compose.foundation.shape.RoundedCornerShape(10.dp),
                 )
                 .semantics { this.contentDescription = contentDescription },
@@ -479,7 +473,7 @@ private fun UnreadCountBadge(
         ) {
             Text(
                 text = if (count > 99) "99+" else count.toString(),
-                color = Color.White,
+                color = ElementTheme.colors.textBadgeAccent,
                 style = ElementTheme.typography.fontBodySmMedium,
                 modifier = Modifier.padding(horizontal = 5.dp),
             )

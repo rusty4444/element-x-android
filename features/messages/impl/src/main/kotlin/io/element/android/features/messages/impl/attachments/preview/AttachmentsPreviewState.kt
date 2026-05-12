@@ -42,7 +42,7 @@ internal fun String.isImage(): Boolean =
     this == MimeTypes.Jpeg || this == MimeTypes.Png || this == MimeTypes.WebP || this == MimeTypes.Gif || this.startsWith("image/")
 
 internal fun String.isVideo(): Boolean =
-    this == MimeTypes.Mp4 || this == MimeTypes.WebM || this == MimeTypes.Mkv || this.startsWith("video/")
+    this == MimeTypes.Mp4 || this.startsWith("video/")
 
 @Immutable
 sealed interface SendActionState {

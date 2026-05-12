@@ -67,9 +67,12 @@ fun anAttachmentsPreviewState(
     mediaOptimizationSelectorState: MediaOptimizationSelectorState = aMediaOptimisationSelectorState(),
     displayFileTooLargeError: Boolean = false,
 ) = AttachmentsPreviewState(
-    attachment = Attachment.Media(
-        localMedia = LocalMedia("file://path".toUri(), mediaInfo),
+    attachments = persistentListOf(
+        Attachment.Media(
+            localMedia = LocalMedia("file://path".toUri(), mediaInfo),
+        ),
     ),
+    selectedIndex = 0,
     sendActionState = sendActionState,
     textEditorState = textEditorState,
     mediaOptimizationSelectorState = mediaOptimizationSelectorState,

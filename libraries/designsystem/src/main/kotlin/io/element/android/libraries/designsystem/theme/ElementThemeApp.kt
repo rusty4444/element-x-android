@@ -74,7 +74,7 @@ fun ElementThemeApp(
             name?.let { runCatching { AccentColor.valueOf(it) }.getOrDefault(AccentColor.Default) }
                 ?: AccentColor.Default
         }
-    }.collectAsState(initial = AccentColor.Default)
+    }.collectAsState(initial = AccentColor.Green)
     LaunchedEffect(theme) {
         AppCompatDelegate.setDefaultNightMode(
             when (theme) {

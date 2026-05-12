@@ -213,16 +213,6 @@ private fun AttachmentPreviewContent(
                                     contentAlignment = Alignment.Center,
                                 ) {
                                     localMediaRenderer.Render(attachment.localMedia)
-                                    // Tap to advance/back through pager
-                                    Box(
-                                        modifier = Modifier
-                                            .matchParentSize()
-                                            .clickable {
-                                                if (pagerState.currentPage < state.attachments.size - 1) {
-                                                    pagerState.scrollToPage(pagerState.currentPage + 1)
-                                                }
-                                            },
-                                    )
                                 }
                             }
                         }

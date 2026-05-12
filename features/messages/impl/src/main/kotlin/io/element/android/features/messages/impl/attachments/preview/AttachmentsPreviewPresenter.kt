@@ -94,8 +94,6 @@ class AttachmentsPreviewPresenter(
 
         val ongoingSendAttachmentJob = remember { mutableStateOf<Job?>(null) }
 
-        var preprocessMediaJobs by remember { mutableStateOf<List<Job>>(emptyList()) }
-
         var selectedIndex by remember { mutableStateOf(0) }
         val currentAttachment = attachments.getOrElse(selectedIndex) { attachments.first() }
         val currentMediaAttachment = currentAttachment as Attachment.Media
@@ -145,34 +143,31 @@ class AttachmentsPreviewPresenter(
                         val caption = markdownTextEditorState.getMessageMarkdown(permalinkBuilder)
                             .takeIf { it.isNotEmpty() }
 
-                        // Process and send all attachments sequentially
-                        val newJobs = attachments.map { attachment ->
-                            launch(dispatchers.io) {
-                                (attachment as? Attachment.Media)?.let { media ->
-                                    val configForUpload = if (!media.localMedia.info.mimeType.isMimeTypeImage() &&
-                                        !media.localMedia.info.mimeType.isMimeTypeVideo()
-                                    ) {
-                                        mediaOptimizationConfigProvider.get()
-                                    } else {
-                                        config
-                                    }
-                                    sendAttachment(
-                                        mediaAttachment = media,
-                                        mediaOptimizationConfig = configForUpload,
-                                        caption = caption,
-                                        sendActionState = sendActionState,
-                                        inReplyToEventId = inReplyToEventId,
-                                        onDone = { onDoneListener() },
-                                    )
+                        // Send all attachments sequentially
+                        for (attachment in attachments) {
+                            if (!isActive) return@launch
+                            (attachment as? Attachment.Media)?.let { media ->
+                                val configForUpload = if (!media.localMedia.info.mimeType.isMimeTypeImage() &&
+                                    !media.localMedia.info.mimeType.isMimeTypeVideo()
+                                ) {
+                                    mediaOptimizationConfigProvider.get()
+                                } else {
+                                    config
                                 }
+                                sendAttachment(
+                                    mediaAttachment = media,
+                                    mediaOptimizationConfig = configForUpload,
+                                    caption = caption,
+                                    sendActionState = sendActionState,
+                                    inReplyToEventId = inReplyToEventId,
+                                )
                             }
                         }
-                        preprocessMediaJobs = newJobs
+                        if (isActive) onDoneListener()
                     }
                 }
                 AttachmentsPreviewEvent.CancelAndDismiss -> {
                     displayFileTooLargeError = false
-                    preprocessMediaJobs.forEach { it.cancel() }
                     mediaSender.cleanUp()
                     ongoingSendAttachmentJob.value?.cancel()
                     dismissAll(sendActionState)
@@ -209,7 +204,6 @@ class AttachmentsPreviewPresenter(
         caption: String?,
         sendActionState: MutableState<SendActionState>,
         inReplyToEventId: EventId?,
-        onDone: () -> Unit,
     ) = runCatchingExceptions {
         sendActionState.value = SendActionState.Sending.Processing(displayProgress = true)
         mediaSender.preProcessMedia(
@@ -229,8 +223,6 @@ class AttachmentsPreviewPresenter(
         }
     }.fold(
         onSuccess = {
-            sendActionState.value = SendActionState.Done
-            onDone()
         },
         onFailure = { error ->
             Timber.e(error, "Failed to send attachment")

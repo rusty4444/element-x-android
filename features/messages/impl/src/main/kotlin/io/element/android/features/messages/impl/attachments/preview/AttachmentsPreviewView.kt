@@ -11,6 +11,9 @@ package io.element.android.features.messages.impl.attachments.preview
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
@@ -20,9 +23,15 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -81,8 +90,8 @@ fun AttachmentsPreviewView(
     localMediaRenderer: LocalMediaRenderer,
     modifier: Modifier = Modifier,
 ) {
-    fun postSendAttachment() {
-        state.eventSink(AttachmentsPreviewEvent.SendAttachment)
+    fun postSendAttachments() {
+        state.eventSink(AttachmentsPreviewEvent.SendAttachments)
     }
 
     fun postCancel() {
@@ -115,13 +124,13 @@ fun AttachmentsPreviewView(
             modifier = Modifier.padding(paddingValues),
             state = state,
             localMediaRenderer = localMediaRenderer,
-            onSendClick = ::postSendAttachment,
+            onSendClick = ::postSendAttachments,
         )
     }
     AttachmentSendStateView(
         sendActionState = state.sendActionState,
         onDismissClick = ::postClearSendState,
-        onRetryClick = ::postSendAttachment
+        onRetryClick = ::postSendAttachments
     )
 }
 
@@ -168,19 +177,86 @@ private fun AttachmentPreviewContent(
     onSendClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val isMultiAttachment = state.attachments.size > 1
+    val pagerState = rememberPagerState { state.attachments.size }
+
+    // Sync pager state to presenter state for currentIndex tracking
+    LaunchedEffect(pagerState.currentPage) {
+        state.eventSink(AttachmentsPreviewEvent.SelectIndex(pagerState.currentPage))
+    }
+
     Column(
         modifier = modifier
             .fillMaxSize()
             .navigationBarsPadding(),
     ) {
-        Box(
+        Column(
             modifier = Modifier
-                .weight(1f),
-            contentAlignment = Alignment.Center
+                .weight(1f)
+                .fillMaxWidth(),
         ) {
-            when (val attachment = state.attachment) {
-                is Attachment.Media -> {
-                    localMediaRenderer.Render(attachment.localMedia)
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth(),
+                contentAlignment = Alignment.Center
+            ) {
+                if (isMultiAttachment) {
+                    HorizontalPager(
+                        state = pagerState,
+                        modifier = Modifier.fillMaxSize(),
+                    ) { page ->
+                        when (val attachment = state.attachments[page]) {
+                            is Attachment.Media -> {
+                                Box(
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    localMediaRenderer.Render(attachment.localMedia)
+                                    // Tap to advance/back through pager
+                                    Box(
+                                        modifier = Modifier
+                                            .matchParentSize()
+                                            .clickable {
+                                                if (pagerState.currentPage < state.attachments.size - 1) {
+                                                    pagerState.scrollToPage(pagerState.currentPage + 1)
+                                                }
+                                            },
+                                    )
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    when (val attachment = state.attachments[0]) {
+                        is Attachment.Media -> {
+                            localMediaRenderer.Render(attachment.localMedia)
+                        }
+                    }
+                }
+            }
+            // Page indicator dots for multiple attachments
+            if (isMultiAttachment) {
+                Row(
+                    modifier = Modifier
+                        .align(Alignment.CenterHorizontally)
+                        .padding(vertical = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    repeat(state.attachments.size) { i ->
+                        Box(
+                            modifier = Modifier
+                                .size(if (i == pagerState.currentPage) 8.dp else 6.dp)
+                                .background(
+                                    color = if (i == pagerState.currentPage) {
+                                        ElementTheme.colors.iconPrimary
+                                    } else {
+                                        ElementTheme.colors.iconTertiary
+                                    },
+                                    shape = CircleShape,
+                                ),
+                        )
+                    }
                 }
             }
         }

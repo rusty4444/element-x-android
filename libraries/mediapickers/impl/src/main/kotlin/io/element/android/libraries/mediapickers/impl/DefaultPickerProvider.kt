@@ -22,6 +22,9 @@ import io.element.android.libraries.di.annotations.ApplicationContext
 import io.element.android.libraries.mediapickers.api.ComposePickerLauncher
 import io.element.android.libraries.mediapickers.api.NoOpPickerLauncher
 import io.element.android.libraries.mediapickers.api.PickerLauncher
+import io.element.android.libraries.mediapickers.api.MultiImagePickerLauncher
+import io.element.android.libraries.mediapickers.api.ComposeMultiImagePickerLauncher
+import io.element.android.libraries.mediapickers.api.NoOpMultiImagePickerLauncher
 import io.element.android.libraries.mediapickers.api.PickerProvider
 import io.element.android.libraries.mediapickers.api.PickerType
 import java.io.File
@@ -148,13 +151,13 @@ class DefaultPickerProvider(
     ): MultiImagePickerLauncher {
         // Tests and UI preview can't handle Contexts, so we might as well disable the whole picker
         return if (LocalInspectionMode.current) {
-            NoOpMultiImagePickerLauncher
+            NoOpMultiImagePickerLauncher()
         } else {
             val contract = PickerType.MultiImage.getContract()
             val managedLauncher = rememberLauncherForActivityResult(contract = contract) { uris ->
                 onResult(uris)
             }
-            remember { ComposeMultiImagePickerLauncher(managedLauncher) }
+            remember { ComposeMultiImagePickerLauncher { request -> managedLauncher.launch(request) } }
         }
     }
 

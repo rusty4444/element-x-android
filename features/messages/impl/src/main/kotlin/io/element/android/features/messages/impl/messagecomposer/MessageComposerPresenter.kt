@@ -283,6 +283,25 @@ class MessageComposerPresenter(
                     // Reset composer since the attachment has been sent
                     messageComposerContext.composerMode = MessageComposerMode.Normal
                 }
+                is MessageComposerEvent.SendUris -> {
+                    val inReplyToEventId = (messageComposerContext.composerMode as? MessageComposerMode.Reply)?.eventId
+                    event.uris.forEach { uri ->
+                        sessionCoroutineScope.sendAttachment(
+                            attachment = Media(
+                                localMedia = localMediaFactory.createFromUri(
+                                    uri = uri,
+                                    mimeType = null,
+                                    name = null,
+                                    formattedFileSize = null
+                                ),
+                            ),
+                            inReplyToEventId = inReplyToEventId,
+                        )
+                    }
+
+                    // Reset composer since the attachments have been sent
+                    messageComposerContext.composerMode = MessageComposerMode.Normal
+                }
                 is MessageComposerEvent.SetMode -> {
                     localCoroutineScope.setMode(event.composerMode, markdownTextEditorState, richTextEditorState)
                 }

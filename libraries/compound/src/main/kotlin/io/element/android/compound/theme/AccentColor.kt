@@ -145,10 +145,6 @@ fun SemanticColors.withAccentColor(accent: AccentColor): SemanticColors {
         bgActionSecondaryHovered = accent.primaryAlpha,
         bgActionSecondaryPressed = accent.primary.copy(alpha = 0.5f),
         bgActionSecondaryRest = accent.subtle,
-        // ACCENT/HOVERED
-        iconAccentHovered = accent.primaryHover,
-        iconAccentPressed = accent.primaryPressed,
-        iconAccentSelected = accent.primary,
         // Border colors
         borderAccentPrimary = accent.primary,
         // Text accent colors

@@ -9,7 +9,9 @@ package io.element.android.libraries.mediapickers.api
 
 import android.content.ActivityNotFoundException
 import android.net.Uri
-import androidx.activity.compose.ManagedActivityResultLauncher
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import timber.log.Timber
 
 /**
@@ -19,13 +21,14 @@ interface MultiImagePickerLauncher {
     fun launch()
 }
 
-/** Compose-backed launcher that uses ActivityResultContracts.OpenMultipleDocuments. */
+/** Compose-backed launcher that uses ActivityResultContracts.PickMultipleVisualMedia. */
 class ComposeMultiImagePickerLauncher(
-    private val managedLauncher: ManagedActivityResultLauncher<Nothing?, List<Uri>>,
+    private val managedLauncher: (PickVisualMediaRequest) -> Unit,
 ) : MultiImagePickerLauncher {
     override fun launch() {
         try {
-            managedLauncher.launch(null)
+            val request = PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+            managedLauncher(request)
         } catch (activityNotFoundException: ActivityNotFoundException) {
             Timber.w(activityNotFoundException, "No activity found for multi-image picker")
         }

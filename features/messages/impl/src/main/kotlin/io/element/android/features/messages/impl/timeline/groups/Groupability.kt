@@ -69,6 +69,15 @@ internal fun TimelineItem.Event.canBeGrouped(): Boolean {
     }
 }
 
+internal fun TimelineItem.Event.canBeGroupedAsImageGrid(): Boolean {
+    val imageContent = content as? TimelineItemImageContent ?: return false
+    return imageContent.caption == null &&
+        imageContent.formattedCaption == null &&
+        inReplyTo == null &&
+        threadInfo == null &&
+        reactionsState.reactions.isEmpty()
+}
+
 /**
  * Return true if the Event can be grouped in a block of message bubbles.
  * When [canBeDisplayedInBubbleBlock] returns a value, [canBeGrouped] MUST return the opposite value.

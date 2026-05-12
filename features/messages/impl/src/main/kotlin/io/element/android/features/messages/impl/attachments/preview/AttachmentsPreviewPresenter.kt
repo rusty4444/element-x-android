@@ -25,12 +25,9 @@ import io.element.android.features.messages.impl.attachments.Attachment
 import io.element.android.features.messages.impl.attachments.video.MediaOptimizationSelectorPresenter
 import io.element.android.libraries.androidutils.file.TemporaryUriDeleter
 import io.element.android.libraries.androidutils.file.safeDelete
-import io.element.android.libraries.androidutils.hash.hash
 import io.element.android.libraries.architecture.Presenter
 import io.element.android.libraries.core.coroutine.CoroutineDispatchers
-import io.element.android.libraries.core.coroutine.firstInstanceOf
 import io.element.android.libraries.core.extensions.runCatchingExceptions
-import io.element.android.libraries.core.mimetype.MimeTypes
 import io.element.android.libraries.core.mimetype.MimeTypes.isMimeTypeImage
 import io.element.android.libraries.core.mimetype.MimeTypes.isMimeTypeVideo
 import io.element.android.libraries.di.annotations.SessionCoroutineScope
@@ -40,7 +37,6 @@ import io.element.android.libraries.matrix.api.timeline.Timeline
 import io.element.android.libraries.mediaupload.api.MediaOptimizationConfig
 import io.element.android.libraries.mediaupload.api.MediaOptimizationConfigProvider
 import io.element.android.libraries.mediaupload.api.MediaSenderFactory
-import io.element.android.libraries.mediaupload.api.MediaUploadInfo
 import io.element.android.libraries.mediaupload.api.allFiles
 import io.element.android.libraries.preferences.api.store.VideoCompressionPreset
 import io.element.android.libraries.textcomposer.model.TextEditorState

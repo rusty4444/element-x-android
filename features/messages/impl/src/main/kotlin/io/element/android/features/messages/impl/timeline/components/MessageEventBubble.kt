@@ -29,7 +29,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.layer.CompositingStrategy
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription

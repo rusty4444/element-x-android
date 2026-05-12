@@ -57,5 +57,6 @@ fun TimelineItem.mustBeProtected(): Boolean {
         }
         is TimelineItem.Virtual -> false
         is TimelineItem.GroupedEvents -> false
+        is TimelineItem.ImageGrid -> true
     }
 }

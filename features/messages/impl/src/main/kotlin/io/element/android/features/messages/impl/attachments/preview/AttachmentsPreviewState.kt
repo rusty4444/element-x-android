@@ -9,7 +9,6 @@
 package io.element.android.features.messages.impl.attachments.preview
 import androidx.compose.runtime.Immutable
 import io.element.android.features.messages.impl.attachments.Attachment
-import io.element.android.features.messages.impl.attachments.preview.AttachmentsPreviewEvent.SelectIndex
 import io.element.android.features.messages.impl.attachments.video.MediaOptimizationSelectorState
 import io.element.android.libraries.core.mimetype.MimeTypes
 import io.element.android.libraries.mediaupload.api.MediaUploadInfo

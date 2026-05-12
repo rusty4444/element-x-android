@@ -162,6 +162,7 @@ fun MessagesView(
     val localView = LocalView.current
 
     fun hidingKeyboard(block: () -> Unit) {
+        localView.clearFocus()
         localView.hideKeyboard()
         block()
     }
@@ -192,6 +193,8 @@ fun MessagesView(
     }
 
     fun onEmojiReactionClick(emoji: String, event: TimelineItem.Event) {
+        localView.clearFocus()
+        localView.hideKeyboard()
         state.eventSink(MessagesEvent.ToggleReaction(emoji, event.eventOrTransactionId))
     }
 

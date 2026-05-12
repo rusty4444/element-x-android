@@ -20,14 +20,18 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredHeightIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -163,10 +167,19 @@ fun TextComposer(
         is TextEditorState.Rich -> {
             val coroutineScope = rememberCoroutineScope()
             val view = LocalView.current
-            remember(state.richTextEditorState, composerMode, onResetComposerMode, onError) {
+            val density = LocalDensity.current
+            val imeBottom = WindowInsets.ime.getBottom(density)
+            val bringIntoViewRequester = remember { BringIntoViewRequester() }
+            LaunchedEffect(state.richTextEditorState.hasFocus, imeBottom) {
+                if (state.richTextEditorState.hasFocus) {
+                    bringIntoViewRequester.bringIntoView()
+                }
+            }
+            remember(state.richTextEditorState, composerMode, onResetComposerMode, onError, bringIntoViewRequester) {
                 @Composable {
                     TextInputBox(
                         modifier = Modifier
+                            .bringIntoViewRequester(bringIntoViewRequester)
                             .clickable(
                                 interactionSource = remember { MutableInteractionSource() },
                                 indication = null,
@@ -202,22 +215,34 @@ fun TextComposer(
             }
         }
         is TextEditorState.Markdown -> {
-            @Composable {
-                val style = ElementRichTextEditorStyle.composerStyle(hasFocus = state.hasFocus())
-                TextInputBox(
-                    composerMode = composerMode,
-                    onResetComposerMode = onResetComposerMode,
-                    isTextEmpty = state.state.text.value().isEmpty(),
-                ) {
-                    MarkdownTextInput(
-                        state = state.state,
-                        placeholder = placeholder,
-                        placeholderColor = ElementTheme.colors.textSecondary,
-                        onTyping = onTyping,
-                        onReceiveSuggestion = onReceiveSuggestion,
-                        richTextEditorStyle = style,
-                        onSelectRichContent = onSelectRichContent,
-                    )
+            val density = LocalDensity.current
+            val imeBottom = WindowInsets.ime.getBottom(density)
+            val isFocused = state.hasFocus()
+            val bringIntoViewRequester = remember { BringIntoViewRequester() }
+            LaunchedEffect(isFocused, imeBottom) {
+                if (isFocused) {
+                    bringIntoViewRequester.bringIntoView()
+                }
+            }
+            remember(state, composerMode, onResetComposerMode, onError, bringIntoViewRequester) {
+                @Composable {
+                    val style = ElementRichTextEditorStyle.composerStyle(hasFocus = state.hasFocus())
+                    TextInputBox(
+                        modifier = Modifier.bringIntoViewRequester(bringIntoViewRequester),
+                        composerMode = composerMode,
+                        onResetComposerMode = onResetComposerMode,
+                        isTextEmpty = state.state.text.value().isEmpty(),
+                    ) {
+                        MarkdownTextInput(
+                            state = state.state,
+                            placeholder = placeholder,
+                            placeholderColor = ElementTheme.colors.textSecondary,
+                            onTyping = onTyping,
+                            onReceiveSuggestion = onReceiveSuggestion,
+                            richTextEditorStyle = style,
+                            onSelectRichContent = onSelectRichContent,
+                        )
+                    }
                 }
             }
         }

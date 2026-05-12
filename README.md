@@ -32,6 +32,10 @@ Choose from Default, Orange, Purple, Blue, Teal, Pink, Red, Green, Indigo, and A
 
 The composer has one Image entry that supports multi-select. Selected images open in a horizontal preview carousel with page indicator dots, then send sequentially in order from a single send action.
 
+### Grouped image grid
+
+Consecutive image messages from the same sender within a short time window are automatically displayed as a photo grid — 2×2 for four images, side-by-side for two, or a large-left/stacked-right layout for three — matching the UX of WhatsApp, Telegram, and Messenger. This is a pure client-side feature; no server or bridge changes are required.
+
 ### Group avatars with participants
 
 Rooms without a custom avatar use up to four participant avatars instead of a single letter fallback. This is used in open-room headers and on the main chats screen for visible room rows.

@@ -138,6 +138,26 @@ class DefaultPickerProvider(
         }
     }
 
+    /**
+     * Remembers and returns a [MultiImagePickerLauncher] for picking multiple images from the gallery.
+     * [onResult] will be called with the list of selected [Uri]s (can be empty if nothing was selected).
+     */
+    @Composable
+    override fun registerMultiImagePicker(
+        onResult: (List<Uri>) -> Unit
+    ): MultiImagePickerLauncher {
+        // Tests and UI preview can't handle Contexts, so we might as well disable the whole picker
+        return if (LocalInspectionMode.current) {
+            NoOpMultiImagePickerLauncher
+        } else {
+            val contract = PickerType.MultiImage.getContract()
+            val managedLauncher = rememberLauncherForActivityResult(contract = contract) { uris ->
+                onResult(uris)
+            }
+            remember { ComposeMultiImagePickerLauncher(managedLauncher) }
+        }
+    }
+
     private fun getTemporaryFile(
         filename: String,
     ): File {

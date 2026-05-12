@@ -188,6 +188,9 @@ class MessageComposerPresenter(
         val cameraVideoPicker = mediaPickerProvider.registerCameraVideoPicker { uri ->
             handlePickedMedia(uri, MimeTypes.Mp4)
         }
+        val multiImagePicker = mediaPickerProvider.registerMultiImagePicker { uris ->
+            handlePickedMultipleUris(uris)
+        }
         val isFullScreen = rememberSaveable {
             mutableStateOf(false)
         }
@@ -312,6 +315,10 @@ class MessageComposerPresenter(
                         pendingEvent = event
                         cameraPermissionState.eventSink(PermissionsEvent.RequestPermissions)
                     }
+                }
+                MessageComposerEvent.PickAttachmentSource.MultipleImages -> localCoroutineScope.launch {
+                    showAttachmentSourcePicker = false
+                    multiImagePicker.launch()
                 }
                 MessageComposerEvent.PickAttachmentSource.Location -> {
                     showAttachmentSourcePicker = false
@@ -619,6 +626,24 @@ class MessageComposerPresenter(
         navigator.navigateToPreviewAttachments(persistentListOf(mediaAttachment), inReplyToEventId)
 
         // Reset composer since the attachment will be sent in a separate flow
+        messageComposerContext.composerMode = MessageComposerMode.Normal
+    }
+
+    private fun handlePickedMultipleUris(uris: List<Uri>) {
+        if (uris.isEmpty()) {
+            return
+        }
+        val attachments = uris.map { uri ->
+            val localMedia = localMediaFactory.createFromUri(
+                uri = uri,
+                mimeType = MimeTypes.Jpeg,
+                name = null,
+                formattedFileSize = null
+            )
+            Attachment.Media(localMedia)
+        }
+        val inReplyToEventId = (messageComposerContext.composerMode as? MessageComposerMode.Reply)?.eventId
+        navigator.navigateToPreviewAttachments(attachments.toImmutableList(), inReplyToEventId)
         messageComposerContext.composerMode = MessageComposerMode.Normal
     }
 

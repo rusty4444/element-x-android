@@ -202,6 +202,7 @@ internal fun MessagesViewTopBarPreview() = ElementPreview {
                 displayThreads = displayThreads,
                 onJoinCallClick = {},
                 onThreadsListClick = {},
+                onSetRoomBackgroundClick = {},
             )
         }
     )

@@ -277,7 +277,6 @@ fun MessagesView(
                                     onJoinCallClick = onJoinCallClick,
                                     onThreadsListClick = onThreadsListClick,
                                     onSetRoomBackgroundClick = { showBackgroundPicker = true },
-                                    onScheduleSendClick = { showScheduleSendPicker = true },
                                 )
                             }
                         )

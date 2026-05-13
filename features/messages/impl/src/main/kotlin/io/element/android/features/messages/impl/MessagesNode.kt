@@ -305,6 +305,12 @@ class MessagesNode(
                     )
                 },
                 onThreadsListClick = callback::navigateToThreadsList,
+                onSetRoomBackground = { uri ->
+                    state.eventSink(MessagesEvent.SetRoomBackground(uri.toString()))
+                },
+                onClearRoomBackground = {
+                    state.eventSink(MessagesEvent.ClearRoomBackground)
+                },
             )
             roomMemberModerationRenderer.Render(
                 state = state.roomMemberModerationState,

@@ -304,6 +304,8 @@ class ThreadedMessagesNode(
                     modifier = modifier,
                     knockRequestsBannerView = {},
                     onThreadsListClick = {},
+                    onSetRoomBackground = {},
+                    onClearRoomBackground = {},
                 )
 
                 roomMemberModerationRenderer.Render(

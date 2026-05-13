@@ -41,6 +41,8 @@ import io.element.android.features.messages.impl.draft.ComposerDraftService
 import io.element.android.features.messages.impl.messagecomposer.suggestions.RoomAliasSuggestionsDataSource
 import io.element.android.features.messages.impl.messagecomposer.suggestions.SuggestionsProcessor
 import io.element.android.features.messages.impl.scheduledsend.ScheduledSendRequestBuilder
+import io.element.android.features.messages.impl.scheduledsend.ScheduledSendManager
+import io.element.android.features.messages.impl.scheduledsend.ScheduledMessageInfo
 import io.element.android.features.messages.impl.timeline.TimelineController
 import io.element.android.features.messages.impl.utils.TextPillificationHelper
 import io.element.android.libraries.architecture.AsyncAction
@@ -139,6 +141,7 @@ class MessageComposerPresenter(
     private val slashCommandService: SlashCommandService,
     private val workManagerScheduler: WorkManagerScheduler,
     private val scheduledSendRequestBuilderFactory: ScheduledSendRequestBuilder.Factory,
+    private val scheduledSendManager: ScheduledSendManager,
 ) : Presenter<MessageComposerState> {
     @AssistedFactory
     interface Factory {
@@ -277,9 +280,35 @@ class MessageComposerPresenter(
                     )
                 }
                 is MessageComposerEvent.CancelScheduledSends -> {
-                    // Placeholder — would cancel all pending scheduled sends for this room
-                    // via WorkManager: workManagerScheduler.cancelAll()
+                    val workIds = scheduledSendManager
+                        .getForRoom(room.sessionId, room.roomId)
+                        .map { it.workId }
+                    workIds.forEach { workManagerScheduler.cancel(room.sessionId) }
+                    workIds.forEach { scheduledSendManager.remove(it) }
                     snackbarDispatcher.post(SnackbarMessage(R.string.schedule_send_scheduled_cancelled))
+                }
+                is MessageComposerEvent.LoadScheduledMessages -> {
+                    // No-op — list is refreshed on each compose
+                }
+                is MessageComposerEvent.CancelScheduledMessage -> {
+                    workManagerScheduler.cancel(room.sessionId)
+                    scheduledSendManager.remove(event.info.workId)
+                    snackbarDispatcher.post(SnackbarMessage(R.string.schedule_send_scheduled_cancelled))
+                }
+                is MessageComposerEvent.ForceSendScheduledMessage -> {
+                    // Cancel the WorkManager job, then send immediately
+                    workManagerScheduler.cancel(room.sessionId)
+                    scheduledSendManager.remove(event.info.workId)
+                    sessionCoroutineScope.launch {
+                        room.liveTimeline.sendMessage(
+                            body = event.info.body,
+                            htmlBody = event.info.htmlBody,
+                            intentionalMentions = emptyList(),
+                        ).onFailure {
+                            Timber.e(it, "Failed to force-send scheduled message")
+                            snackbarDispatcher.post(SnackbarMessage(CommonStrings.common_error))
+                        }
+                    }
                 }
                 is MessageComposerEvent.SendUri -> {
                     val inReplyToEventId = (messageComposerContext.composerMode as? MessageComposerMode.Reply)?.eventId
@@ -440,6 +469,9 @@ class MessageComposerPresenter(
             showAttachmentSourcePicker = showAttachmentSourcePicker,
             showTextFormatting = showTextFormatting,
             canShareLocation = canShareLocation.value,
+            scheduledMessageInfos = scheduledSendManager
+                .getForRoom(room.sessionId, room.roomId)
+                .toImmutableList(),
             suggestions = suggestions.toImmutableList(),
             resolveMentionDisplay = resolveMentionDisplay,
             resolveAtRoomMentionDisplay = resolveAtRoomMentionDisplay,
@@ -511,10 +543,21 @@ class MessageComposerPresenter(
         }
         snackbarDispatcher.post(SnackbarMessage(R.string.schedule_send_scheduled))
         resetComposer(markdownTextEditorState, richTextEditorState, fromEdit = false)
-        workManagerScheduler.submit(
-            scheduledSendRequestBuilderFactory.create(
-                sessionId = room.sessionId,
-                roomId = room.roomId,
+        val requestBuilder = scheduledSendRequestBuilderFactory.create(
+            sessionId = room.sessionId,
+            roomId = room.roomId,
+            body = message.markdown,
+            htmlBody = message.html,
+            scheduledTimeMillis = scheduledTimeMillis,
+        )
+        val workId = java.util.UUID.randomUUID().toString()
+        workManagerScheduler.submit(requestBuilder)
+        // Persist metadata for the management UI
+        scheduledSendManager.save(
+            ScheduledMessageInfo(
+                workId = workId,
+                sessionId = room.sessionId.value,
+                roomId = room.roomId.value,
                 body = message.markdown,
                 htmlBody = message.html,
                 scheduledTimeMillis = scheduledTimeMillis,

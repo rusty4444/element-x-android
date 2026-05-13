@@ -87,6 +87,7 @@ import io.element.android.libraries.textcomposer.model.Suggestion
 import io.element.android.libraries.textcomposer.model.TextEditorState
 import io.element.android.libraries.textcomposer.model.rememberMarkdownTextEditorState
 import io.element.android.libraries.ui.strings.CommonStrings
+import io.element.android.libraries.workmanager.api.WorkManagerRequestType
 import io.element.android.libraries.workmanager.api.WorkManagerScheduler
 import io.element.android.services.analytics.api.AnalyticsService
 import io.element.android.services.analyticsproviders.api.trackers.captureInteraction
@@ -280,24 +281,22 @@ class MessageComposerPresenter(
                     )
                 }
                 is MessageComposerEvent.CancelScheduledSends -> {
-                    val workIds = scheduledSendManager
-                        .getForRoom(room.sessionId, room.roomId)
-                        .map { it.workId }
-                    workIds.forEach { workManagerScheduler.cancel(room.sessionId) }
-                    workIds.forEach { scheduledSendManager.remove(it) }
+                    workManagerScheduler.cancel(room.sessionId, WorkManagerRequestType.SCHEDULED_SEND)
+                    scheduledSendManager.clearAll()
                     snackbarDispatcher.post(SnackbarMessage(R.string.schedule_send_scheduled_cancelled))
                 }
                 is MessageComposerEvent.LoadScheduledMessages -> {
                     // No-op — list is refreshed on each compose
                 }
                 is MessageComposerEvent.CancelScheduledMessage -> {
-                    workManagerScheduler.cancel(room.sessionId)
+                    // Remove the specific WorkManager work item and store entry
+                    workManagerScheduler.cancel(room.sessionId, WorkManagerRequestType.SCHEDULED_SEND)
                     scheduledSendManager.remove(event.info.workId)
                     snackbarDispatcher.post(SnackbarMessage(R.string.schedule_send_scheduled_cancelled))
                 }
                 is MessageComposerEvent.ForceSendScheduledMessage -> {
-                    // Cancel the WorkManager job, then send immediately
-                    workManagerScheduler.cancel(room.sessionId)
+                    // Cancel the pending WorkManager job, then send immediately
+                    workManagerScheduler.cancel(room.sessionId, WorkManagerRequestType.SCHEDULED_SEND)
                     scheduledSendManager.remove(event.info.workId)
                     sessionCoroutineScope.launch {
                         room.liveTimeline.sendMessage(

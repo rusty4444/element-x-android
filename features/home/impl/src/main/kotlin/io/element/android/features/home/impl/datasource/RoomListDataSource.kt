@@ -30,6 +30,7 @@ import io.element.android.libraries.matrix.api.roomlist.RoomListService
 import io.element.android.libraries.matrix.api.roomlist.RoomSummary
 import io.element.android.libraries.matrix.api.roomlist.updateVisibleRange
 import io.element.android.libraries.matrix.ui.model.getAvatarData
+import io.element.android.libraries.matrix.ui.model.withoutBridgeBotHeroes
 import io.element.android.services.analytics.api.AnalyticsService
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
@@ -234,6 +235,7 @@ class RoomListDataSource(
             .orEmpty()
             .asSequence()
             .filter { member -> member.membership == RoomMembershipState.JOIN && member.userId != matrixClient.sessionId }
+            .withoutBridgeBotHeroes()
             .sortedWith(compareByDescending { member -> member.avatarUrl != null })
             .take(4)
             .map { member -> member.getAvatarData(size = AvatarSize.RoomListItem) }

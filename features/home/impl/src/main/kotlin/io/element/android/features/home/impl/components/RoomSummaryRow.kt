@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -46,6 +47,7 @@ import io.element.android.compound.theme.ElementTheme
 import io.element.android.compound.tokens.generated.CompoundIcons
 import io.element.android.features.home.impl.R
 import io.element.android.features.home.impl.model.LatestEvent
+import io.element.android.features.home.impl.model.RoomBridgeBadge
 import io.element.android.features.home.impl.model.RoomListRoomSummary
 import io.element.android.features.home.impl.model.RoomListRoomSummaryProvider
 import io.element.android.features.home.impl.model.RoomSummaryDisplayType
@@ -129,6 +131,7 @@ internal fun RoomSummaryRow(
                     NameAndTimestampRow(
                         name = room.name,
                         timestamp = room.timestamp,
+                        bridgeBadge = room.bridgeBadge,
                         isHighlighted = room.isHighlighted
                     )
                     MessagePreviewAndIndicatorRow(room = room)
@@ -145,6 +148,7 @@ internal fun RoomSummaryRow(
                     NameAndTimestampRow(
                         name = room.name,
                         timestamp = null,
+                        bridgeBadge = room.bridgeBadge,
                         isHighlighted = room.isHighlighted
                     )
                     if (room.canonicalAlias != null) {
@@ -220,6 +224,7 @@ private fun RoomSummaryScaffoldRow(
 private fun NameAndTimestampRow(
     name: String?,
     timestamp: String?,
+    bridgeBadge: RoomBridgeBadge,
     isHighlighted: Boolean,
     modifier: Modifier = Modifier
 ) {
@@ -238,18 +243,83 @@ private fun NameAndTimestampRow(
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
-        // Timestamp
+        if (timestamp != null) {
+            RoomBridgeBadgeView(bridgeBadge = bridgeBadge)
+            // Timestamp
+            Text(
+                text = timestamp,
+                style = ElementTheme.typography.fontBodySmMedium,
+                color = if (isHighlighted) {
+                    ElementTheme.colors.unreadIndicator
+                } else {
+                    ElementTheme.colors.roomListRoomMessageDate
+                },
+            )
+        }
+    }
+}
+
+@Composable
+private fun RoomBridgeBadgeView(
+    bridgeBadge: RoomBridgeBadge,
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier = modifier
+            .height(18.dp)
+            .widthIn(min = 18.dp)
+            .background(
+                color = bridgeBadge.backgroundColor,
+                shape = RoundedCornerShape(5.dp),
+            )
+            .padding(horizontal = 5.dp),
+        contentAlignment = Alignment.Center,
+    ) {
         Text(
-            text = timestamp ?: "",
+            text = bridgeBadge.logoText,
             style = ElementTheme.typography.fontBodySmMedium,
-            color = if (isHighlighted) {
-                ElementTheme.colors.unreadIndicator
-            } else {
-                ElementTheme.colors.roomListRoomMessageDate
-            },
+            color = bridgeBadge.foregroundColor,
+            maxLines = 1,
         )
     }
 }
+
+private val RoomBridgeBadge.logoText: String
+    get() = when (this) {
+        RoomBridgeBadge.WHATSAPP -> "☎"
+        RoomBridgeBadge.META -> "∞"
+        RoomBridgeBadge.GMESSAGES -> "G"
+        RoomBridgeBadge.MATRIX -> "✦"
+        RoomBridgeBadge.X -> "𝕏"
+        RoomBridgeBadge.DISCORD -> "D"
+        RoomBridgeBadge.LINKEDIN -> "in"
+        RoomBridgeBadge.TELEGRAM -> "✈"
+        RoomBridgeBadge.SIGNAL -> "S"
+        RoomBridgeBadge.SLACK -> "#"
+        RoomBridgeBadge.INSTAGRAM -> "◎"
+        RoomBridgeBadge.IMESSAGE -> "i"
+        RoomBridgeBadge.GENERIC_BRIDGE -> "↔"
+    }
+
+private val RoomBridgeBadge.backgroundColor: Color
+    get() = when (this) {
+        RoomBridgeBadge.WHATSAPP -> Color(0xFF25D366)
+        RoomBridgeBadge.META -> Color(0xFF0866FF)
+        RoomBridgeBadge.GMESSAGES -> Color(0xFF1A73E8)
+        RoomBridgeBadge.MATRIX -> Color(0xFF000000)
+        RoomBridgeBadge.X -> Color(0xFF000000)
+        RoomBridgeBadge.DISCORD -> Color(0xFF5865F2)
+        RoomBridgeBadge.LINKEDIN -> Color(0xFF0A66C2)
+        RoomBridgeBadge.TELEGRAM -> Color(0xFF229ED9)
+        RoomBridgeBadge.SIGNAL -> Color(0xFF3A76F0)
+        RoomBridgeBadge.SLACK -> Color(0xFF611F69)
+        RoomBridgeBadge.INSTAGRAM -> Color(0xFFE4405F)
+        RoomBridgeBadge.IMESSAGE -> Color(0xFF34C759)
+        RoomBridgeBadge.GENERIC_BRIDGE -> Color(0xFF6B7280)
+    }
+
+private val RoomBridgeBadge.foregroundColor: Color
+    get() = Color.White
 
 @Composable
 private fun InviteSubtitle(

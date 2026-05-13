@@ -90,6 +90,7 @@ import io.element.android.libraries.matrix.api.room.RoomNotificationMode
 import io.element.android.libraries.matrix.api.room.getBestName
 import io.element.android.libraries.matrix.api.user.MatrixUser
 import io.element.android.libraries.matrix.ui.model.getAvatarData
+import io.element.android.libraries.matrix.ui.model.withoutBridgeBotHeroes
 import io.element.android.libraries.testtags.TestTags
 import io.element.android.libraries.testtags.testTag
 import io.element.android.libraries.ui.strings.CommonStrings
@@ -485,7 +486,7 @@ private fun RoomHeaderSection(
         Avatar(
             avatarData = AvatarData(roomId.value, roomName, avatarUrl, AvatarSize.RoomDetailsHeader),
             avatarType = AvatarType.Room(
-                heroes = heroes.map { user ->
+                heroes = heroes.withoutBridgeBotHeroes().map { user ->
                     user.getAvatarData(size = AvatarSize.RoomDetailsHeader)
                 }.toImmutableList(),
                 isTombstoned = isTombstoned,

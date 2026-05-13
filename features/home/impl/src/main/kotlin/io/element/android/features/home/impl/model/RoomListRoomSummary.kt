@@ -42,6 +42,7 @@ data class RoomListRoomSummary(
     val isTombstoned: Boolean,
     val heroes: ImmutableList<AvatarData>,
     val isSpace: Boolean,
+    val bridgeBadge: RoomBridgeBadge = RoomBridgeBadge.MATRIX,
 ) {
     val isHighlighted = userDefinedNotificationMode != RoomNotificationMode.MUTE &&
         (numberOfUnreadNotifications > 0 || numberOfUnreadMentions > 0) ||

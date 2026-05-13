@@ -83,6 +83,7 @@ import io.element.android.libraries.matrix.api.room.powerlevels.permissionsAsSta
 import io.element.android.libraries.matrix.api.timeline.item.event.EventOrTransactionId
 import io.element.android.libraries.matrix.ui.messages.reply.map
 import io.element.android.libraries.matrix.ui.model.getAvatarData
+import io.element.android.libraries.matrix.ui.model.withoutBridgeBotHeroes
 import io.element.android.libraries.matrix.ui.room.getDirectRoomMember
 import io.element.android.libraries.preferences.api.store.AppPreferencesStore
 import io.element.android.libraries.recentemojis.api.AddRecentEmoji
@@ -357,12 +358,15 @@ class MessagesPresenter(
         val useParticipantAvatars = avatarUrl == null && !isDm && activeMembers.size > 1
         if (useParticipantAvatars) {
             return activeMembers
+                .asSequence()
+                .withoutBridgeBotHeroes()
                 .sortedWith(compareByDescending { it.avatarUrl != null })
                 .map { member ->
                     member.getAvatarData(size = AvatarSize.TimelineRoom)
                 }
+                .toList()
         }
-        return heroes.map { user ->
+        return heroes.withoutBridgeBotHeroes().map { user ->
             user.getAvatarData(size = AvatarSize.TimelineRoom)
         }
     }

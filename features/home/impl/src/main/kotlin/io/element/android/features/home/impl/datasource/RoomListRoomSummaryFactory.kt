@@ -10,6 +10,7 @@ package io.element.android.features.home.impl.datasource
 
 import dev.zacsweers.metro.Inject
 import io.element.android.features.home.impl.model.LatestEvent
+import io.element.android.features.home.impl.model.RoomBridgeBadge
 import io.element.android.features.home.impl.model.RoomListRoomSummary
 import io.element.android.features.home.impl.model.RoomSummaryDisplayType
 import io.element.android.libraries.core.extensions.orEmpty
@@ -25,6 +26,7 @@ import io.element.android.libraries.matrix.api.roomlist.LatestEventValue
 import io.element.android.libraries.matrix.api.roomlist.RoomSummary
 import io.element.android.libraries.matrix.ui.model.getAvatarData
 import io.element.android.libraries.matrix.ui.model.toInviteSender
+import io.element.android.libraries.matrix.ui.model.withoutBridgeBotHeroes
 import kotlinx.collections.immutable.toImmutableList
 
 @Inject
@@ -48,6 +50,7 @@ class RoomListRoomSummaryFactory(
                 mode = DateFormatterMode.TimeOrDate,
                 useRelative = true,
             ),
+            bridgeBadge = RoomBridgeBadge.from(roomInfo.name, roomInfo.aliases),
             latestEvent = computeLatestEvent(roomSummary.latestEvent, roomInfo.isDm),
             avatarData = avatarData,
             userDefinedNotificationMode = roomInfo.userDefinedNotificationMode,
@@ -74,7 +77,7 @@ class RoomListRoomSummaryFactory(
                 }
             },
             heroes = (participantHeroes.ifEmpty {
-                roomInfo.heroes.map { user ->
+                roomInfo.heroes.withoutBridgeBotHeroes().map { user ->
                     user.getAvatarData(size = AvatarSize.RoomListItem)
                 }
             }).toImmutableList(),

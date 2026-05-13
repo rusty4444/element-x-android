@@ -36,7 +36,7 @@ data class SelectRoomInfo(
     )
 
     fun getHeroAvatarData(size: AvatarSize) = heroAvatarData.takeIf { it.isNotEmpty() }
-        ?: heroes.map { user -> user.getAvatarData(size = size) }.toImmutableList()
+        ?: heroes.withoutBridgeBotHeroes().map { user -> user.getAvatarData(size = size) }.toImmutableList()
 }
 
 fun RoomSummary.toSelectRoomInfo(heroAvatarData: ImmutableList<AvatarData> = persistentListOf()) = info.toSelectRoomInfo(heroAvatarData)
@@ -45,7 +45,7 @@ fun RoomInfo.toSelectRoomInfo(heroAvatarData: ImmutableList<AvatarData> = persis
     roomId = id,
     name = name,
     avatarUrl = avatarUrl,
-    heroes = heroes,
+    heroes = heroes.withoutBridgeBotHeroes().toImmutableList(),
     heroAvatarData = heroAvatarData,
     canonicalAlias = canonicalAlias,
     isTombstoned = successorRoom != null,

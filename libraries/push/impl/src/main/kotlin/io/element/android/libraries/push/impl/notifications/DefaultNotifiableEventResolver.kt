@@ -54,6 +54,7 @@ import io.element.android.libraries.matrix.api.timeline.item.event.VideoMessageT
 import io.element.android.libraries.matrix.api.timeline.item.event.VoiceMessageType
 import io.element.android.libraries.matrix.ui.messages.toPlainText
 import io.element.android.libraries.matrix.ui.model.getAvatarData
+import io.element.android.libraries.matrix.ui.model.withoutBridgeBotHeroes
 import io.element.android.libraries.push.impl.R
 import io.element.android.libraries.push.impl.db.PushRequest
 import io.element.android.libraries.push.impl.notifications.model.InviteNotifiableEvent
@@ -435,6 +436,7 @@ class DefaultNotifiableEventResolver(
             .orEmpty()
             .asSequence()
             .filter { member -> member.membership == RoomMembershipState.JOIN && member.userId != client.sessionId }
+            .withoutBridgeBotHeroes()
             .sortedWith(compareByDescending { member -> member.avatarUrl != null })
             .take(4)
             .map { member -> member.getAvatarData(size = AvatarSize.RoomDetailsHeader) }
@@ -444,6 +446,7 @@ class DefaultNotifiableEventResolver(
         return memberHeroes ?: room
             ?.info()
             ?.heroes
+            ?.withoutBridgeBotHeroes()
             ?.take(4)
             ?.map { user -> user.getAvatarData(size = AvatarSize.RoomDetailsHeader) }
             ?.takeIf { it.isNotEmpty() }

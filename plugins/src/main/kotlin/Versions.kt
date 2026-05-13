@@ -45,7 +45,7 @@ private const val versionMonth = 5
  * Release number in the month. Value must be in [0,99].
  * Do not update this value. it is updated by the release script.
  */
-private const val versionReleaseNumber = 0
+private const val versionReleaseNumber = 1
 
 object Versions {
     /**
@@ -54,7 +54,7 @@ object Versions {
      * AAB will have a ABI code of 0.
      * See comment above for the calculation method.
      */
-    const val VERSION_CODE = 20260501
+    const val VERSION_CODE = (2000 + versionYear) * 10_000 + versionMonth * 100 + versionReleaseNumber
     const val VERSION_NAME = "0.6.4"
 
     /**

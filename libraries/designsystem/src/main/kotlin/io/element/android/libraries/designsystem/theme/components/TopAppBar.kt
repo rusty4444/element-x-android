@@ -29,15 +29,22 @@ import io.element.android.libraries.designsystem.preview.PreviewGroup
 import io.element.android.libraries.designsystem.theme.aliasScreenTitle
 
 /** Default colors for top app bars themed to Element design system. */
+@OptIn(ExperimentalMaterial3Api::class)
 object ElementTopAppBarDefaults {
-    @OptIn(ExperimentalMaterial3Api::class)
     @Composable
-    fun elementTopAppBarColors(): TopAppBarColors = TopAppBarDefaults.topAppBarColors(
-        containerColor = ElementTheme.colors.bgCanvasDefault,
-        titleContentColor = ElementTheme.colors.textPrimary,
-        navigationIconContentColor = ElementTheme.colors.textPrimary,
-        actionIconContentColor = ElementTheme.colors.textActionPrimary,
-    )
+    fun elementTopAppBarColors(transparent: Boolean = false): TopAppBarColors {
+        val containerColor = if (transparent) {
+            Color.Transparent
+        } else {
+            ElementTheme.colors.bgSubtleSecondary
+        }
+        return TopAppBarDefaults.topAppBarColors(
+            containerColor = containerColor,
+            titleContentColor = ElementTheme.colors.textPrimary,
+            navigationIconContentColor = ElementTheme.colors.textPrimary,
+            actionIconContentColor = ElementTheme.colors.textActionPrimary,
+        )
+    }
 }
 
 /**

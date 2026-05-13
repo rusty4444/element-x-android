@@ -8,7 +8,6 @@
 
 package io.element.android.features.messages.impl.topbars
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -17,14 +16,13 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import io.element.android.libraries.designsystem.modifiers.backgroundVerticalGradient
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -44,11 +42,12 @@ import io.element.android.libraries.designsystem.components.avatar.AvatarSize
 import io.element.android.libraries.designsystem.components.avatar.AvatarType
 import io.element.android.libraries.designsystem.components.avatar.anAvatarData
 import io.element.android.libraries.designsystem.components.button.BackButton
+import io.element.android.libraries.designsystem.modifiers.backgroundVerticalGradient
 import io.element.android.libraries.designsystem.preview.ElementPreview
 import io.element.android.libraries.designsystem.preview.PreviewsDayNight
 import io.element.android.libraries.designsystem.preview.ROOM_NAME
-import io.element.android.libraries.designsystem.theme.components.HorizontalDivider
 import io.element.android.libraries.designsystem.theme.components.ElementTopAppBarDefaults
+import io.element.android.libraries.designsystem.theme.components.HorizontalDivider
 import io.element.android.libraries.designsystem.theme.components.Icon
 import io.element.android.libraries.designsystem.theme.components.Text
 import io.element.android.libraries.designsystem.theme.components.TopAppBar
@@ -64,8 +63,10 @@ import kotlinx.collections.immutable.toImmutableList
 enum class RoomBarMode {
     /** Room background image exists — bar is transparent with gradient overlay. */
     HAS_ROOM_BG,
+
     /** No room background but a theme/accent is set — use gradient. */
     GRADIENT,
+
     /** Default — use bgSubtleSecondary solid fill. */
     DEFAULT,
 }
@@ -98,25 +99,29 @@ internal fun MessagesViewTopBar(
             showGradient = barMode == RoomBarMode.GRADIENT,
         ),
         navigationIcon = {
-            BackButton(onClick = onBackClick)
+            BackButton(
+                modifier = Modifier.statusBarsPadding(),
+                onClick = onBackClick,
+            )
         },
         title = {
-            val roundedCornerShape = RoundedCornerShape(8.dp)
-            Row(
-                modifier = Modifier
+            Column(modifier = Modifier.statusBarsPadding()) {
+                val roundedCornerShape = RoundedCornerShape(8.dp)
+                Row(
+                    modifier = Modifier
                     .clip(roundedCornerShape)
                     .clickable { onRoomDetailsClick() },
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                val titleModifier = Modifier.weight(1f, fill = false)
-                RoomAvatarAndNameRow(
-                    roomName = roomName,
-                    roomAvatar = roomAvatar,
-                    isTombstoned = isTombstoned,
-                    heroes = heroes,
-                    modifier = titleModifier
-                )
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    val titleModifier = Modifier.weight(1f, fill = false)
+                    RoomAvatarAndNameRow(
+                        roomName = roomName,
+                        roomAvatar = roomAvatar,
+                        isTombstoned = isTombstoned,
+                        heroes = heroes,
+                        modifier = titleModifier
+                    )
 
                 val iconModifier = Modifier.size(16.dp)
 
@@ -156,8 +161,13 @@ internal fun MessagesViewTopBar(
                     )
                 }
             }
+            }
         },
-        actions = menuActions,
+        actions = {
+            Column(modifier = Modifier.statusBarsPadding()) {
+                menuActions()
+            }
+        },
         windowInsets = WindowInsets(0.dp)
     )
 }

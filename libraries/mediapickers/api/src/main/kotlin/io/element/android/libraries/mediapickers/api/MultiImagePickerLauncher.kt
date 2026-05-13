@@ -8,9 +8,7 @@
 package io.element.android.libraries.mediapickers.api
 
 import android.content.ActivityNotFoundException
-import android.net.Uri
 import androidx.activity.result.PickVisualMediaRequest
-import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import timber.log.Timber
 

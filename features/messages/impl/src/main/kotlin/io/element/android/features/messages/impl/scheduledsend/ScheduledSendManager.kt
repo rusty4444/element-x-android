@@ -40,9 +40,13 @@ data class ScheduledMessageInfo(
             val body = Base64.encodeToString(info.body.toByteArray(Charsets.UTF_8), Base64.NO_WRAP)
             val html = info.htmlBody?.let { Base64.encodeToString(it.toByteArray(Charsets.UTF_8), Base64.NO_WRAP) } ?: ""
             return listOf(
-                info.workId, info.sessionId, info.roomId,
-                info.scheduledTimeMillis.toString(), info.createdAtMillis.toString(),
-                html, body
+                info.workId,
+                info.sessionId,
+                info.roomId,
+                info.scheduledTimeMillis.toString(),
+                info.createdAtMillis.toString(),
+                html,
+                body
             ).joinToString(SEP)
         }
 
@@ -51,8 +55,11 @@ data class ScheduledMessageInfo(
             if (parts.size < 7) return null
             val body = String(Base64.decode(parts[6], Base64.NO_WRAP), Charsets.UTF_8)
             val htmlRaw = parts[5]
-            val htmlBody = if (htmlRaw.isEmpty()) null
-                else String(Base64.decode(htmlRaw, Base64.NO_WRAP), Charsets.UTF_8)
+            val htmlBody = if (htmlRaw.isEmpty()) {
+                null
+            } else {
+                String(Base64.decode(htmlRaw, Base64.NO_WRAP), Charsets.UTF_8)
+            }
             ScheduledMessageInfo(
                 workId = parts[0],
                 sessionId = parts[1],

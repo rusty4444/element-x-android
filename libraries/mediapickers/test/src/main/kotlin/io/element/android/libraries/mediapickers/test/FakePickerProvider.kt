@@ -13,7 +13,6 @@ import androidx.activity.result.PickVisualMediaRequest
 import androidx.compose.runtime.Composable
 import io.element.android.libraries.core.mimetype.MimeTypes
 import io.element.android.libraries.mediapickers.api.MultiImagePickerLauncher
-import io.element.android.libraries.mediapickers.api.NoOpMultiImagePickerLauncher
 import io.element.android.libraries.mediapickers.api.NoOpPickerLauncher
 import io.element.android.libraries.mediapickers.api.PickerLauncher
 import io.element.android.libraries.mediapickers.api.PickerProvider

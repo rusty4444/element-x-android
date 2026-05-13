@@ -40,9 +40,9 @@ import io.element.android.features.messages.impl.attachments.preview.error.sendA
 import io.element.android.features.messages.impl.draft.ComposerDraftService
 import io.element.android.features.messages.impl.messagecomposer.suggestions.RoomAliasSuggestionsDataSource
 import io.element.android.features.messages.impl.messagecomposer.suggestions.SuggestionsProcessor
-import io.element.android.features.messages.impl.scheduledsend.ScheduledSendRequestBuilder
-import io.element.android.features.messages.impl.scheduledsend.ScheduledSendManager
 import io.element.android.features.messages.impl.scheduledsend.ScheduledMessageInfo
+import io.element.android.features.messages.impl.scheduledsend.ScheduledSendManager
+import io.element.android.features.messages.impl.scheduledsend.ScheduledSendRequestBuilder
 import io.element.android.features.messages.impl.timeline.TimelineController
 import io.element.android.features.messages.impl.utils.TextPillificationHelper
 import io.element.android.libraries.architecture.AsyncAction

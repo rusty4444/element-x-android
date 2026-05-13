@@ -9,7 +9,6 @@
 
 package io.element.android.compound.theme
 
-import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.Color
 import io.element.android.compound.tokens.generated.SemanticColors
 
@@ -141,7 +140,7 @@ enum class AccentColor(
 /**
  * Apply accent color overrides to the base [SemanticColors].
  * Returns a new SemanticColors instance with overridden accent tokens.
- * 
+ *
  * @param isDark Whether the dark theme variant is being applied. This controls
  *   which subtle colors are used.
  */

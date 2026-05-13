@@ -19,12 +19,12 @@ import androidx.core.content.FileProvider
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
 import io.element.android.libraries.di.annotations.ApplicationContext
+import io.element.android.libraries.mediapickers.api.ComposeMultiImagePickerLauncher
 import io.element.android.libraries.mediapickers.api.ComposePickerLauncher
+import io.element.android.libraries.mediapickers.api.MultiImagePickerLauncher
+import io.element.android.libraries.mediapickers.api.NoOpMultiImagePickerLauncher
 import io.element.android.libraries.mediapickers.api.NoOpPickerLauncher
 import io.element.android.libraries.mediapickers.api.PickerLauncher
-import io.element.android.libraries.mediapickers.api.MultiImagePickerLauncher
-import io.element.android.libraries.mediapickers.api.ComposeMultiImagePickerLauncher
-import io.element.android.libraries.mediapickers.api.NoOpMultiImagePickerLauncher
 import io.element.android.libraries.mediapickers.api.PickerProvider
 import io.element.android.libraries.mediapickers.api.PickerType
 import java.io.File

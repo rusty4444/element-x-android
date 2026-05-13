@@ -41,7 +41,6 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
-import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -272,7 +271,6 @@ fun MessagesView(
         modifier = modifier
             .fillMaxSize()
             .imePadding()
-            .systemBarsPadding()
             .onSizeChanged { size ->
                 // Let the composer takes at max half of the available height.
                 // The value will be different if the soft keyboard is displayed
@@ -294,7 +292,7 @@ fun MessagesView(
                 }
                 Scaffold(
                     containerColor = if (state.roomBackgroundUri != null) Color.Transparent else ElementTheme.colors.bgCanvasDefault,
-                    contentWindowInsets = WindowInsets.statusBars,
+                    contentWindowInsets = WindowInsets(0),
                 topBar = {
                     if (state.timelineState.timelineMode is Timeline.Mode.Thread) {
                         ThreadTopBar(
@@ -340,6 +338,7 @@ fun MessagesView(
                         modifier = Modifier
                             .padding(padding)
                             .consumeWindowInsets(padding)
+                            .navigationBarsPadding()
                     ) {
                         MessagesViewContent(
                             state = state,

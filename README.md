@@ -44,6 +44,14 @@ Rooms without a custom avatar use up to four participant avatars instead of a si
 
 The coloured heading bar now has clearer spacing before the room filter chips, and the fork keeps its gplay package id (`io.element.android.x.fork`) so it can be installed side-by-side with official Element X.
 
+### Edge-to-edge top bars
+
+The room list header extends seamlessly behind the status bar, and that same edge-to-edge treatment now carries into individual room screens so the purple header gradient flows to the very top of the phone screen without a black gap.
+
+### Bridge room badges
+
+Rooms connected via bridges display a small bridge icon badge in the room list, making it easy to tell bridged conversations from native Matrix rooms.
+
 ### Room backgrounds
 
 Set a custom background image per room via Room Details or the top bar menu. The image is stored client-locally and displayed behind the timeline at a subtle alpha. Backgrounds can be changed or cleared at any time.
@@ -52,9 +60,13 @@ Set a custom background image per room via Room Details or the top bar menu. The
 
 Schedule text messages for later delivery from the room top bar. The composer contents are queued locally with Android WorkManager and sent automatically when the selected time arrives and network connectivity is available.
 
+### Encryption status badge
+
+An optional hideable encryption warning badge appears in the composer area, showing the current encryption state of the room and allowing users to verify or review security settings.
+
 ## Latest fork release
 
-The latest fork APK is [v0.8.0](https://github.com/rusty4444/element-x-android/releases/tag/v0.8.0). This release includes the grouped-image persistence fix, themed room bars, bridge badge refinements, and schedule-send UI improvements.
+The latest fork APK is [v0.8.5](https://github.com/rusty4444/element-x-android/releases/tag/v0.8.5). This release includes edge-to-edge top bars, encryption status badge, bridge room badges, schedule send, room backgrounds, and all previous QoL features.
 
 [<img src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" alt="Get it on Google Play" height="80">](https://play.google.com/store/apps/details?id=io.element.android.x)[<img src="https://fdroid.gitlab.io/artwork/badge/get-it-on.png" alt="Get it on F-Droid" height="80">](https://f-droid.org/packages/io.element.android.x)
 

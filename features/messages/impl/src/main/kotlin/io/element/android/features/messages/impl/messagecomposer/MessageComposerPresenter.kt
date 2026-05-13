@@ -509,6 +509,7 @@ class MessageComposerPresenter(
             snackbarDispatcher.post(SnackbarMessage(CommonStrings.common_error))
             return@launch
         }
+        snackbarDispatcher.post(SnackbarMessage(R.string.schedule_send_scheduled))
         resetComposer(markdownTextEditorState, richTextEditorState, fromEdit = false)
         workManagerScheduler.submit(
             scheduledSendRequestBuilderFactory.create(
@@ -519,7 +520,6 @@ class MessageComposerPresenter(
                 scheduledTimeMillis = scheduledTimeMillis,
             )
         )
-        snackbarDispatcher.post(SnackbarMessage(R.string.schedule_send_scheduled))
     }
 
     private fun CoroutineScope.sendMessage(

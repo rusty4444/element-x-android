@@ -244,7 +244,9 @@ private fun NameAndTimestampRow(
             overflow = TextOverflow.Ellipsis
         )
         if (timestamp != null) {
-            RoomBridgeBadgeView(bridgeBadge = bridgeBadge)
+            if (bridgeBadge != RoomBridgeBadge.MATRIX) {
+                RoomBridgeBadgeView(bridgeBadge = bridgeBadge)
+            }
             // Timestamp
             Text(
                 text = timestamp,

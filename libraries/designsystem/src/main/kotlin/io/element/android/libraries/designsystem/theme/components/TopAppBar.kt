@@ -28,6 +28,18 @@ import io.element.android.libraries.designsystem.preview.ElementThemedPreview
 import io.element.android.libraries.designsystem.preview.PreviewGroup
 import io.element.android.libraries.designsystem.theme.aliasScreenTitle
 
+/** Default colors for top app bars themed to Element design system. */
+object ElementTopAppBarDefaults {
+    @OptIn(ExperimentalMaterial3Api::class)
+    @Composable
+    fun elementTopAppBarColors(): TopAppBarColors = TopAppBarDefaults.topAppBarColors(
+        containerColor = ElementTheme.colors.bgCanvasDefault,
+        titleContentColor = ElementTheme.colors.textPrimary,
+        navigationIconContentColor = ElementTheme.colors.textPrimary,
+        actionIconContentColor = ElementTheme.colors.textActionPrimary,
+    )
+}
+
 /**
  * A top app bar that displays a title string, navigation icon, and actions.
  * @param titleStr The title string to display in the top app bar.
@@ -46,7 +58,7 @@ fun TopAppBar(
     navigationIcon: @Composable () -> Unit = {},
     actions: @Composable RowScope.() -> Unit = {},
     windowInsets: WindowInsets = TopAppBarDefaults.windowInsets,
-    colors: TopAppBarColors = TopAppBarDefaults.topAppBarColors(),
+    colors: TopAppBarColors = ElementTopAppBarDefaults.elementTopAppBarColors(),
     scrollBehavior: TopAppBarScrollBehavior? = null
 ) {
     TopAppBar(
@@ -86,7 +98,7 @@ fun TopAppBar(
     navigationIcon: @Composable () -> Unit = {},
     actions: @Composable RowScope.() -> Unit = {},
     windowInsets: WindowInsets = TopAppBarDefaults.windowInsets,
-    colors: TopAppBarColors = TopAppBarDefaults.topAppBarColors(),
+    colors: TopAppBarColors = ElementTopAppBarDefaults.elementTopAppBarColors(),
     scrollBehavior: TopAppBarScrollBehavior? = null
 ) {
     androidx.compose.material3.TopAppBar(

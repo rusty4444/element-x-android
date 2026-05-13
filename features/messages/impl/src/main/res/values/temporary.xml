@@ -8,4 +8,11 @@
   <string name="screen_room_current_background_message">Choose a new background or clear the current one.</string>
   <string name="screen_room_background_set_success">Room background updated</string>
   <string name="screen_room_background_cleared">Room background cleared</string>
+
+  <!-- Schedule send -->
+  <string name="action_schedule_send">Schedule send</string>
+  <string name="schedule_send_title">Schedule message</string>
+  <string name="schedule_send_scheduled">Message scheduled</string>
+  <string name="schedule_send_empty_message">Type a message before scheduling it</string>
+  <string name="schedule_send_past_time">Choose a future time to schedule this message</string>
 </resources>

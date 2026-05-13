@@ -33,12 +33,14 @@ import im.vector.app.features.analytics.plan.Composer
 import im.vector.app.features.analytics.plan.Interaction
 import io.element.android.features.location.api.LocationService
 import io.element.android.features.messages.impl.MessagesNavigator
+import io.element.android.features.messages.impl.R
 import io.element.android.features.messages.impl.attachments.Attachment
 import io.element.android.features.messages.impl.attachments.Attachment.Media
 import io.element.android.features.messages.impl.attachments.preview.error.sendAttachmentError
 import io.element.android.features.messages.impl.draft.ComposerDraftService
 import io.element.android.features.messages.impl.messagecomposer.suggestions.RoomAliasSuggestionsDataSource
 import io.element.android.features.messages.impl.messagecomposer.suggestions.SuggestionsProcessor
+import io.element.android.features.messages.impl.scheduledsend.ScheduledSendRequestBuilder
 import io.element.android.features.messages.impl.timeline.TimelineController
 import io.element.android.features.messages.impl.utils.TextPillificationHelper
 import io.element.android.libraries.architecture.AsyncAction
@@ -82,6 +84,8 @@ import io.element.android.libraries.textcomposer.model.MessageComposerMode
 import io.element.android.libraries.textcomposer.model.Suggestion
 import io.element.android.libraries.textcomposer.model.TextEditorState
 import io.element.android.libraries.textcomposer.model.rememberMarkdownTextEditorState
+import io.element.android.libraries.ui.strings.CommonStrings
+import io.element.android.libraries.workmanager.api.WorkManagerScheduler
 import io.element.android.services.analytics.api.AnalyticsService
 import io.element.android.services.analyticsproviders.api.trackers.captureInteraction
 import io.element.android.wysiwyg.compose.RichTextEditorState
@@ -133,6 +137,8 @@ class MessageComposerPresenter(
     private val mediaOptimizationConfigProvider: MediaOptimizationConfigProvider,
     private val notificationConversationService: NotificationConversationService,
     private val slashCommandService: SlashCommandService,
+    private val workManagerScheduler: WorkManagerScheduler,
+    private val scheduledSendRequestBuilderFactory: ScheduledSendRequestBuilder.Factory,
 ) : Presenter<MessageComposerState> {
     @AssistedFactory
     interface Factory {
@@ -261,6 +267,13 @@ class MessageComposerPresenter(
                         markdownTextEditorState = markdownTextEditorState,
                         richTextEditorState = richTextEditorState,
                         slashCommandAction = slashCommandAction,
+                    )
+                }
+                is MessageComposerEvent.ScheduleSend -> {
+                    sessionCoroutineScope.scheduleSend(
+                        scheduledTimeMillis = event.scheduledTimeMillis,
+                        markdownTextEditorState = markdownTextEditorState,
+                        richTextEditorState = richTextEditorState,
                     )
                 }
                 is MessageComposerEvent.SendUri -> {
@@ -470,6 +483,38 @@ class MessageComposerPresenter(
             }
                 .collect()
         }
+    }
+
+    private fun CoroutineScope.scheduleSend(
+        scheduledTimeMillis: Long,
+        markdownTextEditorState: MarkdownTextEditorState,
+        richTextEditorState: RichTextEditorState,
+    ) = launch {
+        if (scheduledTimeMillis <= System.currentTimeMillis()) {
+            snackbarDispatcher.post(SnackbarMessage(R.string.schedule_send_past_time))
+            return@launch
+        }
+        val message = currentComposerMessage(markdownTextEditorState, richTextEditorState, withMentions = true)
+        if (message.markdown.isBlank()) {
+            snackbarDispatcher.post(SnackbarMessage(R.string.schedule_send_empty_message))
+            return@launch
+        }
+        val capturedMode = messageComposerContext.composerMode
+        if (capturedMode !is MessageComposerMode.Normal && capturedMode !is MessageComposerMode.Attachment) {
+            snackbarDispatcher.post(SnackbarMessage(CommonStrings.common_error))
+            return@launch
+        }
+        resetComposer(markdownTextEditorState, richTextEditorState, fromEdit = false)
+        workManagerScheduler.submit(
+            scheduledSendRequestBuilderFactory.create(
+                sessionId = room.sessionId,
+                roomId = room.roomId,
+                body = message.markdown,
+                htmlBody = message.html,
+                scheduledTimeMillis = scheduledTimeMillis,
+            )
+        )
+        snackbarDispatcher.post(SnackbarMessage(R.string.schedule_send_scheduled))
     }
 
     private fun CoroutineScope.sendMessage(

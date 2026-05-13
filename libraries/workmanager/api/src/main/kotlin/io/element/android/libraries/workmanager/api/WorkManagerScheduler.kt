@@ -32,6 +32,7 @@ fun workManagerTag(sessionId: SessionId, requestType: WorkManagerRequestType): S
     val prefix = when (requestType) {
         WorkManagerRequestType.NOTIFICATION_SYNC -> "notifications"
         WorkManagerRequestType.DB_VACUUM -> "db_vacuum"
+        WorkManagerRequestType.SCHEDULED_SEND -> "scheduled_send"
     }
     return "$prefix-$sessionId"
 }
@@ -39,4 +40,5 @@ fun workManagerTag(sessionId: SessionId, requestType: WorkManagerRequestType): S
 enum class WorkManagerRequestType {
     NOTIFICATION_SYNC,
     DB_VACUUM,
+    SCHEDULED_SEND,
 }

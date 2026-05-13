@@ -8,6 +8,8 @@
 
 package io.element.android.features.messages.impl
 
+import android.app.DatePickerDialog
+import android.app.TimePickerDialog
 import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -132,6 +134,7 @@ import io.element.android.libraries.ui.strings.CommonStrings
 import io.element.android.wysiwyg.link.Link
 import kotlinx.collections.immutable.persistentListOf
 import timber.log.Timber
+import java.util.Calendar
 import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
@@ -165,6 +168,7 @@ fun MessagesView(
 
     var maxComposerHeightPx by remember { mutableIntStateOf(120) }
     var showBackgroundPicker by remember { mutableStateOf(false) }
+    var showScheduleSendPicker by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument(),
@@ -280,6 +284,7 @@ fun MessagesView(
                                     onJoinCallClick = onJoinCallClick,
                                     onThreadsListClick = onThreadsListClick,
                                     onSetRoomBackgroundClick = { showBackgroundPicker = true },
+                                    onScheduleSendClick = { showScheduleSendPicker = true },
                                 )
                             }
                         )
@@ -478,6 +483,59 @@ fun MessagesView(
     }
 
     // Schedule send date/time picker dialog
+    if (showScheduleSendPicker) {
+        ScheduleSendPicker(
+            onDismiss = { showScheduleSendPicker = false },
+            onSchedule = { scheduledTimeMillis ->
+                state.composerState.eventSink(MessageComposerEvent.ScheduleSend(scheduledTimeMillis))
+                showScheduleSendPicker = false
+            },
+        )
+    }
+}
+
+@Composable
+private fun ScheduleSendPicker(
+    onDismiss: () -> Unit,
+    onSchedule: (Long) -> Unit,
+) {
+    val context = LocalContext.current
+    LaunchedEffect(Unit) {
+        val now = Calendar.getInstance()
+        val selectedDate = Calendar.getInstance()
+        DatePickerDialog(
+            context,
+            { _, year, month, dayOfMonth ->
+                selectedDate.set(Calendar.YEAR, year)
+                selectedDate.set(Calendar.MONTH, month)
+                selectedDate.set(Calendar.DAY_OF_MONTH, dayOfMonth)
+                TimePickerDialog(
+                    context,
+                    { _, hourOfDay, minute ->
+                        selectedDate.set(Calendar.HOUR_OF_DAY, hourOfDay)
+                        selectedDate.set(Calendar.MINUTE, minute)
+                        selectedDate.set(Calendar.SECOND, 0)
+                        selectedDate.set(Calendar.MILLISECOND, 0)
+                        onSchedule(selectedDate.timeInMillis)
+                    },
+                    now.get(Calendar.HOUR_OF_DAY),
+                    now.get(Calendar.MINUTE),
+                    true,
+                ).apply {
+                    setTitle(context.getString(R.string.schedule_send_title))
+                    setOnCancelListener { onDismiss() }
+                    setOnDismissListener { }
+                }.show()
+            },
+            now.get(Calendar.YEAR),
+            now.get(Calendar.MONTH),
+            now.get(Calendar.DAY_OF_MONTH),
+        ).apply {
+            setTitle(context.getString(R.string.schedule_send_title))
+            datePicker.minDate = now.timeInMillis
+            setOnCancelListener { onDismiss() }
+        }.show()
+    }
 }
 
 @Composable
@@ -487,6 +545,7 @@ internal fun MessagesMenuActions(
     onJoinCallClick: (isAudioCall: Boolean) -> Unit,
     onThreadsListClick: () -> Unit,
     onSetRoomBackgroundClick: () -> Unit,
+    onScheduleSendClick: () -> Unit,
 ) {
     if (displayThreads) {
         Icon(
@@ -505,6 +564,12 @@ internal fun MessagesMenuActions(
         modifier = Modifier.clickable(enabled = true, onClick = onSetRoomBackgroundClick),
         imageVector = CompoundIcons.Image(),
         contentDescription = stringResource(R.string.screen_room_set_background_action),
+    )
+    Spacer(Modifier.width(8.dp))
+    Icon(
+        modifier = Modifier.clickable(enabled = true, onClick = onScheduleSendClick),
+        imageVector = CompoundIcons.Time(),
+        contentDescription = stringResource(R.string.action_schedule_send),
     )
 }
 

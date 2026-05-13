@@ -8,6 +8,7 @@
 
 package io.element.android.features.messages.impl.topbars
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -16,12 +17,14 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import io.element.android.libraries.designsystem.modifiers.backgroundVerticalGradient
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -45,6 +48,7 @@ import io.element.android.libraries.designsystem.preview.ElementPreview
 import io.element.android.libraries.designsystem.preview.PreviewsDayNight
 import io.element.android.libraries.designsystem.preview.ROOM_NAME
 import io.element.android.libraries.designsystem.theme.components.HorizontalDivider
+import io.element.android.libraries.designsystem.theme.components.ElementTopAppBarDefaults
 import io.element.android.libraries.designsystem.theme.components.Icon
 import io.element.android.libraries.designsystem.theme.components.Text
 import io.element.android.libraries.designsystem.theme.components.TopAppBar
@@ -68,10 +72,22 @@ internal fun MessagesViewTopBar(
     onRoomDetailsClick: () -> Unit,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
+    containerColor: Color = Color.Transparent,
     menuActions: @Composable RowScope.() -> Unit,
 ) {
     TopAppBar(
-        modifier = modifier,
+        modifier = modifier
+            .then(if (containerColor == Color.Transparent) Modifier.backgroundVerticalGradient() else Modifier),
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = containerColor.takeIf { it != Color.Unspecified && it != Color.Transparent }
+                ?: when {
+                    containerColor == Color.Unspecified -> ElementTheme.colors.bgSubtleSecondary
+                    else -> Color.Transparent
+                },
+            titleContentColor = ElementTheme.colors.textPrimary,
+            navigationIconContentColor = ElementTheme.colors.textPrimary,
+            actionIconContentColor = ElementTheme.colors.textActionPrimary,
+        ),
         navigationIcon = {
             BackButton(onClick = onBackClick)
         },

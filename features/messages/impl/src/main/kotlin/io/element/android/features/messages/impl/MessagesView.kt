@@ -293,6 +293,8 @@ fun MessagesView(
                             sharedHistoryIcon = state.topBarSharedHistoryIcon,
                             onBackClick = { hidingKeyboard { onBackClick() } },
                             onRoomDetailsClick = { hidingKeyboard { onRoomDetailsClick() } },
+                            containerColor = state.roomBackgroundUri?.let { Color.Transparent }
+                                ?: Color.Unspecified,
                             menuActions = {
                                 MessagesMenuActions(
                                     displayThreads = state.timelineState.timelineMode !is Timeline.Mode.Thread && state.threads.hasThreads,

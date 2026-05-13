@@ -15,4 +15,11 @@
   <string name="schedule_send_scheduled">Message scheduled</string>
   <string name="schedule_send_empty_message">Type a message before scheduling it</string>
   <string name="schedule_send_past_time">Choose a future time to schedule this message</string>
+  <string name="schedule_send_confirm_action">Schedule</string>
+  <string name="schedule_send_preview_label">Message preview</string>
+  <string name="schedule_send_manage_title">Scheduled messages</string>
+  <string name="schedule_send_cancel_action">Cancel send</string>
+  <string name="schedule_send_scheduled_cancelled">Scheduled message cancelled</string>
+  <string name="schedule_send_no_scheduled">No scheduled messages</string>
+  <string name="schedule_send_manage_action">Manage</string>
 </resources>

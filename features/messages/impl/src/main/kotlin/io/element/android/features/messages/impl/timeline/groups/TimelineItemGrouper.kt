@@ -25,13 +25,21 @@ class TimelineItemGrouper {
     /**
      * Keys are identifier of items in a group, only one by group will be kept.
      * Values are the actual groupIds.
+     * Cleared on each group() call to avoid stale groupId assignments when
+     * items change reactable status (e.g., get a reaction or lose one).
      */
     private val groupIds = HashMap<String, String>()
 
     /**
      * Create a new list of [TimelineItem] by grouping some of them into [TimelineItem.GroupedEvents].
+     * The internal groupId cache is cleared each time to ensure stale groupIds
+     * from previous runs don't cause items to stick in/out of groups unexpectedly.
      */
     fun group(from: List<TimelineItem>): List<TimelineItem> {
+        // Clear stale groupIds from previous runs — items may have gained/lost
+        // reactions, replies, etc. which changes their groupability.
+        groupIds.clear()
+
         val result = mutableListOf<TimelineItem>()
         val currentGroup = mutableListOf<TimelineItem.Event>()
         val currentImageGrid = mutableListOf<TimelineItem.Event>()

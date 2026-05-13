@@ -38,6 +38,7 @@ data class RoomDetailsState(
     val leaveRoomState: LeaveRoomState,
     val roomNotificationSettings: RoomNotificationSettings?,
     val isFavorite: Boolean,
+    val roomBackgroundUri: String?,
     val displayRolesAndPermissionsSettings: Boolean,
     val isPublic: Boolean,
     val heroes: ImmutableList<MatrixUser>,

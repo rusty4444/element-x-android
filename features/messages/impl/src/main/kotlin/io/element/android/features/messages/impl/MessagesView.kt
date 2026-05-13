@@ -8,9 +8,9 @@
 
 package io.element.android.features.messages.impl
 
+import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
@@ -46,6 +46,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
@@ -164,10 +165,12 @@ fun MessagesView(
 
     var maxComposerHeightPx by remember { mutableIntStateOf(120) }
     var showBackgroundPicker by remember { mutableStateOf(false) }
+    val context = LocalContext.current
     val imagePickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.PickVisualMedia(),
+        contract = ActivityResultContracts.OpenDocument(),
         onResult = { uri ->
             if (uri != null) {
+                context.contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
                 onSetRoomBackground(uri)
             }
         },
@@ -466,7 +469,7 @@ fun MessagesView(
                 if (state.roomBackgroundUri != null) {
                     onClearRoomBackground()
                 } else {
-                    imagePickerLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                    imagePickerLauncher.launch(arrayOf("image/*"))
                 }
                 showBackgroundPicker = false
             },

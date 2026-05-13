@@ -8,6 +8,9 @@
 
 package io.element.android.features.roomdetails.impl
 
+import android.content.Intent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -50,6 +53,7 @@ import io.element.android.libraries.architecture.coverage.ExcludeFromCoverage
 import io.element.android.libraries.designsystem.atomic.atoms.MatrixBadgeAtom
 import io.element.android.libraries.designsystem.atomic.molecules.MatrixBadgeRowMolecule
 import io.element.android.libraries.designsystem.components.ClickableLinkText
+import io.element.android.libraries.designsystem.components.dialogs.ConfirmationDialog
 import io.element.android.libraries.designsystem.components.avatar.Avatar
 import io.element.android.libraries.designsystem.components.avatar.AvatarData
 import io.element.android.libraries.designsystem.components.avatar.AvatarSize
@@ -118,6 +122,17 @@ fun RoomDetailsView(
     leaveRoomView: @Composable () -> Unit,
 ) {
     val snackbarHostState = rememberSnackbarHostState(snackbarMessage = state.snackbarMessage)
+    val context = LocalContext.current
+    var showBackgroundPicker by remember { mutableStateOf(false) }
+    val backgroundPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument(),
+        onResult = { uri ->
+            if (uri != null) {
+                context.contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                state.eventSink(RoomDetailsEvent.SetRoomBackground(uri.toString()))
+            }
+        },
+    )
     Scaffold(
         modifier = modifier,
         topBar = {
@@ -203,6 +218,11 @@ fun RoomDetailsView(
                     }
                 )
 
+                RoomBackgroundItem(
+                    hasBackground = state.roomBackgroundUri != null,
+                    onClick = { showBackgroundPicker = true },
+                )
+
                 if (state.canShowSecurityAndPrivacy) {
                     SecurityAndPrivacyItem(
                         onClick = onSecurityAndPrivacyClick
@@ -273,6 +293,59 @@ fun RoomDetailsView(
             }
         }
     }
+
+    if (showBackgroundPicker) {
+        ConfirmationDialog(
+            title = stringResource(id = R.string.screen_room_set_background_title),
+            content = stringResource(
+                id = if (state.roomBackgroundUri != null) {
+                    R.string.screen_room_current_background_message
+                } else {
+                    R.string.screen_room_set_background_message
+                },
+            ),
+            submitText = stringResource(id = R.string.screen_room_set_background_action),
+            cancelText = if (state.roomBackgroundUri != null) {
+                stringResource(id = R.string.screen_room_clear_background_action)
+            } else {
+                stringResource(id = CommonStrings.action_cancel)
+            },
+            onSubmitClick = {
+                showBackgroundPicker = false
+                backgroundPickerLauncher.launch(arrayOf("image/*"))
+            },
+            onDismiss = { showBackgroundPicker = false },
+            onCancelClick = {
+                showBackgroundPicker = false
+                if (state.roomBackgroundUri != null) {
+                    state.eventSink(RoomDetailsEvent.ClearRoomBackground)
+                }
+            },
+        )
+    }
+}
+
+@Composable
+private fun RoomBackgroundItem(
+    hasBackground: Boolean,
+    onClick: () -> Unit,
+) {
+    ListItem(
+        headlineContent = { Text(stringResource(R.string.screen_room_set_background_title)) },
+        supportingContent = {
+            Text(
+                stringResource(
+                    id = if (hasBackground) {
+                        R.string.screen_room_background_configured
+                    } else {
+                        R.string.screen_room_background_not_configured
+                    }
+                )
+            )
+        },
+        leadingContent = ListItemContent.Icon(IconSource.Vector(CompoundIcons.Image())),
+        onClick = onClick,
+    )
 }
 
 @Composable

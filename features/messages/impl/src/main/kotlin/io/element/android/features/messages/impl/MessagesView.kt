@@ -43,6 +43,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -87,6 +89,7 @@ import io.element.android.features.messages.impl.messagecomposer.suggestions.Sug
 import io.element.android.features.messages.impl.pinned.banner.PinnedMessagesBannerState
 import io.element.android.features.messages.impl.pinned.banner.PinnedMessagesBannerView
 import io.element.android.features.messages.impl.pinned.banner.PinnedMessagesBannerViewDefaults
+import io.element.android.features.messages.impl.scheduledsend.ScheduledMessageInfo
 import io.element.android.features.messages.impl.timeline.FOCUS_ON_PINNED_EVENT_DEBOUNCE_DURATION_IN_MILLIS
 import io.element.android.features.messages.impl.timeline.TimelineEvent
 import io.element.android.features.messages.impl.timeline.TimelineView
@@ -512,19 +515,17 @@ fun MessagesView(
 
     // Manage scheduled sends dialog
     if (showManageScheduled) {
-        AlertDialog(
-            onDismissRequest = { showManageScheduled = false },
-            title = {
-                Text(text = stringResource(R.string.schedule_send_manage_title))
+        ManageScheduledSendsDialog(
+            scheduledMessages = state.composerState.scheduledMessageInfos,
+            onCancel = { info ->
+                state.composerState.eventSink(MessageComposerEvent.CancelScheduledMessage(info))
+                showManageScheduled = false
             },
-            text = {
-                Text(text = stringResource(R.string.schedule_send_no_scheduled))
+            onForceSend = { info ->
+                state.composerState.eventSink(MessageComposerEvent.ForceSendScheduledMessage(info))
+                showManageScheduled = false
             },
-            confirmButton = {
-                TextButton(onClick = { showManageScheduled = false }) {
-                    Text(stringResource(CommonStrings.action_ok))
-                }
-            },
+            onDismiss = { showManageScheduled = false },
         )
     }
 }
@@ -652,6 +653,108 @@ private fun ScheduleSendPicker(
                     )
                 }
                 TimePicker(state = timePickerState)
+            }
+        }
+    }
+}
+
+
+@Composable
+private fun ManageScheduledSendsDialog(
+    scheduledMessages: ImmutableList<ScheduledMessageInfo>,
+    onCancel: (ScheduledMessageInfo) -> Unit,
+    onForceSend: (ScheduledMessageInfo) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val formatter = remember { SimpleDateFormat("EEE d MMM, HH:mm", Locale.getDefault()) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(text = stringResource(R.string.schedule_send_manage_title))
+        },
+        text = {
+            if (scheduledMessages.isEmpty()) {
+                Text(
+                    text = stringResource(R.string.schedule_send_no_scheduled),
+                    color = ElementTheme.colors.textSecondary,
+                )
+            } else {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 300.dp)
+                        .verticalScroll(rememberScrollState()),
+                ) {
+                    scheduledMessages.forEach { info ->
+                        ScheduledMessageRow(
+                            info = info,
+                            timeText = formatter.format(info.scheduledTimeMillis),
+                            onCancel = { onCancel(info) },
+                            onForceSend = { onForceSend(info) },
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(CommonStrings.action_ok))
+            }
+        },
+    )
+}
+
+@Composable
+private fun ScheduledMessageRow(
+    info: ScheduledMessageInfo,
+    timeText: String,
+    onCancel: () -> Unit,
+    onForceSend: () -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = timeText,
+                style = ElementTheme.typography.fontBodySmSemibold,
+                color = ElementTheme.colors.textAccent,
+            )
+            if (info.isPast()) {
+                Text(
+                    text = "Past",
+                    style = ElementTheme.typography.fontBodyXsRegular,
+                    color = ElementTheme.colors.textCriticalPrimary,
+                )
+            }
+        }
+        Text(
+            text = info.formattedPreview(),
+            style = ElementTheme.typography.fontBodyMdRegular,
+            color = ElementTheme.colors.textSecondary,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(vertical = 4.dp),
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.End,
+        ) {
+            TextButton(onClick = onCancel, enabled = !info.isPast()) {
+                Text(
+                    text = stringResource(R.string.schedule_send_cancel_action),
+                    color = ElementTheme.colors.textCriticalPrimary,
+                )
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+            TextButton(onClick = onForceSend, enabled = info.isPast()) {
+                Text(text = stringResource(R.string.action_send))
             }
         }
     }

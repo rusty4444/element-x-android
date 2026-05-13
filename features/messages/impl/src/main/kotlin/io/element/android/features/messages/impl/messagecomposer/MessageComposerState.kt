@@ -9,12 +9,14 @@
 package io.element.android.features.messages.impl.messagecomposer
 
 import androidx.compose.runtime.Stable
+import io.element.android.features.messages.impl.scheduledsend.ScheduledMessageInfo
 import io.element.android.libraries.architecture.AsyncAction
 import io.element.android.libraries.textcomposer.mentions.ResolvedSuggestion
 import io.element.android.libraries.textcomposer.model.MessageComposerMode
 import io.element.android.libraries.textcomposer.model.TextEditorState
 import io.element.android.wysiwyg.display.TextDisplay
 import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
 
 @Stable
 data class MessageComposerState(
@@ -24,6 +26,7 @@ data class MessageComposerState(
     val showAttachmentSourcePicker: Boolean,
     val showTextFormatting: Boolean,
     val canShareLocation: Boolean,
+    val scheduledMessageInfos: ImmutableList<ScheduledMessageInfo> = persistentListOf(),
     val suggestions: ImmutableList<ResolvedSuggestion>,
     val resolveMentionDisplay: (String, String) -> TextDisplay,
     val resolveAtRoomMentionDisplay: () -> TextDisplay,

@@ -9,6 +9,7 @@
 package io.element.android.features.messages.impl.messagecomposer
 
 import android.net.Uri
+import io.element.android.features.messages.impl.scheduledsend.ScheduledMessageInfo
 import io.element.android.libraries.textcomposer.mentions.ResolvedSuggestion
 import io.element.android.libraries.textcomposer.model.MessageComposerMode
 import io.element.android.libraries.textcomposer.model.Suggestion
@@ -18,6 +19,9 @@ sealed interface MessageComposerEvent {
     data object SendMessage : MessageComposerEvent
     data class ScheduleSend(val scheduledTimeMillis: Long) : MessageComposerEvent
     data object CancelScheduledSends : MessageComposerEvent
+    data class CancelScheduledMessage(val info: ScheduledMessageInfo) : MessageComposerEvent
+    data class ForceSendScheduledMessage(val info: ScheduledMessageInfo) : MessageComposerEvent
+    data object LoadScheduledMessages : MessageComposerEvent
     data class SendUri(val uri: Uri) : MessageComposerEvent
     data class SendUris(val uris: List<Uri>) : MessageComposerEvent
     data object CloseSpecialMode : MessageComposerEvent

@@ -73,6 +73,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
 import io.element.android.compound.theme.ElementTheme
+import coil3.compose.AsyncImage
+import io.element.android.libraries.designsystem.text.toDp
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.foundation.layout.fillMaxSize
 import io.element.android.compound.tokens.generated.CompoundIcons
 import io.element.android.features.messages.api.timeline.voicemessages.composer.VoiceMessageComposerEvent
 import io.element.android.features.messages.impl.actionlist.ActionListEvent
@@ -110,6 +115,7 @@ import io.element.android.features.messages.impl.timeline.model.event.aTimelineI
 import io.element.android.features.messages.impl.timeline.model.event.aTimelineItemTextContent
 import io.element.android.features.messages.impl.timeline.model.event.canReact
 import io.element.android.features.messages.impl.topbars.MessagesViewTopBar
+import io.element.android.features.messages.impl.topbars.RoomBarMode
 import io.element.android.features.messages.impl.topbars.ThreadTopBar
 import io.element.android.features.messages.impl.voicemessages.composer.VoiceMessagePermissionRationaleDialog
 import io.element.android.features.messages.impl.voicemessages.composer.VoiceMessageSendingFailedDialog
@@ -272,8 +278,21 @@ fun MessagesView(
                 maxComposerHeightPx = (size.height * 0.5f).toInt()
             },
         content = {
-            Scaffold(
-                contentWindowInsets = WindowInsets.statusBars,
+            Box(modifier = Modifier.fillMaxSize()) {
+                // Room background image rendered at Scaffold level so it shows through bars
+                if (state.roomBackgroundUri != null) {
+                    AsyncImage(
+                        model = state.roomBackgroundUri,
+                        contentDescription = null,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .alpha(0.15f),
+                        contentScale = ContentScale.Crop,
+                    )
+                }
+                Scaffold(
+                    containerColor = if (state.roomBackgroundUri != null) Color.Transparent else ElementTheme.colors.bgCanvasDefault,
+                    contentWindowInsets = WindowInsets.statusBars,
                 topBar = {
                     if (state.timelineState.timelineMode is Timeline.Mode.Thread) {
                         ThreadTopBar(
@@ -293,8 +312,7 @@ fun MessagesView(
                             sharedHistoryIcon = state.topBarSharedHistoryIcon,
                             onBackClick = { hidingKeyboard { onBackClick() } },
                             onRoomDetailsClick = { hidingKeyboard { onRoomDetailsClick() } },
-                            containerColor = state.roomBackgroundUri?.let { Color.Transparent }
-                                ?: Color.Unspecified,
+                            barMode = if (state.roomBackgroundUri != null) RoomBarMode.HAS_ROOM_BG else RoomBarMode.DEFAULT,
                             menuActions = {
                                 MessagesMenuActions(
                                     displayThreads = state.timelineState.timelineMode !is Timeline.Mode.Thread && state.threads.hasThreads,
@@ -372,6 +390,7 @@ fun MessagesView(
                     )
                 },
             )
+        }
         },
         bottomSheetContent = {
             MessagesViewComposerBottomSheetContents(

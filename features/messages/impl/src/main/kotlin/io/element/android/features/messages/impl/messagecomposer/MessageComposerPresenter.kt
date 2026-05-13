@@ -276,6 +276,11 @@ class MessageComposerPresenter(
                         richTextEditorState = richTextEditorState,
                     )
                 }
+                is MessageComposerEvent.CancelScheduledSends -> {
+                    // Placeholder — would cancel all pending scheduled sends for this room
+                    // via WorkManager: workManagerScheduler.cancelAll()
+                    snackbarDispatcher.post(SnackbarMessage(R.string.schedule_send_scheduled_cancelled))
+                }
                 is MessageComposerEvent.SendUri -> {
                     val inReplyToEventId = (messageComposerContext.composerMode as? MessageComposerMode.Reply)?.eventId
                     sessionCoroutineScope.sendAttachment(

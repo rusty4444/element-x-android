@@ -52,6 +52,10 @@ Set a custom background image per room via Room Details or the top bar menu. The
 
 Schedule text messages for later delivery from the room top bar. The composer contents are queued locally with Android WorkManager and sent automatically when the selected time arrives and network connectivity is available.
 
+## Latest fork release
+
+The latest fork APK is [v0.8.0](https://github.com/rusty4444/element-x-android/releases/tag/v0.8.0). This release includes the grouped-image persistence fix, themed room bars, bridge badge refinements, and schedule-send UI improvements.
+
 [<img src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" alt="Get it on Google Play" height="80">](https://play.google.com/store/apps/details?id=io.element.android.x)[<img src="https://fdroid.gitlab.io/artwork/badge/get-it-on.png" alt="Get it on F-Droid" height="80">](https://f-droid.org/packages/io.element.android.x)
 
 ## Table of contents

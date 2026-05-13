@@ -91,19 +91,24 @@ class DefaultRoomGroupMessageCreator(
         events: List<NotifiableMessageEvent>,
         imageLoader: ImageLoader,
     ): Bitmap? {
-        // Use the last event (most recent?)
-        val event = events.reversed().firstOrNull { it.roomAvatarPath != null }
+        // Use the latest event that can provide a room image, falling back to initials for the latest event.
+        val event = events.reversed().firstOrNull { it.roomAvatarPath != null || it.roomHeroes != null }
             ?: events.reversed().firstOrNull()
         return event?.let { event ->
-            bitmapLoader.getRoomBitmap(
-                avatarData = AvatarData(
-                    id = event.roomId.value,
-                    name = event.roomName,
-                    url = event.roomAvatarPath,
-                    size = AvatarSize.RoomDetailsHeader,
-                ),
-                imageLoader = imageLoader,
-            )
+            event.roomHeroes?.let { heroes ->
+                bitmapLoader.getClusterBitmap(
+                    heroes = heroes,
+                    imageLoader = imageLoader,
+                )
+            } ?: bitmapLoader.getRoomBitmap(
+                    avatarData = AvatarData(
+                        id = event.roomId.value,
+                        name = event.roomName,
+                        url = event.roomAvatarPath,
+                        size = AvatarSize.RoomDetailsHeader,
+                    ),
+                    imageLoader = imageLoader,
+                )
         }
     }
 }

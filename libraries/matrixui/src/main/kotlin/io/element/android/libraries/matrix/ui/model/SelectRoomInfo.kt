@@ -31,6 +31,10 @@ data class SelectRoomInfo(
         url = avatarUrl,
         size = size,
     )
+
+    fun getHeroAvatarData(size: AvatarSize) = heroes.map { user ->
+        user.getAvatarData(size = size)
+    }
 }
 
 fun RoomSummary.toSelectRoomInfo() = info.toSelectRoomInfo()

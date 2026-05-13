@@ -9,6 +9,7 @@ package io.element.android.libraries.push.impl.notifications.model
 
 import android.net.Uri
 import androidx.core.net.toUri
+import io.element.android.libraries.designsystem.components.avatar.AvatarData
 import io.element.android.libraries.matrix.api.core.EventId
 import io.element.android.libraries.matrix.api.core.RoomId
 import io.element.android.libraries.matrix.api.core.SessionId
@@ -35,6 +36,7 @@ data class NotifiableMessageEvent(
     val roomName: String?,
     val roomIsDm: Boolean = false,
     val roomAvatarPath: String? = null,
+    val roomHeroes: List<AvatarData>? = null,
     val senderAvatarPath: String? = null,
     val soundName: String? = null,
     // This is used for >N notification, as the result of a smart reply

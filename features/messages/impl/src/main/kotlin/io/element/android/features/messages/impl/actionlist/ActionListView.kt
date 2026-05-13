@@ -45,6 +45,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.semantics
@@ -79,6 +80,7 @@ import io.element.android.features.messages.impl.timeline.model.event.TimelineIt
 import io.element.android.features.messages.impl.timeline.model.event.TimelineItemVideoContent
 import io.element.android.features.messages.impl.timeline.model.event.TimelineItemVoiceContent
 import io.element.android.features.messages.impl.utils.messagesummary.DefaultMessageSummaryFormatter
+import io.element.android.libraries.androidutils.ui.hideKeyboard
 import io.element.android.libraries.designsystem.components.avatar.Avatar
 import io.element.android.libraries.designsystem.components.avatar.AvatarSize
 import io.element.android.libraries.designsystem.components.avatar.AvatarType
@@ -111,12 +113,19 @@ fun ActionListView(
 ) {
     val sheetState = rememberModalBottomSheetState()
     val coroutineScope = rememberCoroutineScope()
+    val view = LocalView.current
     val targetItem = (state.target as? ActionListState.Target.Success)?.event
+
+    fun clearFocusAndHideKeyboard() {
+        view.clearFocus()
+        view.hideKeyboard()
+    }
 
     fun onItemActionClick(
         itemAction: TimelineItemAction
     ) {
         if (targetItem == null) return
+        clearFocusAndHideKeyboard()
         sheetState.hide(coroutineScope) {
             state.eventSink(ActionListEvent.Clear)
             onSelectAction(itemAction, targetItem)
@@ -125,6 +134,7 @@ fun ActionListView(
 
     fun onEmojiReactionClick(emoji: String) {
         if (targetItem == null) return
+        clearFocusAndHideKeyboard()
         sheetState.hide(coroutineScope) {
             state.eventSink(ActionListEvent.Clear)
             onEmojiReactionClick(emoji, targetItem)
@@ -133,6 +143,7 @@ fun ActionListView(
 
     fun onCustomReactionClick() {
         if (targetItem == null) return
+        clearFocusAndHideKeyboard()
         sheetState.hide(coroutineScope) {
             state.eventSink(ActionListEvent.Clear)
             onCustomReactionClick(targetItem)
@@ -140,11 +151,13 @@ fun ActionListView(
     }
 
     fun onDismiss() {
+        clearFocusAndHideKeyboard()
         state.eventSink(ActionListEvent.Clear)
     }
 
     fun onVerifiedUserSendFailureClick() {
         if (targetItem == null) return
+        clearFocusAndHideKeyboard()
         sheetState.hide(coroutineScope) {
             state.eventSink(ActionListEvent.Clear)
             onVerifiedUserSendFailureClick(targetItem)

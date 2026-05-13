@@ -145,6 +145,7 @@ import io.element.android.libraries.textcomposer.model.TextEditorState
 import io.element.android.libraries.ui.strings.CommonStrings
 import io.element.android.wysiwyg.link.Link
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.ImmutableList
 import timber.log.Timber
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -723,8 +724,8 @@ private fun ScheduledMessageRow(
         ) {
             Text(
                 text = timeText,
-                style = ElementTheme.typography.fontBodySmSemibold,
-                color = ElementTheme.colors.textAccent,
+                style = ElementTheme.typography.fontBodySmMedium,
+                color = ElementTheme.colors.textActionAccent,
             )
             if (info.isPast()) {
                 Text(

@@ -244,9 +244,6 @@ private fun NameAndTimestampRow(
             overflow = TextOverflow.Ellipsis
         )
         if (timestamp != null) {
-            if (bridgeBadge != RoomBridgeBadge.MATRIX) {
-                RoomBridgeBadgeView(bridgeBadge = bridgeBadge)
-            }
             // Timestamp
             Text(
                 text = timestamp,
@@ -257,6 +254,11 @@ private fun NameAndTimestampRow(
                     ElementTheme.colors.roomListRoomMessageDate
                 },
             )
+            // Badge positioned to the right of timestamp
+            if (bridgeBadge != RoomBridgeBadge.MATRIX) {
+                Spacer(modifier = Modifier.width(4.dp))
+                RoomBridgeBadgeView(bridgeBadge = bridgeBadge)
+            }
         }
     }
 }

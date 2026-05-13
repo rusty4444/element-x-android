@@ -207,6 +207,10 @@ class MessageComposerPresenter(
             sessionPreferencesStore.isSendTypingNotificationsEnabled()
         }.collectAsState(initial = true)
 
+        val showEncryptionWarning by remember {
+            sessionPreferencesStore.isShowEncryptionWarningEnabled()
+        }.collectAsState(initial = true)
+
         LaunchedEffect(cameraPermissionState.permissionGranted) {
             if (cameraPermissionState.permissionGranted) {
                 when (pendingEvent) {
@@ -232,11 +236,12 @@ class MessageComposerPresenter(
             }
         }
 
+        val roomEncryptionValue = if (showEncryptionWarning) roomInfo.isEncrypted == true else null
         val textEditorState by rememberUpdatedState(
             if (showTextFormatting) {
-                TextEditorState.Rich(richTextEditorState, roomInfo.isEncrypted == true)
+                TextEditorState.Rich(richTextEditorState, roomEncryptionValue)
             } else {
-                TextEditorState.Markdown(markdownTextEditorState, roomInfo.isEncrypted == true)
+                TextEditorState.Markdown(markdownTextEditorState, roomEncryptionValue)
             }
         )
 

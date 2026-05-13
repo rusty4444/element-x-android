@@ -7,4 +7,6 @@
 
 <resources>
     <string name="screen_advanced_settings_accent_color">"Accent color"</string>
+    <string name="screen_advanced_settings_show_encryption_warning">"Show encryption warnings"</string>
+    <string name="screen_advanced_settings_show_encryption_warning_description">"Show \"Not encrypted\" label in unencrypted rooms"</string>
 </resources>

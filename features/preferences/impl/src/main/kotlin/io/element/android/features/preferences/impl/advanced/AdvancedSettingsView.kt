@@ -112,6 +112,18 @@ fun AdvancedSettingsView(
             ),
             onClick = { state.eventSink(AdvancedSettingsEvents.SetSharePresenceEnabled(!state.isSharePresenceEnabled)) }
         )
+        ListItem(
+            headlineContent = {
+                Text(text = stringResource(id = R.string.screen_advanced_settings_show_encryption_warning))
+            },
+            supportingContent = {
+                Text(text = stringResource(id = R.string.screen_advanced_settings_show_encryption_warning_description))
+            },
+            trailingContent = ListItemContent.Switch(
+                checked = state.isShowEncryptionWarningEnabled,
+            ),
+            onClick = { state.eventSink(AdvancedSettingsEvents.SetShowEncryptionWarning(!state.isShowEncryptionWarningEnabled)) }
+        )
         val compressImages = state.mediaOptimizationState?.shouldCompressImages
 
         when (state.mediaOptimizationState) {

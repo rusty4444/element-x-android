@@ -48,6 +48,9 @@ class AdvancedSettingsPresenter(
         val isSharePresenceEnabled by remember {
             sessionPreferencesStore.isSharePresenceEnabled()
         }.collectAsState(initial = true)
+        val isShowEncryptionWarningEnabled by remember {
+            sessionPreferencesStore.isShowEncryptionWarningEnabled()
+        }.collectAsState(initial = true)
         val isBlackThemeAllowed by remember {
             featureFlagService.isFeatureEnabledFlow(FeatureFlags.AllowBlackTheme)
         }.collectAsState(initial = false)
@@ -143,12 +146,16 @@ class AdvancedSettingsPresenter(
                 is AdvancedSettingsEvents.SetVideoUploadQuality -> sessionCoroutineScope.launch {
                     sessionPreferencesStore.setVideoCompressionPreset(event.videoPreset)
                 }
+                is AdvancedSettingsEvents.SetShowEncryptionWarning -> sessionCoroutineScope.launch {
+                    sessionPreferencesStore.setShowEncryptionWarning(event.enabled)
+                }
             }
         }
 
         return AdvancedSettingsState(
             isDeveloperModeEnabled = isDeveloperModeEnabled,
             isSharePresenceEnabled = isSharePresenceEnabled,
+            isShowEncryptionWarningEnabled = isShowEncryptionWarningEnabled,
             mediaOptimizationState = mediaOptimizationState,
             theme = themeOption,
             availableThemeOptions = availableThemeOptions,

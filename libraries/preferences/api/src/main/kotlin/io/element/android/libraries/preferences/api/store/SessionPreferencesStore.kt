@@ -35,5 +35,8 @@ interface SessionPreferencesStore {
     suspend fun setVideoCompressionPreset(preset: VideoCompressionPreset)
     fun getVideoCompressionPreset(): Flow<VideoCompressionPreset>
 
+    suspend fun setShowEncryptionWarning(enabled: Boolean)
+    fun isShowEncryptionWarningEnabled(): Flow<Boolean>
+
     suspend fun clear()
 }

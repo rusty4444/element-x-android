@@ -8,8 +8,14 @@
 
 package io.element.android.features.messages.impl
 
-import android.app.DatePickerDialog
-import android.app.TimePickerDialog
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.Surface
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TimePicker
+import androidx.compose.material3.TimePickerDialog
+import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.material3.rememberTimePickerState
 import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -58,6 +64,7 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
@@ -134,7 +141,9 @@ import io.element.android.libraries.ui.strings.CommonStrings
 import io.element.android.wysiwyg.link.Link
 import kotlinx.collections.immutable.persistentListOf
 import timber.log.Timber
+import java.text.SimpleDateFormat
 import java.util.Calendar
+import java.util.Locale
 import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
@@ -169,6 +178,7 @@ fun MessagesView(
     var maxComposerHeightPx by remember { mutableIntStateOf(120) }
     var showBackgroundPicker by remember { mutableStateOf(false) }
     var showScheduleSendPicker by remember { mutableStateOf(false) }
+    var showManageScheduled by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument(),
@@ -285,6 +295,7 @@ fun MessagesView(
                                     onThreadsListClick = onThreadsListClick,
                                     onSetRoomBackgroundClick = { showBackgroundPicker = true },
                                     onScheduleSendClick = { showScheduleSendPicker = true },
+                                    onManageScheduledClick = { showManageScheduled = true },
                                 )
                             }
                         )
@@ -490,6 +501,17 @@ fun MessagesView(
                 state.composerState.eventSink(MessageComposerEvent.ScheduleSend(scheduledTimeMillis))
                 showScheduleSendPicker = false
             },
+            messagePreview = state.composerState.textEditorState.content,
+        )
+    }
+
+    // Manage scheduled sends dialog
+    if (showManageScheduled) {
+        ManageScheduledSendsDialog(
+            onDismiss = { showManageScheduled = false },
+            onCancelScheduled = { scheduledTimeMillis ->
+                state.composerState.eventSink(MessageComposerEvent.CancelScheduledSend(scheduledTimeMillis))
+            },
         )
     }
 }
@@ -498,43 +520,127 @@ fun MessagesView(
 private fun ScheduleSendPicker(
     onDismiss: () -> Unit,
     onSchedule: (Long) -> Unit,
+    messagePreview: String,
 ) {
-    val context = LocalContext.current
-    LaunchedEffect(Unit) {
-        val now = Calendar.getInstance()
-        val selectedDate = Calendar.getInstance()
+    var selectedDate by remember { mutableStateOf(Calendar.getInstance()) }
+    val datePickerState = rememberDatePickerState(
+        initialSelectedDateMillis = selectedDate.timeInMillis
+    )
+    var showDatePicker by remember { mutableStateOf(true) }
+    var showTimePicker by remember { mutableStateOf(false) }
+
+    if (showDatePicker) {
         DatePickerDialog(
-            context,
-            { _, year, month, dayOfMonth ->
-                selectedDate.set(Calendar.YEAR, year)
-                selectedDate.set(Calendar.MONTH, month)
-                selectedDate.set(Calendar.DAY_OF_MONTH, dayOfMonth)
-                TimePickerDialog(
-                    context,
-                    { _, hourOfDay, minute ->
-                        selectedDate.set(Calendar.HOUR_OF_DAY, hourOfDay)
-                        selectedDate.set(Calendar.MINUTE, minute)
-                        selectedDate.set(Calendar.SECOND, 0)
-                        selectedDate.set(Calendar.MILLISECOND, 0)
-                        onSchedule(selectedDate.timeInMillis)
-                    },
-                    now.get(Calendar.HOUR_OF_DAY),
-                    now.get(Calendar.MINUTE),
-                    true,
-                ).apply {
-                    setTitle(context.getString(R.string.schedule_send_title))
-                    setOnCancelListener { onDismiss() }
-                    setOnDismissListener { }
-                }.show()
+            onDismissRequest = onDismiss,
+            confirmButton = {
+                TextButton(onClick = { showTimePicker = true }) {
+                    Text(stringResource(R.string.schedule_send_confirm_action))
+                }
             },
-            now.get(Calendar.YEAR),
-            now.get(Calendar.MONTH),
-            now.get(Calendar.DAY_OF_MONTH),
-        ).apply {
-            setTitle(context.getString(R.string.schedule_send_title))
-            datePicker.minDate = now.timeInMillis
-            setOnCancelListener { onDismiss() }
-        }.show()
+            dismissButton = {
+                TextButton(onClick = onDismiss) {
+                    Text(stringResource(CommonStrings.action_cancel))
+                }
+            },
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Text(
+                    text = stringResource(R.string.schedule_send_preview_label),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = ElementTheme.colors.textSecondary,
+                )
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(
+                            ElementTheme.colors.bgSubtleSecondary,
+                            MaterialTheme.shapes.small
+                        )
+                        .padding(12.dp),
+                    shape = MaterialTheme.shapes.small,
+                    color = ElementTheme.colors.bgSubtleSecondary,
+                ) {
+                    Text(
+                        text = messagePreview.ifBlank { stringResource(R.string.schedule_send_empty_message) },
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = if (messagePreview.isBlank()) ElementTheme.colors.textSecondary else ElementTheme.colors.textPrimary,
+                        maxLines = 3,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+                DatePicker(state = datePickerState)
+            }
+        }
+    }
+
+    if (showTimePicker) {
+        val timePickerState = rememberTimePickerState(
+            initialHour = selectedDate.get(Calendar.HOUR_OF_DAY),
+            initialMinute = selectedDate.get(Calendar.MINUTE),
+            is24Hour = true,
+        )
+        TimePickerDialog(
+            onDismissRequest = onDismiss,
+            confirmButton = {
+                TextButton(onClick = {
+                    val calendar = Calendar.getInstance().apply {
+                        timeInMillis = datePickerState.selectedDateMillis ?: System.currentTimeMillis()
+                        set(Calendar.HOUR_OF_DAY, timePickerState.hour)
+                        set(Calendar.MINUTE, timePickerState.minute)
+                        set(Calendar.SECOND, 0)
+                        set(Calendar.MILLISECOND, 0)
+                    }
+                    onSchedule(calendar.timeInMillis)
+                }) {
+                    Text(stringResource(R.string.schedule_send_confirm_action))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    showTimePicker = false
+                }) {
+                    Text(stringResource(CommonStrings.action_cancel))
+                }
+            },
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Text(
+                    text = stringResource(R.string.schedule_send_preview_label),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = ElementTheme.colors.textSecondary,
+                )
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(
+                            ElementTheme.colors.bgSubtleSecondary,
+                            MaterialTheme.shapes.small
+                        )
+                        .padding(12.dp),
+                    shape = MaterialTheme.shapes.small,
+                    color = ElementTheme.colors.bgSubtleSecondary,
+                ) {
+                    Text(
+                        text = messagePreview.ifBlank { stringResource(R.string.schedule_send_empty_message) },
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = if (messagePreview.isBlank()) ElementTheme.colors.textSecondary else ElementTheme.colors.textPrimary,
+                        maxLines = 3,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+                TimePicker(state = timePickerState, layoutType = TimePickerLayoutType.Vertical)
+            }
+        }
     }
 }
 

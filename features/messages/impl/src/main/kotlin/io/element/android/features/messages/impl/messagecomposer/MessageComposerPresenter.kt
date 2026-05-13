@@ -274,6 +274,10 @@ class MessageComposerPresenter(
                     )
                 }
                 is MessageComposerEvent.ScheduleSend -> {
+                    // Dispatch "message scheduled" immediately so the snackbar appears in this
+                    // composition cycle rather than being delayed until the next recomposition
+                    // (e.g. when leaving the room).
+                    snackbarDispatcher.post(SnackbarMessage(R.string.schedule_send_scheduled))
                     sessionCoroutineScope.scheduleSend(
                         scheduledTimeMillis = event.scheduledTimeMillis,
                         markdownTextEditorState = markdownTextEditorState,
@@ -540,7 +544,6 @@ class MessageComposerPresenter(
             snackbarDispatcher.post(SnackbarMessage(CommonStrings.common_error))
             return@launch
         }
-        snackbarDispatcher.post(SnackbarMessage(R.string.schedule_send_scheduled))
         resetComposer(markdownTextEditorState, richTextEditorState, fromEdit = false)
         val requestBuilder = scheduledSendRequestBuilderFactory.create(
             sessionId = room.sessionId,

@@ -20,7 +20,6 @@ import io.element.android.libraries.designsystem.components.avatar.AvatarType
 import io.element.android.libraries.designsystem.preview.ElementPreview
 import io.element.android.libraries.designsystem.preview.PreviewsDayNight
 import io.element.android.libraries.matrix.ui.model.SelectRoomInfo
-import io.element.android.libraries.matrix.ui.model.getAvatarData
 import io.element.android.libraries.ui.strings.CommonStrings
 import kotlinx.collections.immutable.toImmutableList
 
@@ -33,7 +32,7 @@ fun SelectedRoom(
     SelectedItem(
         avatarData = roomInfo.getAvatarData(AvatarSize.SelectedRoom),
         avatarType = AvatarType.Room(
-            heroes = roomInfo.heroes.map { it.getAvatarData(AvatarSize.SelectedRoom) }.toImmutableList(),
+            heroes = roomInfo.getHeroAvatarData(AvatarSize.SelectedRoom).toImmutableList(),
             isTombstoned = roomInfo.isTombstoned,
         ),
         // If name is null, we do not have space to render "No room name", so just use `#` here.

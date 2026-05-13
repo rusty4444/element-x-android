@@ -38,6 +38,7 @@ import io.element.android.libraries.matrix.api.media.isPreviewEnabled
 import io.element.android.libraries.matrix.api.notification.NotificationContent
 import io.element.android.libraries.matrix.api.notification.NotificationData
 import io.element.android.libraries.matrix.api.permalink.PermalinkParser
+import io.element.android.libraries.matrix.api.room.RoomMembershipState
 import io.element.android.libraries.matrix.api.room.join.JoinRule
 import io.element.android.libraries.matrix.api.timeline.item.event.AudioMessageType
 import io.element.android.libraries.matrix.api.timeline.item.event.EmoteMessageType
@@ -424,17 +425,29 @@ class DefaultNotifiableEventResolver(
         }
     }
 
-    private suspend fun NotificationData.roomHeroes(client: MatrixClient) =
-        if (roomAvatarUrl == null && !isDm) {
-            client.getRoom(roomId)
-                ?.info()
-                ?.heroes
-                ?.take(4)
-                ?.map { user -> user.getAvatarData(size = AvatarSize.RoomDetailsHeader) }
-                ?.takeIf { it.isNotEmpty() }
-        } else {
-            null
-        }
+    private suspend fun NotificationData.roomHeroes(client: MatrixClient): List<AvatarData>? {
+        if (roomAvatarUrl != null || isDm || isSpace) return null
+
+        val room = client.getJoinedRoom(roomId)
+        val memberHeroes = room
+            ?.getMembers(limit = 5)
+            ?.getOrNull()
+            .orEmpty()
+            .asSequence()
+            .filter { member -> member.membership == RoomMembershipState.JOIN && member.userId != client.sessionId }
+            .sortedWith(compareByDescending { member -> member.avatarUrl != null })
+            .take(4)
+            .map { member -> member.getAvatarData(size = AvatarSize.RoomDetailsHeader) }
+            .toList()
+            .takeIf { it.isNotEmpty() }
+
+        return memberHeroes ?: room
+            ?.info()
+            ?.heroes
+            ?.take(4)
+            ?.map { user -> user.getAvatarData(size = AvatarSize.RoomDetailsHeader) }
+            ?.takeIf { it.isNotEmpty() }
+    }
 }
 
 @Suppress("LongParameterList")

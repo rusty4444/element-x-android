@@ -166,6 +166,10 @@ class DefaultNotificationBitmapLoader(
                 avatarData = hero,
                 imageLoader = imageLoader,
                 targetSize = heroAvatarSize.toLong(),
+            ) ?: loadBitmap(
+                avatarData = hero.copy(url = null),
+                imageLoader = imageLoader,
+                targetSize = heroAvatarSize.toLong(),
             ) ?: return@forEachIndexed
 
             val scaledBitmap = Bitmap.createScaledBitmap(childBitmap, heroAvatarSize, heroAvatarSize, true)
@@ -198,5 +202,4 @@ class DefaultNotificationBitmapLoader(
         canvas.drawBitmap(bitmap, left, top, Paint(Paint.ANTI_ALIAS_FLAG))
         canvas.restoreToCount(checkpoint)
     }
-
 }

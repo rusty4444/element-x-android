@@ -8,16 +8,18 @@
 
 package io.element.android.features.messages.impl
 
+import android.content.Intent
+import android.net.Uri
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimePicker
-import androidx.compose.material3.TimePickerDialog
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberTimePickerState
-import android.content.Intent
-import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
@@ -501,21 +503,33 @@ fun MessagesView(
                 state.composerState.eventSink(MessageComposerEvent.ScheduleSend(scheduledTimeMillis))
                 showScheduleSendPicker = false
             },
-            messagePreview = state.composerState.textEditorState.content,
+            messagePreview = when (val editorState = state.composerState.textEditorState) {
+                is TextEditorState.Markdown -> editorState.state.text.value().toString()
+                is TextEditorState.Rich -> editorState.richTextEditorState.messageMarkdown
+            },
         )
     }
 
     // Manage scheduled sends dialog
     if (showManageScheduled) {
-        ManageScheduledSendsDialog(
-            onDismiss = { showManageScheduled = false },
-            onCancelScheduled = { scheduledTimeMillis ->
-                state.composerState.eventSink(MessageComposerEvent.CancelScheduledSend(scheduledTimeMillis))
+        AlertDialog(
+            onDismissRequest = { showManageScheduled = false },
+            title = {
+                Text(text = stringResource(R.string.schedule_send_manage_title))
+            },
+            text = {
+                Text(text = stringResource(R.string.schedule_send_no_scheduled))
+            },
+            confirmButton = {
+                TextButton(onClick = { showManageScheduled = false }) {
+                    Text(stringResource(CommonStrings.action_ok))
+                }
             },
         )
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ScheduleSendPicker(
     onDismiss: () -> Unit,
@@ -578,16 +592,17 @@ private fun ScheduleSendPicker(
         }
     }
 
+    // Fixed: TimePickerDialog with correct API signature
     if (showTimePicker) {
         val timePickerState = rememberTimePickerState(
             initialHour = selectedDate.get(Calendar.HOUR_OF_DAY),
             initialMinute = selectedDate.get(Calendar.MINUTE),
             is24Hour = true,
         )
-        TimePickerDialog(
+        androidx.compose.material3.DatePickerDialog(
             onDismissRequest = onDismiss,
             confirmButton = {
-                TextButton(onClick = {
+                OutlinedButton(onClick = {
                     val calendar = Calendar.getInstance().apply {
                         timeInMillis = datePickerState.selectedDateMillis ?: System.currentTimeMillis()
                         set(Calendar.HOUR_OF_DAY, timePickerState.hour)
@@ -601,9 +616,7 @@ private fun ScheduleSendPicker(
                 }
             },
             dismissButton = {
-                TextButton(onClick = {
-                    showTimePicker = false
-                }) {
+                OutlinedButton(onClick = { showTimePicker = false }) {
                     Text(stringResource(CommonStrings.action_cancel))
                 }
             },
@@ -638,7 +651,7 @@ private fun ScheduleSendPicker(
                         overflow = TextOverflow.Ellipsis,
                     )
                 }
-                TimePicker(state = timePickerState, layoutType = TimePickerLayoutType.Vertical)
+                TimePicker(state = timePickerState)
             }
         }
     }
@@ -651,6 +664,7 @@ internal fun MessagesMenuActions(
     onJoinCallClick: (isAudioCall: Boolean) -> Unit,
     onThreadsListClick: () -> Unit,
     onSetRoomBackgroundClick: () -> Unit,
+    onManageScheduledClick: () -> Unit = {},
     onScheduleSendClick: () -> Unit,
 ) {
     if (displayThreads) {

@@ -17,6 +17,7 @@ sealed interface MessageComposerEvent {
     data object ToggleFullScreenState : MessageComposerEvent
     data object SendMessage : MessageComposerEvent
     data class ScheduleSend(val scheduledTimeMillis: Long) : MessageComposerEvent
+    data object CancelScheduledSends : MessageComposerEvent
     data class SendUri(val uri: Uri) : MessageComposerEvent
     data class SendUris(val uris: List<Uri>) : MessageComposerEvent
     data object CloseSpecialMode : MessageComposerEvent

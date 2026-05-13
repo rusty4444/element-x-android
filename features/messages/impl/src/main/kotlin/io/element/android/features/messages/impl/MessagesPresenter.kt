@@ -84,6 +84,7 @@ import io.element.android.libraries.matrix.api.timeline.item.event.EventOrTransa
 import io.element.android.libraries.matrix.ui.messages.reply.map
 import io.element.android.libraries.matrix.ui.model.getAvatarData
 import io.element.android.libraries.matrix.ui.room.getDirectRoomMember
+import io.element.android.libraries.preferences.api.store.AppPreferencesStore
 import io.element.android.libraries.recentemojis.api.AddRecentEmoji
 import io.element.android.libraries.textcomposer.model.MessageComposerMode
 import io.element.android.libraries.ui.strings.CommonStrings
@@ -128,6 +129,7 @@ class MessagesPresenter(
     private val addRecentEmoji: AddRecentEmoji,
     private val markAsFullyRead: MarkAsFullyRead,
     @SessionCoroutineScope private val sessionCoroutineScope: CoroutineScope,
+    private val appPreferencesStore: AppPreferencesStore,
 ) : Presenter<MessagesState> {
     @AssistedFactory
     interface Factory {
@@ -213,6 +215,8 @@ class MessagesPresenter(
 
         val snackbarMessage by snackbarDispatcher.collectSnackbarMessageAsState()
 
+        val roomBackgroundUri by appPreferencesStore.getRoomBackgroundFlow(room.roomId.value).collectAsState(initial = null)
+
         var dmUserVerificationState by remember { mutableStateOf<IdentityState?>(null) }
 
         val dmRoomMember by room.getDirectRoomMember(membersState)
@@ -277,6 +281,16 @@ class MessagesPresenter(
                         markingAsReadAndExiting.set(false)
                     }
                 }
+                is MessagesEvent.SetRoomBackground -> {
+                    localCoroutineScope.launch {
+                        appPreferencesStore.setRoomBackground(room.roomId.value, event.uri)
+                    }
+                }
+                is MessagesEvent.ClearRoomBackground -> {
+                    localCoroutineScope.launch {
+                        appPreferencesStore.setRoomBackground(room.roomId.value, null)
+                    }
+                }
             }
         }
 
@@ -312,6 +326,7 @@ class MessagesPresenter(
                 // TODO calculate this properly based on the thread list and the read state of each thread
                 hasUnreadThreads = false,
             ),
+            roomBackgroundUri = roomBackgroundUri,
             eventSink = ::handleEvent,
         )
     }

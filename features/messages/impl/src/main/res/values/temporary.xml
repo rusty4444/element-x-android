@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <!-- Room background picker -->
+  <string name="screen_room_set_background_title">Set room background</string>
+  <string name="screen_room_set_background_action">Set background</string>
+  <string name="screen_room_set_background_message">Choose a photo from your library to set as this room\'s background.</string>
+  <string name="screen_room_clear_background_action">Clear background</string>
+  <string name="screen_room_current_background_message">Choose a new background or clear the current one.</string>
+  <string name="screen_room_background_set_success">Room background updated</string>
+  <string name="screen_room_background_cleared">Room background cleared</string>
+</resources>

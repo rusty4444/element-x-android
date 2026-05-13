@@ -44,6 +44,10 @@ Rooms without a custom avatar use up to four participant avatars instead of a si
 
 The coloured heading bar now has clearer spacing before the room filter chips, and the fork keeps its gplay package id (`io.element.android.x.fork`) so it can be installed side-by-side with official Element X.
 
+### Room backgrounds
+
+Set a custom background image per room via the top bar menu. The image is stored client-locally and displayed behind the timeline at a subtle alpha. Backgrounds can be changed or cleared at any time from the same menu entry.
+
 [<img src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" alt="Get it on Google Play" height="80">](https://play.google.com/store/apps/details?id=io.element.android.x)[<img src="https://fdroid.gitlab.io/artwork/badge/get-it-on.png" alt="Get it on F-Droid" height="80">](https://f-droid.org/packages/io.element.android.x)
 
 ## Table of contents

@@ -8,6 +8,10 @@
 
 package io.element.android.features.messages.impl
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
@@ -142,6 +146,8 @@ fun MessagesView(
     onJoinCallClick: (isAudioCall: Boolean) -> Unit,
     onViewAllPinnedMessagesClick: () -> Unit,
     onThreadsListClick: () -> Unit,
+    onSetRoomBackground: (Uri) -> Unit,
+    onClearRoomBackground: () -> Unit,
     modifier: Modifier = Modifier,
     forceJumpToBottomVisibility: Boolean = false,
     knockRequestsBannerView: @Composable () -> Unit,
@@ -157,6 +163,15 @@ fun MessagesView(
     val snackbarHostState = rememberSnackbarHostState(snackbarMessage = state.snackbarMessage)
 
     var maxComposerHeightPx by remember { mutableIntStateOf(120) }
+    var showBackgroundPicker by remember { mutableStateOf(false) }
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia(),
+        onResult = { uri ->
+            if (uri != null) {
+                onSetRoomBackground(uri)
+            }
+        },
+    )
 
     // This is needed because the composer is inside an AndroidView that can't be affected by the FocusManager in Compose
     val localView = LocalView.current
@@ -260,7 +275,9 @@ fun MessagesView(
                                     displayThreads = state.timelineState.timelineMode !is Timeline.Mode.Thread && state.threads.hasThreads,
                                     roomCallState = state.roomCallState,
                                     onJoinCallClick = onJoinCallClick,
-                                    onThreadsListClick = onThreadsListClick
+                                    onThreadsListClick = onThreadsListClick,
+                                    onSetRoomBackgroundClick = { showBackgroundPicker = true },
+                                    onScheduleSendClick = { showScheduleSendPicker = true },
                                 )
                             }
                         )
@@ -428,6 +445,37 @@ fun MessagesView(
         },
         state = state.linkState,
     )
+
+    // Room background picker dialog
+    if (showBackgroundPicker) {
+        val dialogSubmitText = if (state.roomBackgroundUri != null) {
+            stringResource(id = R.string.screen_room_clear_background_action)
+        } else {
+            stringResource(id = R.string.screen_room_set_background_action)
+        }
+        ConfirmationDialog(
+            title = stringResource(id = R.string.screen_room_set_background_title),
+            content = stringResource(
+                id = if (state.roomBackgroundUri != null) {
+                    R.string.screen_room_current_background_message
+                } else {
+                    R.string.screen_room_set_background_message
+                },
+            ),
+            submitText = dialogSubmitText,
+            onSubmitClick = {
+                if (state.roomBackgroundUri != null) {
+                    onClearRoomBackground()
+                } else {
+                    imagePickerLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                }
+                showBackgroundPicker = false
+            },
+            onDismiss = { showBackgroundPicker = false },
+        )
+    }
+
+    // Schedule send date/time picker dialog
 }
 
 @Composable
@@ -436,6 +484,7 @@ internal fun MessagesMenuActions(
     roomCallState: RoomCallState,
     onJoinCallClick: (isAudioCall: Boolean) -> Unit,
     onThreadsListClick: () -> Unit,
+    onSetRoomBackgroundClick: () -> Unit,
 ) {
     if (displayThreads) {
         Icon(
@@ -450,6 +499,11 @@ internal fun MessagesMenuActions(
         onJoinCallClick = onJoinCallClick,
     )
     Spacer(Modifier.width(8.dp))
+    Icon(
+        modifier = Modifier.clickable(enabled = true, onClick = onSetRoomBackgroundClick),
+        imageVector = CompoundIcons.Image(),
+        contentDescription = stringResource(R.string.screen_room_set_background_action),
+    )
 }
 
 @Composable
@@ -539,6 +593,7 @@ private fun MessagesViewContent(
                 forceJumpToBottomVisibility = forceJumpToBottomVisibility,
                 nestedScrollConnection = scrollBehavior.nestedScrollConnection,
                 floatingDateTopOffset = pinnedBannerHeightDp,
+                roomBackgroundUri = state.roomBackgroundUri,
             )
 
             if (state.timelineState.timelineMode !is Timeline.Mode.Thread) {
@@ -654,9 +709,11 @@ internal fun MessagesViewPreview(@PreviewParameter(MessagesStateProvider::class)
         onCreatePollClick = {},
         onJoinCallClick = {},
         onViewAllPinnedMessagesClick = { },
+        onThreadsListClick = {},
+        onSetRoomBackground = {},
+        onClearRoomBackground = {},
         forceJumpToBottomVisibility = true,
         knockRequestsBannerView = {},
-        onThreadsListClick = {},
     )
 }
 
@@ -710,6 +767,8 @@ internal fun MessagesViewA11yPreview() = ElementPreview {
         onJoinCallClick = {},
         onViewAllPinnedMessagesClick = {},
         onThreadsListClick = {},
+        onSetRoomBackground = {},
+        onClearRoomBackground = {},
         forceJumpToBottomVisibility = true,
         knockRequestsBannerView = {},
     )

@@ -41,5 +41,9 @@ interface AppPreferencesStore {
     suspend fun setAccentColor(accentColor: String)
     fun getAccentColorFlow(): Flow<String?>
 
+    // Room background (per-room, client-local)
+    suspend fun setRoomBackground(roomId: String, uri: String?)
+    fun getRoomBackgroundFlow(roomId: String): Flow<String?>
+
     suspend fun reset()
 }

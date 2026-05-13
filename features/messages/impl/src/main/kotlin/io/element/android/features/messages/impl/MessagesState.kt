@@ -58,6 +58,8 @@ data class MessagesState(
     val topBarSharedHistoryIcon: SharedHistoryIcon,
     val successorRoom: SuccessorRoom?,
     val threads: Threads,
+    /** Room-specific background image URI, or null if unset. */
+    val roomBackgroundUri: String?,
     val eventSink: (MessagesEvent) -> Unit
 ) {
     val isTombstoned = successorRoom != null

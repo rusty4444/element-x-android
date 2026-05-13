@@ -157,6 +157,24 @@ class DefaultAppPreferencesStore(
         }
     }
 
+    override suspend fun setRoomBackground(roomId: String, uri: String?) {
+        val key = stringPreferencesKey("roomBackground:${roomId}")
+        store.edit { prefs ->
+            if (uri != null) {
+                prefs[key] = uri
+            } else {
+                prefs.remove(key)
+            }
+        }
+    }
+
+    override fun getRoomBackgroundFlow(roomId: String): Flow<String?> {
+        val key = stringPreferencesKey("roomBackground:${roomId}")
+        return store.data.map { prefs ->
+            prefs[key]
+        }
+    }
+
     override suspend fun reset() {
         store.edit { it.clear() }
     }

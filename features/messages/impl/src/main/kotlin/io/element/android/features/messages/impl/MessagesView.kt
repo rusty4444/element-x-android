@@ -193,16 +193,6 @@ fun MessagesView(
     var showBackgroundPicker by remember { mutableStateOf(false) }
     var showScheduleSendPicker by remember { mutableStateOf(false) }
     var showManageScheduled by remember { mutableStateOf(false) }
-
-    // When clock icon is tapped and there are already scheduled messages,
-    // open the management dialog instead of the picker
-    var openScheduleManagement by remember { mutableStateOf(false) }
-    LaunchedEffect(openScheduleManagement) {
-        if (openScheduleManagement) {
-            openScheduleManagement = false
-            showManageScheduled = true
-        }
-    }
     val context = LocalContext.current
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument(),
@@ -334,12 +324,12 @@ fun MessagesView(
                                     onSetRoomBackgroundClick = { showBackgroundPicker = true },
                                     onScheduleSendClick = {
                                         if (state.composerState.scheduledMessageInfos.isNotEmpty()) {
-                                            openScheduleManagement = true
+                                            showManageScheduled = true
                                         } else {
                                             showScheduleSendPicker = true
                                         }
                                     },
-                                    onManageScheduledClick = { openScheduleManagement = true },
+                                    onManageScheduledClick = { showManageScheduled = true },
                                 )
                             }
                         )
@@ -554,20 +544,18 @@ fun MessagesView(
     }
 
     // Manage scheduled sends dialog
-    if (showManageScheduled || openScheduleManagement) {
+    if (showManageScheduled) {
         ManageScheduledSendsDialog(
             scheduledMessages = state.composerState.scheduledMessageInfos,
             onCancel = { info ->
                 state.composerState.eventSink(MessageComposerEvent.CancelScheduledMessage(info))
                 showManageScheduled = false
-                openScheduleManagement = false
             },
             onForceSend = { info ->
                 state.composerState.eventSink(MessageComposerEvent.ForceSendScheduledMessage(info))
                 showManageScheduled = false
-                openScheduleManagement = false
             },
-            onDismiss = { showManageScheduled = false; openScheduleManagement = false },
+            onDismiss = { showManageScheduled = false },
         )
     }
 }

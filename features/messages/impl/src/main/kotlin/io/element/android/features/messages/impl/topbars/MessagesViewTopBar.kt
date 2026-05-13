@@ -60,6 +60,16 @@ import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 
+/** Background mode for room app bars. */
+enum class RoomBarMode {
+    /** Room background image exists — bar is transparent with gradient overlay. */
+    HAS_ROOM_BG,
+    /** No room background but a theme/accent is set — use gradient. */
+    GRADIENT,
+    /** Default — use bgSubtleSecondary solid fill. */
+    DEFAULT,
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun MessagesViewTopBar(
@@ -72,21 +82,20 @@ internal fun MessagesViewTopBar(
     onRoomDetailsClick: () -> Unit,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
-    containerColor: Color = Color.Transparent,
+    barMode: RoomBarMode = RoomBarMode.DEFAULT,
     menuActions: @Composable RowScope.() -> Unit,
 ) {
+    val hasTransparency = barMode != RoomBarMode.DEFAULT
+    val bgModifier = if (hasTransparency) {
+        Modifier.backgroundVerticalGradient()
+    } else {
+        Modifier
+    }
     TopAppBar(
-        modifier = modifier
-            .then(if (containerColor == Color.Transparent) Modifier.backgroundVerticalGradient() else Modifier),
-        colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = containerColor.takeIf { it != Color.Unspecified && it != Color.Transparent }
-                ?: when {
-                    containerColor == Color.Unspecified -> ElementTheme.colors.bgSubtleSecondary
-                    else -> Color.Transparent
-                },
-            titleContentColor = ElementTheme.colors.textPrimary,
-            navigationIconContentColor = ElementTheme.colors.textPrimary,
-            actionIconContentColor = ElementTheme.colors.textActionPrimary,
+        modifier = modifier.then(bgModifier),
+        colors = ElementTopAppBarDefaults.elementTopAppBarColors(
+            showBackgroundThrough = barMode == RoomBarMode.HAS_ROOM_BG,
+            showGradient = barMode == RoomBarMode.GRADIENT,
         ),
         navigationIcon = {
             BackButton(onClick = onBackClick)

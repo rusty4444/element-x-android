@@ -26,17 +26,25 @@ import io.element.android.compound.tokens.generated.CompoundIcons
 import io.element.android.libraries.designsystem.components.button.BackButton
 import io.element.android.libraries.designsystem.preview.ElementThemedPreview
 import io.element.android.libraries.designsystem.preview.PreviewGroup
+import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.background
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.runtime.Stable
+import io.element.android.libraries.designsystem.colors.gradientSubtleColors
 import io.element.android.libraries.designsystem.theme.aliasScreenTitle
 
 /** Default colors for top app bars themed to Element design system. */
 @OptIn(ExperimentalMaterial3Api::class)
 object ElementTopAppBarDefaults {
     @Composable
-    fun elementTopAppBarColors(transparent: Boolean = false): TopAppBarColors {
-        val containerColor = if (transparent) {
-            Color.Transparent
-        } else {
-            ElementTheme.colors.bgSubtleSecondary
+    fun elementTopAppBarColors(
+        showBackgroundThrough: Boolean = false,
+        showGradient: Boolean = false,
+    ): TopAppBarColors {
+        val containerColor = when {
+            showBackgroundThrough -> Color.Transparent
+            showGradient -> Color.Transparent
+            else -> ElementTheme.colors.bgSubtleSecondary
         }
         return TopAppBarDefaults.topAppBarColors(
             containerColor = containerColor,
@@ -44,6 +52,28 @@ object ElementTopAppBarDefaults {
             navigationIconContentColor = ElementTheme.colors.textPrimary,
             actionIconContentColor = ElementTheme.colors.textActionPrimary,
         )
+    }
+
+    @Stable
+    @Composable
+    fun Modifier.roomAppBarBackground(
+        showBackgroundThrough: Boolean = false,
+        showGradient: Boolean = false,
+    ): Modifier {
+        return when {
+            showBackgroundThrough || showGradient -> {
+                this.background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            ElementTheme.colors.bgCanvasDefault.copy(alpha = 0.95f),
+                            ElementTheme.colors.bgCanvasDefault.copy(alpha = 0.7f),
+                            Color.Transparent,
+                        ),
+                    ),
+                )
+            }
+            else -> this
+        }
     }
 }
 

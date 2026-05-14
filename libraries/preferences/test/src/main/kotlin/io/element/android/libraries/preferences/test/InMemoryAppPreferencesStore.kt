@@ -14,6 +14,7 @@ import io.element.android.libraries.matrix.api.tracing.TraceLogPack
 import io.element.android.libraries.preferences.api.store.AppPreferencesStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.map
 
 class InMemoryAppPreferencesStore(
     isDeveloperModeEnabled: Boolean = false,
@@ -33,6 +34,7 @@ class InMemoryAppPreferencesStore(
     private val tracingLogPacks = MutableStateFlow(traceLockPacks)
     private val hideInviteAvatars = MutableStateFlow(hideInviteAvatars)
     private val timelineMediaPreviewValue = MutableStateFlow(timelineMediaPreviewValue)
+    private val roomBackgrounds = MutableStateFlow<Map<String, String?>>(emptyMap())
 
     override suspend fun setDeveloperModeEnabled(enabled: Boolean) {
         isDeveloperModeEnabled.value = enabled
@@ -92,6 +94,14 @@ class InMemoryAppPreferencesStore(
 
     override fun getAccentColorFlow(): Flow<String?> {
         return accentColor
+    }
+
+    override suspend fun setRoomBackground(roomId: String, uri: String?) {
+        roomBackgrounds.value = roomBackgrounds.value + (roomId to uri)
+    }
+
+    override fun getRoomBackgroundFlow(roomId: String): Flow<String?> {
+        return roomBackgrounds.map { it[roomId] }
     }
 
     override suspend fun setTracingLogPacks(targets: Set<TraceLogPack>) {

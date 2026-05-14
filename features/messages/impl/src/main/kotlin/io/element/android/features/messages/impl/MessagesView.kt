@@ -53,11 +53,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -73,7 +71,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
-import coil3.compose.AsyncImage
 import io.element.android.compound.theme.ElementTheme
 import io.element.android.compound.tokens.generated.CompoundIcons
 import io.element.android.features.messages.api.timeline.voicemessages.composer.VoiceMessageComposerEvent
@@ -276,17 +273,6 @@ fun MessagesView(
             },
         content = {
             Box(modifier = Modifier.fillMaxSize()) {
-                // Room background image rendered at Scaffold level so it shows through bars
-                if (state.roomBackgroundUri != null) {
-                    AsyncImage(
-                        model = state.roomBackgroundUri,
-                        contentDescription = null,
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .alpha(0.15f),
-                        contentScale = ContentScale.Crop,
-                    )
-                }
                 Scaffold(
                     containerColor = if (state.roomBackgroundUri != null) Color.Transparent else ElementTheme.colors.bgCanvasDefault,
                     contentWindowInsets = WindowInsets(0),

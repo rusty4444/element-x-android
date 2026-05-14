@@ -33,6 +33,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -271,7 +272,7 @@ private fun RoomBridgeBadgeView(
             .height(18.dp)
             .widthIn(min = 18.dp)
             .background(
-                color = bridgeBadge.backgroundColor,
+                brush = bridgeBadge.backgroundBrush,
                 shape = RoundedCornerShape(5.dp),
             )
             .padding(horizontal = 5.dp),
@@ -288,8 +289,8 @@ private fun RoomBridgeBadgeView(
 
 private val RoomBridgeBadge.logoText: String
     get() = when (this) {
-        RoomBridgeBadge.WHATSAPP -> "☎"
-        RoomBridgeBadge.META -> "∞"
+        RoomBridgeBadge.WHATSAPP -> "W"
+        RoomBridgeBadge.META -> "f"
         RoomBridgeBadge.GMESSAGES -> "G"
         RoomBridgeBadge.MATRIX -> "✦"
         RoomBridgeBadge.X -> "𝕏"
@@ -303,21 +304,28 @@ private val RoomBridgeBadge.logoText: String
         RoomBridgeBadge.GENERIC_BRIDGE -> "↔"
     }
 
-private val RoomBridgeBadge.backgroundColor: Color
+private val RoomBridgeBadge.backgroundBrush: Brush
     get() = when (this) {
-        RoomBridgeBadge.WHATSAPP -> Color(0xFF25D366)
-        RoomBridgeBadge.META -> Color(0xFF0866FF)
-        RoomBridgeBadge.GMESSAGES -> Color(0xFF1A73E8)
-        RoomBridgeBadge.MATRIX -> Color(0xFF000000)
-        RoomBridgeBadge.X -> Color(0xFF000000)
-        RoomBridgeBadge.DISCORD -> Color(0xFF5865F2)
-        RoomBridgeBadge.LINKEDIN -> Color(0xFF0A66C2)
-        RoomBridgeBadge.TELEGRAM -> Color(0xFF229ED9)
-        RoomBridgeBadge.SIGNAL -> Color(0xFF3A76F0)
-        RoomBridgeBadge.SLACK -> Color(0xFF611F69)
-        RoomBridgeBadge.INSTAGRAM -> Color(0xFFE4405F)
-        RoomBridgeBadge.IMESSAGE -> Color(0xFF34C759)
-        RoomBridgeBadge.GENERIC_BRIDGE -> Color(0xFF6B7280)
+        RoomBridgeBadge.WHATSAPP -> Brush.linearGradient(listOf(Color(0xFF25D366), Color(0xFF25D366)))
+        RoomBridgeBadge.META -> Brush.linearGradient(listOf(Color(0xFF0866FF), Color(0xFF0866FF)))
+        RoomBridgeBadge.GMESSAGES -> Brush.horizontalGradient(
+            colors = listOf(
+                Color(0xFF4285F4), // Blue
+                Color(0xFFEA4335), // Red
+                Color(0xFFFBBC05), // Yellow
+                Color(0xFF34C759), // Green
+            )
+        )
+        RoomBridgeBadge.MATRIX -> Brush.linearGradient(listOf(Color(0xFF000000), Color(0xFF000000)))
+        RoomBridgeBadge.X -> Brush.linearGradient(listOf(Color(0xFF000000), Color(0xFF000000)))
+        RoomBridgeBadge.DISCORD -> Brush.linearGradient(listOf(Color(0xFF5865F2), Color(0xFF5865F2)))
+        RoomBridgeBadge.LINKEDIN -> Brush.linearGradient(listOf(Color(0xFF0A66C2), Color(0xFF0A66C2)))
+        RoomBridgeBadge.TELEGRAM -> Brush.linearGradient(listOf(Color(0xFF229ED9), Color(0xFF229ED9)))
+        RoomBridgeBadge.SIGNAL -> Brush.linearGradient(listOf(Color(0xFF3A76F0), Color(0xFF3A76F0)))
+        RoomBridgeBadge.SLACK -> Brush.linearGradient(listOf(Color(0xFF611F69), Color(0xFF611F69)))
+        RoomBridgeBadge.INSTAGRAM -> Brush.linearGradient(listOf(Color(0xFFE4405F), Color(0xFFE4405F)))
+        RoomBridgeBadge.IMESSAGE -> Brush.linearGradient(listOf(Color(0xFF34C759), Color(0xFF34C759)))
+        RoomBridgeBadge.GENERIC_BRIDGE -> Brush.linearGradient(listOf(Color(0xFF6B7280), Color(0xFF6B7280)))
     }
 
 private val RoomBridgeBadge.foregroundColor: Color

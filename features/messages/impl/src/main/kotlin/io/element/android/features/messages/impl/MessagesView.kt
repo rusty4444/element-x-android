@@ -266,6 +266,7 @@ fun MessagesView(
     ExpandableBottomSheetLayout(
         modifier = modifier
             .fillMaxSize()
+            .navigationBarsPadding()
             .imePadding()
             .onSizeChanged { size ->
                 // Let the composer takes at max half of the available height.

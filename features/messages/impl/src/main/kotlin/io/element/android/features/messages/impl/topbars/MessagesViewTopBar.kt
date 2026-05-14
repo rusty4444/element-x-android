@@ -10,11 +10,9 @@ package io.element.android.features.messages.impl.topbars
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -85,7 +83,7 @@ internal fun MessagesViewTopBar(
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
     barMode: RoomBarMode = RoomBarMode.DEFAULT,
-    menuActions: @Composable () -> Unit,
+    menuActions: @Composable RowScope.() -> Unit,
 ) {
     val hasTransparency = barMode != RoomBarMode.DEFAULT
     val bgModifier = if (hasTransparency) {
@@ -94,35 +92,33 @@ internal fun MessagesViewTopBar(
         Modifier
     }
     TopAppBar(
-        modifier = modifier.then(bgModifier),
+        modifier = modifier
+            .then(bgModifier)
+            .statusBarsPadding(),
         colors = ElementTopAppBarDefaults.elementTopAppBarColors(
             showBackgroundThrough = barMode == RoomBarMode.HAS_ROOM_BG,
             showGradient = barMode == RoomBarMode.GRADIENT,
         ),
         navigationIcon = {
-            BackButton(
-                modifier = Modifier.statusBarsPadding(),
-                onClick = onBackClick,
-            )
+            BackButton(onClick = onBackClick)
         },
         title = {
-            Column(modifier = Modifier.statusBarsPadding()) {
-                val roundedCornerShape = RoundedCornerShape(8.dp)
-                Row(
-                    modifier = Modifier
+            val roundedCornerShape = RoundedCornerShape(8.dp)
+            Row(
+                modifier = Modifier
                     .clip(roundedCornerShape)
                     .clickable { onRoomDetailsClick() },
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    val titleModifier = Modifier.weight(1f, fill = false)
-                    RoomAvatarAndNameRow(
-                        roomName = roomName,
-                        roomAvatar = roomAvatar,
-                        isTombstoned = isTombstoned,
-                        heroes = heroes,
-                        modifier = titleModifier
-                    )
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                val titleModifier = Modifier.weight(1f, fill = false)
+                RoomAvatarAndNameRow(
+                    roomName = roomName,
+                    roomAvatar = roomAvatar,
+                    isTombstoned = isTombstoned,
+                    heroes = heroes,
+                    modifier = titleModifier
+                )
 
                 val iconModifier = Modifier.size(16.dp)
 
@@ -162,16 +158,8 @@ internal fun MessagesViewTopBar(
                     )
                 }
             }
-            }
         },
-        actions = {
-            Box(
-                modifier = Modifier
-                    .statusBarsPadding()
-            ) {
-                menuActions()
-            }
-        },
+        actions = menuActions,
         windowInsets = WindowInsets(0.dp)
     )
 }

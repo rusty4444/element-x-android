@@ -308,7 +308,7 @@ fun MessagesView(
                             sharedHistoryIcon = state.topBarSharedHistoryIcon,
                             onBackClick = { hidingKeyboard { onBackClick() } },
                             onRoomDetailsClick = { hidingKeyboard { onRoomDetailsClick() } },
-                            barMode = if (state.roomBackgroundUri != null) RoomBarMode.HAS_ROOM_BG else RoomBarMode.DEFAULT,
+                            barMode = if (state.roomBackgroundUri != null) RoomBarMode.HAS_ROOM_BG else RoomBarMode.GRADIENT,
                             menuActions = {
                                 MessagesMenuActions(
                                     displayThreads = state.timelineState.timelineMode !is Timeline.Mode.Thread && state.threads.hasThreads,

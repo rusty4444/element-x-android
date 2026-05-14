@@ -38,6 +38,7 @@ class RoomListRoomSummaryFactory(
         roomSummary: RoomSummary,
         participantHeroes: List<AvatarData> = emptyList(),
         bridgeDetectionUserIds: List<String> = emptyList(),
+        skipBridgeDetection: Boolean = false,
     ): RoomListRoomSummary {
         val roomInfo = roomSummary.info
         val avatarData = roomInfo.getAvatarData(size = AvatarSize.RoomListItem)
@@ -45,9 +46,13 @@ class RoomListRoomSummaryFactory(
         // a prefix like @gmessages_, @meta_, @linkedin_, etc. (GH#23)
         // info.heroes (MatrixUser) are available for some rooms; bridgeDetectionUserIds are unfiltered
         // member IDs from the room list data source so bridge users are not lost when hidden from avatars.
-        val heroUserIds = roomInfo.heroes.map { it.userId.value } +
-            participantHeroes.map { it.id } +
-            bridgeDetectionUserIds
+        val heroUserIds = if (skipBridgeDetection) {
+            emptyList()
+        } else {
+            roomInfo.heroes.map { it.userId.value } +
+                participantHeroes.map { it.id } +
+                bridgeDetectionUserIds
+        }
         return RoomListRoomSummary(
             id = roomSummary.roomId.value,
             roomId = roomSummary.roomId,
@@ -61,7 +66,11 @@ class RoomListRoomSummaryFactory(
                 mode = DateFormatterMode.TimeOrDate,
                 useRelative = true,
             ),
-            bridgeBadge = RoomBridgeBadge.from(roomInfo.name, roomInfo.aliases, heroUserIds),
+            bridgeBadge = if (skipBridgeDetection) {
+                RoomBridgeBadge.DISABLED
+            } else {
+                RoomBridgeBadge.from(roomInfo.name, roomInfo.aliases, heroUserIds)
+            },
             latestEvent = computeLatestEvent(roomSummary.latestEvent, roomInfo.isDm),
             avatarData = avatarData,
             userDefinedNotificationMode = roomInfo.userDefinedNotificationMode,

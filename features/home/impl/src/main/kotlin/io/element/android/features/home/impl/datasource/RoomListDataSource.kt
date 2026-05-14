@@ -31,6 +31,7 @@ import io.element.android.libraries.matrix.api.roomlist.RoomSummary
 import io.element.android.libraries.matrix.api.roomlist.updateVisibleRange
 import io.element.android.libraries.matrix.ui.model.getAvatarData
 import io.element.android.libraries.matrix.ui.model.withoutBridgeBotHeroes
+import io.element.android.libraries.preferences.api.store.SessionPreferencesStore
 import io.element.android.services.analytics.api.AnalyticsService
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
@@ -41,6 +42,7 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
@@ -68,10 +70,12 @@ class RoomListDataSource(
     private val sessionCoroutineScope: CoroutineScope,
     private val dateTimeObserver: DateTimeObserver,
     private val analyticsService: AnalyticsService,
+    private val sessionPreferencesStore: SessionPreferencesStore,
 ) {
     init {
         observeNotificationSettings()
         observeDateTimeChanges()
+        observeShowRoomBadges()
     }
 
     private val roomList = roomListService.createRoomList(
@@ -80,6 +84,7 @@ class RoomListDataSource(
         coroutineScope = sessionCoroutineScope
     )
     private val _roomSummariesFlow = MutableSharedFlow<ImmutableList<RoomListRoomSummary>>(replay = 1)
+    private val _showRoomBadges = MutableStateFlow(true)
 
     private val lock = Mutex()
     private val diffCache = MutableListDiffCache<RoomListRoomSummary>()
@@ -154,6 +159,15 @@ class RoomListDataSource(
             .launchIn(sessionCoroutineScope)
     }
 
+    private fun observeShowRoomBadges() {
+        sessionPreferencesStore.isShowRoomBadgesEnabled()
+            .onEach { enabled ->
+                _showRoomBadges.value = enabled
+                rebuildAllRoomSummaries()
+            }
+            .launchIn(sessionCoroutineScope)
+    }
+
     private suspend fun replaceWith(roomSummaries: List<RoomSummary>) = withContext(coroutineDispatchers.computation) {
         lock.withLock {
             diffCacheUpdater.updateWith(roomSummaries)
@@ -218,12 +232,19 @@ class RoomListDataSource(
 
     private suspend fun buildAndCacheItem(roomSummaries: List<RoomSummary>, index: Int): RoomListRoomSummary? {
         val roomListSummary = roomSummaries.getOrNull(index)?.let { summary ->
-            val participantDetails = summary.participantDetails()
-            roomListRoomSummaryFactory.create(
-                roomSummary = summary,
-                participantHeroes = participantDetails.heroes,
-                bridgeDetectionUserIds = participantDetails.bridgeDetectionUserIds,
-            )
+            if (_showRoomBadges.value) {
+                val participantDetails = summary.participantDetails()
+                roomListRoomSummaryFactory.create(
+                    roomSummary = summary,
+                    participantHeroes = participantDetails.heroes,
+                    bridgeDetectionUserIds = participantDetails.bridgeDetectionUserIds,
+                )
+            } else {
+                roomListRoomSummaryFactory.create(
+                    roomSummary = summary,
+                    skipBridgeDetection = true,
+                )
+            }
         }
         diffCache[index] = roomListSummary
         return roomListSummary

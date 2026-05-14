@@ -267,6 +267,7 @@ private fun RoomBridgeBadgeView(
     bridgeBadge: RoomBridgeBadge,
     modifier: Modifier = Modifier,
 ) {
+    if (bridgeBadge == RoomBridgeBadge.DISABLED) return
     Box(
         modifier = modifier
             .height(18.dp)

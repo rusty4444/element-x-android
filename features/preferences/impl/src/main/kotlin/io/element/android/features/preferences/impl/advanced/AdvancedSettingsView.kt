@@ -123,6 +123,18 @@ fun AdvancedSettingsView(
             ),
             onClick = { state.eventSink(AdvancedSettingsEvents.SetShowEncryptionWarning(!state.isShowEncryptionWarningEnabled)) }
         )
+        ListItem(
+            headlineContent = {
+                Text(text = stringResource(id = R.string.screen_advanced_settings_show_room_badges))
+            },
+            supportingContent = {
+                Text(text = stringResource(id = R.string.screen_advanced_settings_show_room_badges_description))
+            },
+            trailingContent = ListItemContent.Switch(
+                checked = state.isShowRoomBadgesEnabled,
+            ),
+            onClick = { state.eventSink(AdvancedSettingsEvents.SetShowRoomBadges(!state.isShowRoomBadgesEnabled)) }
+        )
         val compressImages = state.mediaOptimizationState?.shouldCompressImages
 
         when (state.mediaOptimizationState) {

@@ -51,6 +51,9 @@ class AdvancedSettingsPresenter(
         val isShowEncryptionWarningEnabled by remember {
             sessionPreferencesStore.isShowEncryptionWarningEnabled()
         }.collectAsState(initial = true)
+        val isShowRoomBadgesEnabled by remember {
+            sessionPreferencesStore.isShowRoomBadgesEnabled()
+        }.collectAsState(initial = true)
         val isBlackThemeAllowed by remember {
             featureFlagService.isFeatureEnabledFlow(FeatureFlags.AllowBlackTheme)
         }.collectAsState(initial = false)
@@ -149,6 +152,9 @@ class AdvancedSettingsPresenter(
                 is AdvancedSettingsEvents.SetShowEncryptionWarning -> sessionCoroutineScope.launch {
                     sessionPreferencesStore.setShowEncryptionWarning(event.enabled)
                 }
+                is AdvancedSettingsEvents.SetShowRoomBadges -> sessionCoroutineScope.launch {
+                    sessionPreferencesStore.setShowRoomBadges(event.enabled)
+                }
             }
         }
 
@@ -156,6 +162,7 @@ class AdvancedSettingsPresenter(
             isDeveloperModeEnabled = isDeveloperModeEnabled,
             isSharePresenceEnabled = isSharePresenceEnabled,
             isShowEncryptionWarningEnabled = isShowEncryptionWarningEnabled,
+            isShowRoomBadgesEnabled = isShowRoomBadgesEnabled,
             mediaOptimizationState = mediaOptimizationState,
             theme = themeOption,
             availableThemeOptions = availableThemeOptions,

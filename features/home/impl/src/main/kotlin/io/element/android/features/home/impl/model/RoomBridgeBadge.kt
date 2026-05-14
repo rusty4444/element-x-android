@@ -23,6 +23,7 @@ enum class RoomBridgeBadge {
     INSTAGRAM,
     IMESSAGE,
     GENERIC_BRIDGE,
+    DISABLED,
     ;
 
     companion object {

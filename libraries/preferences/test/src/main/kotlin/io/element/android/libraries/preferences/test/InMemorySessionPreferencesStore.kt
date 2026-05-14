@@ -23,6 +23,7 @@ class InMemorySessionPreferencesStore(
     doesCompressMedia: Boolean = true,
     videoCompressionPreset: VideoCompressionPreset = VideoCompressionPreset.STANDARD,
     isShowEncryptionWarningEnabled: Boolean = true,
+    isShowRoomBadgesEnabled: Boolean = true,
 ) : SessionPreferencesStore {
     private val isSharePresenceEnabled = MutableStateFlow(isSharePresenceEnabled)
     private val isSendPublicReadReceiptsEnabled = MutableStateFlow(isSendPublicReadReceiptsEnabled)
@@ -33,6 +34,7 @@ class InMemorySessionPreferencesStore(
     private val doesCompressMedia = MutableStateFlow(doesCompressMedia)
     private val videoCompressionPreset = MutableStateFlow(videoCompressionPreset)
     private val isShowEncryptionWarningEnabled = MutableStateFlow(isShowEncryptionWarningEnabled)
+    private val isShowRoomBadgesEnabled = MutableStateFlow(isShowRoomBadgesEnabled)
     var clearCallCount = 0
         private set
 
@@ -91,6 +93,12 @@ class InMemorySessionPreferencesStore(
     }
 
     override fun isShowEncryptionWarningEnabled(): Flow<Boolean> = isShowEncryptionWarningEnabled
+
+    override suspend fun setShowRoomBadges(enabled: Boolean) {
+        isShowRoomBadgesEnabled.tryEmit(enabled)
+    }
+
+    override fun isShowRoomBadgesEnabled(): Flow<Boolean> = isShowRoomBadgesEnabled
 
     override suspend fun clear() {
         clearCallCount++

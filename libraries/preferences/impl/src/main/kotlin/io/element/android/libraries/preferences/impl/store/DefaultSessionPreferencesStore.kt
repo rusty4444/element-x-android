@@ -48,6 +48,7 @@ class DefaultSessionPreferencesStore(
     private val compressImages = booleanPreferencesKey("compressMedia")
     private val compressMediaPreset = stringPreferencesKey("compressMediaPreset")
     private val showEncryptionWarning = booleanPreferencesKey("showEncryptionWarning")
+    private val showRoomBadges = booleanPreferencesKey("showRoomBadges")
 
     private val dataStoreFile = storeFile(context, sessionId)
     private val store = PreferenceDataStoreFactory.create(
@@ -97,6 +98,9 @@ class DefaultSessionPreferencesStore(
 
     override suspend fun setShowEncryptionWarning(enabled: Boolean) = update(showEncryptionWarning, enabled)
     override fun isShowEncryptionWarningEnabled(): Flow<Boolean> = get(showEncryptionWarning) { true }
+
+    override suspend fun setShowRoomBadges(enabled: Boolean) = update(showRoomBadges, enabled)
+    override fun isShowRoomBadgesEnabled(): Flow<Boolean> = get(showRoomBadges) { true }
 
     override suspend fun clear() {
         dataStoreFile.safeDelete()

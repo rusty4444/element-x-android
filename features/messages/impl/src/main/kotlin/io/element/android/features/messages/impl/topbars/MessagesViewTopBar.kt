@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -84,7 +85,7 @@ internal fun MessagesViewTopBar(
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
     barMode: RoomBarMode = RoomBarMode.DEFAULT,
-    menuActions: @Composable RowScope.() -> Unit,
+    menuActions: @Composable () -> Unit,
 ) {
     val hasTransparency = barMode != RoomBarMode.DEFAULT
     val bgModifier = if (hasTransparency) {
@@ -164,7 +165,10 @@ internal fun MessagesViewTopBar(
             }
         },
         actions = {
-            Column(modifier = Modifier.statusBarsPadding()) {
+            Box(
+                modifier = Modifier
+                    .statusBarsPadding()
+            ) {
                 menuActions()
             }
         },

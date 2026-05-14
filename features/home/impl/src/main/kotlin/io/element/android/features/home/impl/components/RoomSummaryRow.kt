@@ -255,9 +255,7 @@ private fun NameAndTimestampRow(
                         ElementTheme.colors.roomListRoomMessageDate
                     },
                 )
-                if (bridgeBadge != RoomBridgeBadge.MATRIX) {
-                    RoomBridgeBadgeView(bridgeBadge = bridgeBadge)
-                }
+                RoomBridgeBadgeView(bridgeBadge = bridgeBadge)
             }
         }
     }

@@ -218,28 +218,64 @@ class RoomListDataSource(
 
     private suspend fun buildAndCacheItem(roomSummaries: List<RoomSummary>, index: Int): RoomListRoomSummary? {
         val roomListSummary = roomSummaries.getOrNull(index)?.let { summary ->
-            roomListRoomSummaryFactory.create(summary, summary.participantHeroes())
+            val participantDetails = summary.participantDetails()
+            roomListRoomSummaryFactory.create(
+                roomSummary = summary,
+                participantHeroes = participantDetails.heroes,
+                bridgeDetectionUserIds = participantDetails.bridgeDetectionUserIds,
+            )
         }
         diffCache[index] = roomListSummary
         return roomListSummary
     }
 
-    private suspend fun RoomSummary.participantHeroes(): List<AvatarData> {
+    private suspend fun RoomSummary.participantDetails(): ParticipantDetails {
         val roomInfo = info
-        if (roomInfo.avatarUrl != null || roomInfo.isDm || roomInfo.isSpace || roomInfo.activeMembersCount <= 1) {
-            return emptyList()
+        if (roomInfo.isSpace || roomInfo.activeMembersCount <= 1) {
+            return ParticipantDetails.Empty
         }
-        return matrixClient.getJoinedRoom(roomId)
-            ?.getMembers(limit = 5)
+
+        val joinedMembers = matrixClient.getJoinedRoom(roomId)
+            ?.getMembers(limit = roomInfo.activeMembersCount.coerceAtMost(BRIDGE_BADGE_MEMBER_SCAN_LIMIT).toInt())
             ?.getOrNull()
             .orEmpty()
-            .asSequence()
+
+        val activeMembers = joinedMembers
             .filter { member -> member.membership == RoomMembershipState.JOIN && member.userId != matrixClient.sessionId }
-            .withoutBridgeBotHeroes()
-            .sortedWith(compareByDescending { member -> member.avatarUrl != null })
-            .take(4)
-            .map { member -> member.getAvatarData(size = AvatarSize.RoomListItem) }
-            .toList()
+
+        val bridgeDetectionUserIds = activeMembers.map { member -> member.userId.value }
+
+        val heroes = if (roomInfo.avatarUrl != null || roomInfo.isDm) {
+            emptyList()
+        } else {
+            activeMembers.asSequence()
+                .withoutBridgeBotHeroes()
+                .sortedWith(compareByDescending { member -> member.avatarUrl != null })
+                .take(4)
+                .map { member -> member.getAvatarData(size = AvatarSize.RoomListItem) }
+                .toList()
+        }
+
+        return ParticipantDetails(
+            heroes = heroes,
+            bridgeDetectionUserIds = bridgeDetectionUserIds,
+        )
+    }
+
+    private data class ParticipantDetails(
+        val heroes: List<AvatarData>,
+        val bridgeDetectionUserIds: List<String>,
+    ) {
+        companion object {
+            val Empty = ParticipantDetails(
+                heroes = emptyList(),
+                bridgeDetectionUserIds = emptyList(),
+            )
+        }
+    }
+
+    private companion object {
+        const val BRIDGE_BADGE_MEMBER_SCAN_LIMIT = 100L
     }
 
     private suspend fun rebuildAllRoomSummaries() {

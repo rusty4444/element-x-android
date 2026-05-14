@@ -34,14 +34,20 @@ class RoomListRoomSummaryFactory(
     private val dateFormatter: DateFormatter,
     private val roomLatestEventFormatter: RoomLatestEventFormatter,
 ) {
-    fun create(roomSummary: RoomSummary, participantHeroes: List<AvatarData> = emptyList()): RoomListRoomSummary {
+    fun create(
+        roomSummary: RoomSummary,
+        participantHeroes: List<AvatarData> = emptyList(),
+        bridgeDetectionUserIds: List<String> = emptyList(),
+    ): RoomListRoomSummary {
         val roomInfo = roomSummary.info
         val avatarData = roomInfo.getAvatarData(size = AvatarSize.RoomListItem)
         // Extract hero user IDs for badge detection — bridges use usernames starting with
         // a prefix like @gmessages_, @meta_, @linkedin_, etc. (GH#23)
-        // info.heroes (MatrixUser) are available for DM rooms; participantHeroes (RoomMember→AvatarData) for groups
+        // info.heroes (MatrixUser) are available for some rooms; bridgeDetectionUserIds are unfiltered
+        // member IDs from the room list data source so bridge users are not lost when hidden from avatars.
         val heroUserIds = roomInfo.heroes.map { it.userId.value } +
-            participantHeroes.map { it.id }
+            participantHeroes.map { it.id } +
+            bridgeDetectionUserIds
         return RoomListRoomSummary(
             id = roomSummary.roomId.value,
             roomId = roomSummary.roomId,

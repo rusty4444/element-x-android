@@ -303,6 +303,7 @@ private val RoomBridgeBadge.logoText: String
         RoomBridgeBadge.INSTAGRAM -> "◎"
         RoomBridgeBadge.IMESSAGE -> "i"
         RoomBridgeBadge.GENERIC_BRIDGE -> "↔"
+        RoomBridgeBadge.DISABLED -> ""
     }
 
 private val RoomBridgeBadge.backgroundBrush: Brush
@@ -327,6 +328,7 @@ private val RoomBridgeBadge.backgroundBrush: Brush
         RoomBridgeBadge.INSTAGRAM -> Brush.linearGradient(listOf(Color(0xFFE4405F), Color(0xFFE4405F)))
         RoomBridgeBadge.IMESSAGE -> Brush.linearGradient(listOf(Color(0xFF34C759), Color(0xFF34C759)))
         RoomBridgeBadge.GENERIC_BRIDGE -> Brush.linearGradient(listOf(Color(0xFF6B7280), Color(0xFF6B7280)))
+        RoomBridgeBadge.DISABLED -> Brush.linearGradient(listOf(Color.Transparent, Color.Transparent))
     }
 
 private val RoomBridgeBadge.foregroundColor: Color

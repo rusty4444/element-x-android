@@ -244,20 +244,20 @@ private fun NameAndTimestampRow(
             overflow = TextOverflow.Ellipsis
         )
         if (timestamp != null) {
-            // Timestamp
-            Text(
-                text = timestamp,
-                style = ElementTheme.typography.fontBodySmMedium,
-                color = if (isHighlighted) {
-                    ElementTheme.colors.unreadIndicator
-                } else {
-                    ElementTheme.colors.roomListRoomMessageDate
-                },
-            )
-            // Badge positioned to the right of timestamp
-            if (bridgeBadge != RoomBridgeBadge.MATRIX) {
-                Spacer(modifier = Modifier.width(4.dp))
-                RoomBridgeBadgeView(bridgeBadge = bridgeBadge)
+            // Timestamp and badge grouped so spacing is only between name and (timestamp+badge), not between timestamp and badge
+            Row(horizontalArrangement = spacedBy(4.dp)) {
+                Text(
+                    text = timestamp,
+                    style = ElementTheme.typography.fontBodySmMedium,
+                    color = if (isHighlighted) {
+                        ElementTheme.colors.unreadIndicator
+                    } else {
+                        ElementTheme.colors.roomListRoomMessageDate
+                    },
+                )
+                if (bridgeBadge != RoomBridgeBadge.MATRIX) {
+                    RoomBridgeBadgeView(bridgeBadge = bridgeBadge)
+                }
             }
         }
     }

@@ -37,6 +37,11 @@ class RoomListRoomSummaryFactory(
     fun create(roomSummary: RoomSummary, participantHeroes: List<AvatarData> = emptyList()): RoomListRoomSummary {
         val roomInfo = roomSummary.info
         val avatarData = roomInfo.getAvatarData(size = AvatarSize.RoomListItem)
+        // Extract hero user IDs for badge detection — bridges use usernames starting with
+        // a prefix like @gmessages_, @meta_, @linkedin_, etc. (GH#23)
+        // info.heroes (MatrixUser) are available for DM rooms; participantHeroes (RoomMember→AvatarData) for groups
+        val heroUserIds = roomInfo.heroes.map { it.userId.value } +
+            participantHeroes.map { it.id }
         return RoomListRoomSummary(
             id = roomSummary.roomId.value,
             roomId = roomSummary.roomId,
@@ -50,7 +55,7 @@ class RoomListRoomSummaryFactory(
                 mode = DateFormatterMode.TimeOrDate,
                 useRelative = true,
             ),
-            bridgeBadge = RoomBridgeBadge.from(roomInfo.name, roomInfo.aliases),
+            bridgeBadge = RoomBridgeBadge.from(roomInfo.name, roomInfo.aliases, heroUserIds),
             latestEvent = computeLatestEvent(roomSummary.latestEvent, roomInfo.isDm),
             avatarData = avatarData,
             userDefinedNotificationMode = roomInfo.userDefinedNotificationMode,

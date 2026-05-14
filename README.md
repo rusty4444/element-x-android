@@ -66,7 +66,7 @@ An optional hideable encryption warning badge appears in the composer area, show
 
 ## Latest fork release
 
-The latest fork APK is [v0.8.5](https://github.com/rusty4444/element-x-android/releases/tag/v0.8.5). This release includes edge-to-edge top bars, encryption status badge, bridge room badges, schedule send, room backgrounds, and all previous QoL features.
+The latest fork APK is [v0.8.7](https://github.com/rusty4444/element-x-android/releases/tag/v0.8.7). This release includes bridge room badges detected by participant usernames (not just room names), tighter badge-to-timestamp spacing, consistent gradient top bars for all rooms, fixed compose field positioning above the system home indicator, edge-to-edge top bars, encryption status badge, schedule send, room backgrounds, and all previous QoL features.
 
 [<img src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" alt="Get it on Google Play" height="80">](https://play.google.com/store/apps/details?id=io.element.android.x)[<img src="https://fdroid.gitlab.io/artwork/badge/get-it-on.png" alt="Get it on F-Droid" height="80">](https://f-droid.org/packages/io.element.android.x)
 

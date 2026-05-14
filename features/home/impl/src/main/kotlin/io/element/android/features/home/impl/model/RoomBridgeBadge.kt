@@ -26,12 +26,22 @@ enum class RoomBridgeBadge {
     ;
 
     companion object {
-        fun from(roomName: String?, aliases: List<RoomAlias>): RoomBridgeBadge {
+        fun from(
+            roomName: String?,
+            aliases: List<RoomAlias>,
+            heroUserIds: List<String> = emptyList(),
+        ): RoomBridgeBadge {
             val haystack = buildString {
                 append(roomName.orEmpty())
                 aliases.forEach { alias ->
                     append(' ')
                     append(alias.value)
+                }
+                // Bridge usernames start with the bridge platform prefix
+                // (e.g. @gmessages_, @meta_, @linkedin_, @whatsapp_, @discord_)
+                heroUserIds.forEach { userId ->
+                    append(' ')
+                    append(userId.lowercase())
                 }
             }.lowercase()
 

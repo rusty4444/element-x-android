@@ -184,7 +184,6 @@ fun MessagesView(
     var maxComposerHeightPx by remember { mutableIntStateOf(120) }
     var showBackgroundPicker by remember { mutableStateOf(false) }
     var showScheduleSendPicker by remember { mutableStateOf(false) }
-    var showManageScheduled by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument(),
@@ -303,14 +302,6 @@ fun MessagesView(
                                     onJoinCallClick = onJoinCallClick,
                                     onThreadsListClick = onThreadsListClick,
                                     onSetRoomBackgroundClick = { showBackgroundPicker = true },
-                                    onScheduleSendClick = {
-                                        if (state.composerState.scheduledMessageInfos.isNotEmpty()) {
-                                            showManageScheduled = true
-                                        } else {
-                                            showScheduleSendPicker = true
-                                        }
-                                    },
-                                    onManageScheduledClick = { showManageScheduled = true },
                                 )
                             }
                         )
@@ -389,6 +380,7 @@ fun MessagesView(
                 onRoomSuccessorClick = { roomId ->
                     state.timelineState.eventSink(TimelineEvent.NavigateToPredecessorOrSuccessorRoom(roomId = roomId))
                 },
+                onScheduleMessage = { showScheduleSendPicker = true },
             )
         },
         sheetDragHandle = @Composable { toggleAction ->
@@ -524,22 +516,6 @@ fun MessagesView(
             },
         )
     }
-
-    // Manage scheduled sends dialog
-    if (showManageScheduled) {
-        ManageScheduledSendsDialog(
-            scheduledMessages = state.composerState.scheduledMessageInfos,
-            onCancel = { info ->
-                state.composerState.eventSink(MessageComposerEvent.CancelScheduledMessage(info))
-                showManageScheduled = false
-            },
-            onForceSend = { info ->
-                state.composerState.eventSink(MessageComposerEvent.ForceSendScheduledMessage(info))
-                showManageScheduled = false
-            },
-            onDismiss = { showManageScheduled = false },
-        )
-    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -671,115 +647,12 @@ private fun ScheduleSendPicker(
 }
 
 @Composable
-private fun ManageScheduledSendsDialog(
-    scheduledMessages: ImmutableList<ScheduledMessageInfo>,
-    onCancel: (ScheduledMessageInfo) -> Unit,
-    onForceSend: (ScheduledMessageInfo) -> Unit,
-    onDismiss: () -> Unit,
-) {
-    val formatter = remember { SimpleDateFormat("EEE d MMM, HH:mm", Locale.getDefault()) }
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            Text(text = stringResource(R.string.schedule_send_manage_title))
-        },
-        text = {
-            if (scheduledMessages.isEmpty()) {
-                Text(
-                    text = stringResource(R.string.schedule_send_no_scheduled),
-                    color = ElementTheme.colors.textSecondary,
-                )
-            } else {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(max = 300.dp)
-                        .verticalScroll(rememberScrollState()),
-                ) {
-                    scheduledMessages.forEach { info ->
-                        ScheduledMessageRow(
-                            info = info,
-                            timeText = formatter.format(info.scheduledTimeMillis),
-                            onCancel = { onCancel(info) },
-                            onForceSend = { onForceSend(info) },
-                        )
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(CommonStrings.action_ok))
-            }
-        },
-    )
-}
-
-@Composable
-private fun ScheduledMessageRow(
-    info: ScheduledMessageInfo,
-    timeText: String,
-    onCancel: () -> Unit,
-    onForceSend: () -> Unit,
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp),
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = timeText,
-                style = ElementTheme.typography.fontBodySmMedium,
-                color = ElementTheme.colors.textActionAccent,
-            )
-            if (info.isPast()) {
-                Text(
-                    text = "Past",
-                    style = ElementTheme.typography.fontBodyXsRegular,
-                    color = ElementTheme.colors.textCriticalPrimary,
-                )
-            }
-        }
-        Text(
-            text = info.formattedPreview(),
-            style = ElementTheme.typography.fontBodyMdRegular,
-            color = ElementTheme.colors.textSecondary,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.padding(vertical = 4.dp),
-        )
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.End,
-        ) {
-            TextButton(onClick = onCancel, enabled = !info.isPast()) {
-                Text(
-                    text = stringResource(R.string.schedule_send_cancel_action),
-                    color = ElementTheme.colors.textCriticalPrimary,
-                )
-            }
-            Spacer(modifier = Modifier.width(8.dp))
-            TextButton(onClick = onForceSend, enabled = info.isPast()) {
-                Text(text = stringResource(R.string.action_send))
-            }
-        }
-    }
-}
-
-@Composable
 internal fun MessagesMenuActions(
     displayThreads: Boolean,
     roomCallState: RoomCallState,
     onJoinCallClick: (isAudioCall: Boolean) -> Unit,
     onThreadsListClick: () -> Unit,
     onSetRoomBackgroundClick: () -> Unit,
-    onManageScheduledClick: () -> Unit = {},
-    onScheduleSendClick: () -> Unit,
 ) {
     if (displayThreads) {
         Icon(
@@ -798,12 +671,6 @@ internal fun MessagesMenuActions(
         modifier = Modifier.clickable(enabled = true, onClick = onSetRoomBackgroundClick),
         imageVector = CompoundIcons.Image(),
         contentDescription = stringResource(R.string.screen_room_set_background_action),
-    )
-    Spacer(Modifier.width(8.dp))
-    Icon(
-        modifier = Modifier.clickable(enabled = true, onClick = onScheduleSendClick),
-        imageVector = CompoundIcons.Time(),
-        contentDescription = stringResource(R.string.action_schedule_send),
     )
 }
 
@@ -926,6 +793,7 @@ private fun MessagesViewComposerBottomSheetContents(
     state: MessagesState,
     onRoomSuccessorClick: (RoomId) -> Unit,
     onLinkClick: (String, Boolean) -> Unit,
+    onScheduleMessage: () -> Unit,
 ) {
     when {
         state.successorRoom != null -> {
@@ -950,6 +818,7 @@ private fun MessagesViewComposerBottomSheetContents(
                     MessageComposerView(
                         state = state.composerState,
                         voiceMessageState = state.voiceMessageComposerState,
+                        onScheduleMessage = onScheduleMessage,
                         modifier = Modifier.fillMaxWidth(),
                     )
                 }

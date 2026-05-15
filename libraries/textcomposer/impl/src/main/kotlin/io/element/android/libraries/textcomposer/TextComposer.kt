@@ -32,6 +32,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -119,6 +121,7 @@ fun TextComposer(
     composerMode: MessageComposerMode,
     onRequestFocus: () -> Unit,
     onSendMessage: () -> Unit,
+    onScheduleMessage: () -> Unit = {},
     onResetComposerMode: () -> Unit,
     onAddAttachment: () -> Unit,
     onDismissTextFormatting: () -> Unit,
@@ -265,6 +268,7 @@ fun TextComposer(
         composerMode.isEditing,
         voiceMessageState.endButtonKey(),
         canSendTextMessage,
+        onScheduleMessage,
     ) {
         when {
             !canSendTextMessage ->
@@ -335,6 +339,7 @@ fun TextComposer(
                 endButtonClick = {
                     onSendMessage()
                 },
+                endButtonLongClick = onScheduleMessage,
                 endButtonContent = @Composable {
                     SendButtonIcon(
                         canSendMessage = true,
@@ -468,9 +473,11 @@ fun TextComposer(
 private data class EndButtonParams(
     val endButtonContentDescriptionResId: Int,
     val endButtonClick: () -> Unit,
+    val endButtonLongClick: (() -> Unit)? = null,
     val endButtonContent: @Composable () -> Unit,
 )
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun StandardLayout(
     composerMode: MessageComposerMode,
@@ -563,17 +570,35 @@ private fun StandardLayout(
             }
             // To avoid loosing keyboard focus, the IconButton has to be defined here and has to be always enabled.
             val endButtonContentDescription = stringResource(endButtonParams.endButtonContentDescriptionResId)
-            IconButton(
+            val longClickHandler = endButtonParams.endButtonLongClick
+            val hapticFeedback = LocalHapticFeedback.current
+            val clickModifier = if (longClickHandler != null) {
+                Modifier.combinedClickable(
+                    onClick = endButtonParams.endButtonClick,
+                    onLongClick = {
+                        hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                        longClickHandler()
+                    },
+                )
+            } else {
+                Modifier.clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = endButtonParams.endButtonClick,
+                )
+            }
+            Box(
                 modifier = Modifier
                     .padding(bottom = 5.dp, top = 5.dp, end = 6.dp, start = 6.dp)
                     .size(48.dp)
                     .clearAndSetSemantics {
                         contentDescription = endButtonContentDescription
                         onClick(null, null)
-                    },
-                onClick = endButtonParams.endButtonClick,
-                content = endButtonParams.endButtonContent,
-            )
+                    }
+                    .then(clickModifier),
+            ) {
+                endButtonParams.endButtonContent()
+            }
         }
     }
 }

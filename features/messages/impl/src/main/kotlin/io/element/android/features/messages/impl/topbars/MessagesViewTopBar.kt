@@ -231,7 +231,6 @@ internal fun MessagesViewTopBarPreview() = ElementPreview {
                 onJoinCallClick = {},
                 onThreadsListClick = {},
                 onSetRoomBackgroundClick = {},
-                onScheduleSendClick = {},
             )
         }
     )

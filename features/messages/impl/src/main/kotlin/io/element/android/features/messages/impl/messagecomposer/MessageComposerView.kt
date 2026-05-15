@@ -10,7 +10,7 @@ package io.element.android.features.messages.impl.messagecomposer
 
 import android.net.Uri
 import androidx.compose.foundation.background
-import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,6 +19,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -30,8 +32,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.RoundRect
-import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalView
@@ -45,16 +47,13 @@ import io.element.android.features.messages.api.timeline.voicemessages.composer.
 import io.element.android.features.messages.api.timeline.voicemessages.composer.VoiceMessageComposerState
 import io.element.android.features.messages.api.timeline.voicemessages.composer.VoiceMessageComposerStateProvider
 import io.element.android.features.messages.api.timeline.voicemessages.composer.aVoiceMessageComposerState
-import io.element.android.features.messages.impl.R
 import io.element.android.features.messages.impl.scheduledsend.ScheduledMessageInfo
 import io.element.android.libraries.designsystem.components.async.AsyncActionView
 import io.element.android.libraries.designsystem.preview.ElementPreview
 import io.element.android.libraries.designsystem.preview.PreviewsDayNight
 import io.element.android.libraries.designsystem.theme.components.Icon
 import io.element.android.libraries.designsystem.theme.components.IconButton
-import io.element.android.libraries.designsystem.theme.components.IconSource
 import io.element.android.libraries.designsystem.theme.components.Text
-import io.element.android.libraries.designsystem.theme.components.TextButton
 import io.element.android.libraries.textcomposer.TextComposer
 import io.element.android.libraries.textcomposer.model.Suggestion
 import io.element.android.libraries.textcomposer.model.VoiceMessagePlayerEvent
@@ -82,7 +81,7 @@ internal fun ScheduledMessageBanner(
         verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
         scheduledMessages.forEach { info ->
-            ScheduledMessageBubble(
+            SingleLineScheduledMessageBubble(
                 info = info,
                 timeText = timeFormatter.format(Date(info.scheduledTimeMillis)),
                 onCancel = { onCancel(info) },
@@ -93,105 +92,68 @@ internal fun ScheduledMessageBanner(
 }
 
 @Composable
-private fun ScheduledMessageBubble(
+private fun SingleLineScheduledMessageBubble(
     info: ScheduledMessageInfo,
     timeText: String,
     onCancel: () -> Unit,
     onForceSend: () -> Unit,
 ) {
-    val dashPathEffect = remember { PathEffect.dashPathEffect(floatArrayOf(8f, 6f), 0f) }
     val accentColor = ElementTheme.colors.textActionAccent
-    val criticalColor = ElementTheme.colors.textCriticalPrimary
-    Box(
+    Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .background(ElementTheme.colors.bgSubtleSecondary),
+            .clip(RoundedCornerShape(10.dp))
+            .background(ElementTheme.colors.bgSubtleSecondary)
+            .clickable { onForceSend() }
+            .padding(horizontal = 8.dp, vertical = 0.dp)
+            .heightIn(min = 32.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        // Draw dashed border via Canvas overlay
-        Box(modifier = Modifier.fillMaxSize()) {
-            Canvas(modifier = Modifier.fillMaxSize()) {
-                val strokeWidth = 3f
-                val path = Path().apply {
-                    addRoundRect(
-                        RoundRect(
-                            left = 0f,
-                            top = 0f,
-                            right = size.width,
-                            bottom = size.height,
-                            radiusX = 12.dp.toPx(),
-                            radiusY = 12.dp.toPx(),
-                        )
-                    )
-                }
-                drawPath(
-                    path = path,
-                    color = accentColor,
-                    style = Stroke(
-                        width = strokeWidth,
-                        pathEffect = dashPathEffect,
-                    ),
-                )
-            }
-        }
-        Column(
+        Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(8.dp),
-        ) {
-            // Scheduled time label
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Icon(
-                    imageVector = CompoundIcons.Time(),
-                    contentDescription = null,
-                    modifier = Modifier.size(14.dp),
-                    tint = ElementTheme.colors.textActionAccent,
-                )
-                Spacer(Modifier.width(4.dp))
-                Text(
-                    text = timeText,
-                    style = ElementTheme.typography.fontBodySmMedium,
-                    color = ElementTheme.colors.textActionAccent,
-                )
-                Spacer(Modifier.weight(1f))
-            }
-            // Message preview — single line with ellipsis to keep the banner compact
-            Text(
-                text = info.formattedPreview(),
-                style = ElementTheme.typography.fontBodyMdRegular,
-                color = ElementTheme.colors.textPrimary,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.padding(vertical = 2.dp),
-            )
-            // Action buttons
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                TextButton(
-                    text = stringResource(R.string.action_send),
-                    onClick = onForceSend,
-                    leadingIcon = IconSource.Vector(CompoundIcons.SendSolid()),
-                    size = io.element.android.libraries.designsystem.theme.components.ButtonSize.Medium,
-                )
-                Spacer(Modifier.width(8.dp))
-                IconButton(
-                    onClick = onCancel,
-                    modifier = Modifier.size(32.dp),
-                ) {
-                    Icon(
-                        imageVector = CompoundIcons.Close(),
-                        contentDescription = stringResource(CommonStrings.action_cancel),
-                        modifier = Modifier.size(18.dp),
-                        tint = ElementTheme.colors.textCriticalPrimary,
+                .width(3.dp)
+                .fillMaxHeight()
+                .drawBehind {
+                    val dashPathEffect = PathEffect.dashPathEffect(floatArrayOf(6f, 5f), 0f)
+                    drawRoundRect(
+                        color = accentColor,
+                        style = Stroke(width = 2f, pathEffect = dashPathEffect),
+                        cornerRadius = CornerRadius(4f),
                     )
                 }
-            }
+        )
+        Spacer(Modifier.width(6.dp))
+        Icon(
+            imageVector = CompoundIcons.Time(),
+            contentDescription = null,
+            modifier = Modifier.size(14.dp),
+            tint = accentColor,
+        )
+        Spacer(Modifier.width(4.dp))
+        Text(
+            text = timeText,
+            style = ElementTheme.typography.fontBodySmMedium,
+            color = accentColor,
+        )
+        Spacer(Modifier.width(6.dp))
+        Text(
+            text = info.formattedPreview(),
+            style = ElementTheme.typography.fontBodyMdRegular,
+            color = ElementTheme.colors.textPrimary,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f),
+        )
+        IconButton(
+            onClick = onCancel,
+            modifier = Modifier.size(28.dp),
+        ) {
+            Icon(
+                imageVector = CompoundIcons.Close(),
+                contentDescription = stringResource(CommonStrings.action_cancel),
+                modifier = Modifier.size(16.dp),
+                tint = ElementTheme.colors.textSecondary,
+            )
         }
     }
 }

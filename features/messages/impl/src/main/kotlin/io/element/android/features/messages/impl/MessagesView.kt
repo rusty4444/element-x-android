@@ -34,16 +34,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDialog
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Surface
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TimePicker
-import androidx.compose.material3.rememberDatePickerState
-import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -88,7 +79,6 @@ import io.element.android.features.messages.impl.messagecomposer.suggestions.Sug
 import io.element.android.features.messages.impl.pinned.banner.PinnedMessagesBannerState
 import io.element.android.features.messages.impl.pinned.banner.PinnedMessagesBannerView
 import io.element.android.features.messages.impl.pinned.banner.PinnedMessagesBannerViewDefaults
-import io.element.android.features.messages.impl.scheduledsend.ScheduledMessageInfo
 import io.element.android.features.messages.impl.timeline.FOCUS_ON_PINNED_EVENT_DEBOUNCE_DURATION_IN_MILLIS
 import io.element.android.features.messages.impl.timeline.TimelineEvent
 import io.element.android.features.messages.impl.timeline.TimelineView
@@ -183,7 +173,6 @@ fun MessagesView(
 
     var maxComposerHeightPx by remember { mutableIntStateOf(120) }
     var showBackgroundPicker by remember { mutableStateOf(false) }
-    var showScheduleSendPicker by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument(),
@@ -380,7 +369,6 @@ fun MessagesView(
                 onRoomSuccessorClick = { roomId ->
                     state.timelineState.eventSink(TimelineEvent.NavigateToPredecessorOrSuccessorRoom(roomId = roomId))
                 },
-                onScheduleMessage = { showScheduleSendPicker = true },
             )
         },
         sheetDragHandle = @Composable { toggleAction ->
@@ -500,149 +488,6 @@ fun MessagesView(
             },
             onDismiss = { showBackgroundPicker = false },
         )
-    }
-
-    // Schedule send date/time picker dialog
-    if (showScheduleSendPicker) {
-        ScheduleSendPicker(
-            onDismiss = { showScheduleSendPicker = false },
-            onSchedule = { scheduledTimeMillis ->
-                state.composerState.eventSink(MessageComposerEvent.ScheduleSend(scheduledTimeMillis))
-                showScheduleSendPicker = false
-            },
-            messagePreview = when (val editorState = state.composerState.textEditorState) {
-                is TextEditorState.Markdown -> editorState.state.text.value().toString()
-                is TextEditorState.Rich -> editorState.richTextEditorState.messageMarkdown
-            },
-        )
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun ScheduleSendPicker(
-    onDismiss: () -> Unit,
-    onSchedule: (Long) -> Unit,
-    messagePreview: String,
-) {
-    var selectedDate by remember { mutableStateOf(Calendar.getInstance()) }
-    val datePickerState = rememberDatePickerState(
-        initialSelectedDateMillis = selectedDate.timeInMillis
-    )
-    var showDatePicker by remember { mutableStateOf(true) }
-    var showTimePicker by remember { mutableStateOf(false) }
-
-    if (showDatePicker) {
-        DatePickerDialog(
-            onDismissRequest = onDismiss,
-            confirmButton = {
-                TextButton(onClick = { showTimePicker = true }) {
-                    Text(stringResource(R.string.schedule_send_confirm_action))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = onDismiss) {
-                    Text(stringResource(CommonStrings.action_cancel))
-                }
-            },
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                Text(
-                    text = stringResource(R.string.schedule_send_preview_label),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = ElementTheme.colors.textSecondary,
-                )
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(
-                            ElementTheme.colors.bgSubtleSecondary,
-                            MaterialTheme.shapes.small
-                        )
-                        .padding(12.dp),
-                    shape = MaterialTheme.shapes.small,
-                    color = ElementTheme.colors.bgSubtleSecondary,
-                ) {
-                    Text(
-                        text = messagePreview.ifBlank { stringResource(R.string.schedule_send_empty_message) },
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = if (messagePreview.isBlank()) ElementTheme.colors.textSecondary else ElementTheme.colors.textPrimary,
-                        maxLines = 3,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
-                DatePicker(state = datePickerState)
-            }
-        }
-    }
-
-    // Fixed: TimePickerDialog with correct API signature
-    if (showTimePicker) {
-        val timePickerState = rememberTimePickerState(
-            initialHour = selectedDate.get(Calendar.HOUR_OF_DAY),
-            initialMinute = selectedDate.get(Calendar.MINUTE),
-            is24Hour = true,
-        )
-        androidx.compose.material3.DatePickerDialog(
-            onDismissRequest = onDismiss,
-            confirmButton = {
-                OutlinedButton(onClick = {
-                    val calendar = Calendar.getInstance().apply {
-                        timeInMillis = datePickerState.selectedDateMillis ?: System.currentTimeMillis()
-                        set(Calendar.HOUR_OF_DAY, timePickerState.hour)
-                        set(Calendar.MINUTE, timePickerState.minute)
-                        set(Calendar.SECOND, 0)
-                        set(Calendar.MILLISECOND, 0)
-                    }
-                    onSchedule(calendar.timeInMillis)
-                }) {
-                    Text(stringResource(R.string.schedule_send_confirm_action))
-                }
-            },
-            dismissButton = {
-                OutlinedButton(onClick = { showTimePicker = false }) {
-                    Text(stringResource(CommonStrings.action_cancel))
-                }
-            },
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                Text(
-                    text = stringResource(R.string.schedule_send_preview_label),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = ElementTheme.colors.textSecondary,
-                )
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(
-                            ElementTheme.colors.bgSubtleSecondary,
-                            MaterialTheme.shapes.small
-                        )
-                        .padding(12.dp),
-                    shape = MaterialTheme.shapes.small,
-                    color = ElementTheme.colors.bgSubtleSecondary,
-                ) {
-                    Text(
-                        text = messagePreview.ifBlank { stringResource(R.string.schedule_send_empty_message) },
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = if (messagePreview.isBlank()) ElementTheme.colors.textSecondary else ElementTheme.colors.textPrimary,
-                        maxLines = 3,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
-                TimePicker(state = timePickerState)
-            }
-        }
     }
 }
 
@@ -793,7 +638,6 @@ private fun MessagesViewComposerBottomSheetContents(
     state: MessagesState,
     onRoomSuccessorClick: (RoomId) -> Unit,
     onLinkClick: (String, Boolean) -> Unit,
-    onScheduleMessage: () -> Unit,
 ) {
     when {
         state.successorRoom != null -> {
@@ -818,7 +662,6 @@ private fun MessagesViewComposerBottomSheetContents(
                     MessageComposerView(
                         state = state.composerState,
                         voiceMessageState = state.voiceMessageComposerState,
-                        onScheduleMessage = onScheduleMessage,
                         modifier = Modifier.fillMaxWidth(),
                     )
                 }

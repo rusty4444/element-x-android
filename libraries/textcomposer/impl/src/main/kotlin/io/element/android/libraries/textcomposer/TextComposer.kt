@@ -121,7 +121,6 @@ fun TextComposer(
     composerMode: MessageComposerMode,
     onRequestFocus: () -> Unit,
     onSendMessage: () -> Unit,
-    onScheduleMessage: () -> Unit = {},
     onResetComposerMode: () -> Unit,
     onAddAttachment: () -> Unit,
     onDismissTextFormatting: () -> Unit,
@@ -268,7 +267,6 @@ fun TextComposer(
         composerMode.isEditing,
         voiceMessageState.endButtonKey(),
         canSendTextMessage,
-        onScheduleMessage,
     ) {
         when {
             !canSendTextMessage ->
@@ -339,7 +337,6 @@ fun TextComposer(
                 endButtonClick = {
                     onSendMessage()
                 },
-                endButtonLongClick = onScheduleMessage,
                 endButtonContent = @Composable {
                     SendButtonIcon(
                         canSendMessage = true,

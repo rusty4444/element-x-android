@@ -9,161 +9,34 @@
 package io.element.android.features.messages.impl.messagecomposer
 
 import android.net.Uri
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.graphics.PathEffect
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalView
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
-import io.element.android.compound.theme.ElementTheme
-import io.element.android.compound.tokens.generated.CompoundIcons
 import io.element.android.features.messages.api.timeline.voicemessages.composer.VoiceMessageComposerEvent
 import io.element.android.features.messages.api.timeline.voicemessages.composer.VoiceMessageComposerState
 import io.element.android.features.messages.api.timeline.voicemessages.composer.VoiceMessageComposerStateProvider
 import io.element.android.features.messages.api.timeline.voicemessages.composer.aVoiceMessageComposerState
-import io.element.android.features.messages.impl.scheduledsend.ScheduledMessageInfo
 import io.element.android.libraries.designsystem.components.async.AsyncActionView
 import io.element.android.libraries.designsystem.preview.ElementPreview
 import io.element.android.libraries.designsystem.preview.PreviewsDayNight
-import io.element.android.libraries.designsystem.theme.components.Icon
-import io.element.android.libraries.designsystem.theme.components.IconButton
-import io.element.android.libraries.designsystem.theme.components.Text
 import io.element.android.libraries.textcomposer.TextComposer
 import io.element.android.libraries.textcomposer.model.Suggestion
 import io.element.android.libraries.textcomposer.model.VoiceMessagePlayerEvent
 import io.element.android.libraries.textcomposer.model.VoiceMessageRecorderEvent
-import io.element.android.libraries.ui.strings.CommonStrings
-import kotlinx.collections.immutable.ImmutableList
-import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
-
-@Composable
-internal fun ScheduledMessageBanner(
-    scheduledMessages: ImmutableList<ScheduledMessageInfo>,
-    onCancel: (ScheduledMessageInfo) -> Unit,
-    onForceSend: (ScheduledMessageInfo) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val timeFormatter = remember { SimpleDateFormat("EEE d MMM HH:mm", Locale.getDefault()) }
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 2.dp),
-        verticalArrangement = Arrangement.spacedBy(2.dp),
-    ) {
-        scheduledMessages.forEach { info ->
-            SingleLineScheduledMessageBubble(
-                info = info,
-                timeText = timeFormatter.format(Date(info.scheduledTimeMillis)),
-                onCancel = { onCancel(info) },
-                onForceSend = { onForceSend(info) },
-            )
-        }
-    }
-}
-
-@Composable
-private fun SingleLineScheduledMessageBubble(
-    info: ScheduledMessageInfo,
-    timeText: String,
-    onCancel: () -> Unit,
-    onForceSend: () -> Unit,
-) {
-    val accentColor = ElementTheme.colors.textActionAccent
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(10.dp))
-            .background(ElementTheme.colors.bgSubtleSecondary)
-            .clickable { onForceSend() }
-            .padding(horizontal = 8.dp, vertical = 0.dp)
-            .heightIn(min = 32.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Box(
-            modifier = Modifier
-                .width(3.dp)
-                .fillMaxHeight()
-                .drawBehind {
-                    val dashPathEffect = PathEffect.dashPathEffect(floatArrayOf(6f, 5f), 0f)
-                    drawRoundRect(
-                        color = accentColor,
-                        style = Stroke(width = 2f, pathEffect = dashPathEffect),
-                        cornerRadius = CornerRadius(4f),
-                    )
-                }
-        )
-        Spacer(Modifier.width(6.dp))
-        Icon(
-            imageVector = CompoundIcons.Time(),
-            contentDescription = null,
-            modifier = Modifier.size(14.dp),
-            tint = accentColor,
-        )
-        Spacer(Modifier.width(4.dp))
-        Text(
-            text = timeText,
-            style = ElementTheme.typography.fontBodySmMedium,
-            color = accentColor,
-        )
-        Spacer(Modifier.width(6.dp))
-        Text(
-            text = info.formattedPreview(),
-            style = ElementTheme.typography.fontBodyMdRegular,
-            color = ElementTheme.colors.textPrimary,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(1f),
-        )
-        IconButton(
-            onClick = onCancel,
-            modifier = Modifier.size(28.dp),
-        ) {
-            Icon(
-                imageVector = CompoundIcons.Close(),
-                contentDescription = stringResource(CommonStrings.action_cancel),
-                modifier = Modifier.size(16.dp),
-                tint = ElementTheme.colors.textSecondary,
-            )
-        }
-    }
-}
 
 @PreviewsDayNight
 @Composable
 internal fun MessageComposerView(
     state: MessageComposerState,
     voiceMessageState: VoiceMessageComposerState,
-    onScheduleMessage: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val view = LocalView.current
@@ -225,22 +98,12 @@ internal fun MessageComposerView(
     }
 
     Column(modifier = modifier) {
-        // Scheduled message banner
-        if (state.scheduledMessageInfos.isNotEmpty()) {
-            ScheduledMessageBanner(
-                scheduledMessages = state.scheduledMessageInfos,
-                onCancel = { info -> state.eventSink(MessageComposerEvent.CancelScheduledMessage(info)) },
-                onForceSend = { info -> state.eventSink(MessageComposerEvent.ForceSendScheduledMessage(info)) },
-            )
-        }
-
         TextComposer(
             modifier = Modifier.height(IntrinsicSize.Min),
             state = state.textEditorState,
             voiceMessageState = voiceMessageState.voiceMessageState,
             onRequestFocus = ::onRequestFocus,
             onSendMessage = ::sendMessage,
-            onScheduleMessage = onScheduleMessage,
             composerMode = state.mode,
             showTextFormatting = state.showTextFormatting,
             onResetComposerMode = ::onCloseSpecialMode,

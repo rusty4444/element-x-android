@@ -40,9 +40,6 @@ import io.element.android.features.messages.impl.attachments.preview.error.sendA
 import io.element.android.features.messages.impl.draft.ComposerDraftService
 import io.element.android.features.messages.impl.messagecomposer.suggestions.RoomAliasSuggestionsDataSource
 import io.element.android.features.messages.impl.messagecomposer.suggestions.SuggestionsProcessor
-import io.element.android.features.messages.impl.scheduledsend.ScheduledMessageInfo
-import io.element.android.features.messages.impl.scheduledsend.ScheduledSendManager
-import io.element.android.features.messages.impl.scheduledsend.ScheduledSendRequestBuilder
 import io.element.android.features.messages.impl.timeline.TimelineController
 import io.element.android.features.messages.impl.utils.TextPillificationHelper
 import io.element.android.libraries.architecture.AsyncAction
@@ -87,8 +84,6 @@ import io.element.android.libraries.textcomposer.model.Suggestion
 import io.element.android.libraries.textcomposer.model.TextEditorState
 import io.element.android.libraries.textcomposer.model.rememberMarkdownTextEditorState
 import io.element.android.libraries.ui.strings.CommonStrings
-import io.element.android.libraries.workmanager.api.WorkManagerRequestType
-import io.element.android.libraries.workmanager.api.WorkManagerScheduler
 import io.element.android.services.analytics.api.AnalyticsService
 import io.element.android.services.analyticsproviders.api.trackers.captureInteraction
 import io.element.android.wysiwyg.compose.RichTextEditorState
@@ -140,9 +135,6 @@ class MessageComposerPresenter(
     private val mediaOptimizationConfigProvider: MediaOptimizationConfigProvider,
     private val notificationConversationService: NotificationConversationService,
     private val slashCommandService: SlashCommandService,
-    private val workManagerScheduler: WorkManagerScheduler,
-    private val scheduledSendRequestBuilderFactory: ScheduledSendRequestBuilder.Factory,
-    private val scheduledSendManager: ScheduledSendManager,
 ) : Presenter<MessageComposerState> {
     @AssistedFactory
     interface Factory {
@@ -211,10 +203,6 @@ class MessageComposerPresenter(
             sessionPreferencesStore.isShowEncryptionWarningEnabled()
         }.collectAsState(initial = true)
 
-        val scheduledMessages by remember {
-            scheduledSendManager.observeForRoom(room.sessionId, room.roomId)
-        }.collectAsState(initial = emptyList())
-
         LaunchedEffect(cameraPermissionState.permissionGranted) {
             if (cameraPermissionState.permissionGranted) {
                 when (pendingEvent) {
@@ -281,53 +269,6 @@ class MessageComposerPresenter(
                         richTextEditorState = richTextEditorState,
                         slashCommandAction = slashCommandAction,
                     )
-                }
-                is MessageComposerEvent.ScheduleSend -> {
-                    // Dispatch "message scheduled" immediately so the snackbar appears in this
-                    // composition cycle rather than being delayed until the next recomposition
-                    // (e.g. when leaving the room).
-                    snackbarDispatcher.post(SnackbarMessage(R.string.schedule_send_scheduled))
-                    // Capture the message text and clear the compose field synchronously so
-                    // the text doesn't remain visible after scheduling
-                    val message = currentComposerMessage(markdownTextEditorState, richTextEditorState, withMentions = true)
-                    if (message.markdown.isNotBlank()) {
-                        markdownTextEditorState.text.update("", true)
-                    }
-                    sessionCoroutineScope.scheduleSend(
-                        scheduledTimeMillis = event.scheduledTimeMillis,
-                        message = message,
-                        markdownTextEditorState = markdownTextEditorState,
-                        richTextEditorState = richTextEditorState,
-                    )
-                }
-                is MessageComposerEvent.CancelScheduledSends -> {
-                    workManagerScheduler.cancel(room.sessionId, WorkManagerRequestType.SCHEDULED_SEND)
-                    scheduledSendManager.clearAll()
-                    snackbarDispatcher.post(SnackbarMessage(R.string.schedule_send_scheduled_cancelled))
-                }
-                is MessageComposerEvent.LoadScheduledMessages -> {
-                    // No-op — list is refreshed on each compose
-                }
-                is MessageComposerEvent.CancelScheduledMessage -> {
-                    // Remove the specific WorkManager work item and store entry
-                    workManagerScheduler.cancel(room.sessionId, WorkManagerRequestType.SCHEDULED_SEND)
-                    scheduledSendManager.remove(event.info.workId)
-                    snackbarDispatcher.post(SnackbarMessage(R.string.schedule_send_scheduled_cancelled))
-                }
-                is MessageComposerEvent.ForceSendScheduledMessage -> {
-                    // Cancel the pending WorkManager job, then send immediately
-                    workManagerScheduler.cancel(room.sessionId, WorkManagerRequestType.SCHEDULED_SEND)
-                    scheduledSendManager.remove(event.info.workId)
-                    sessionCoroutineScope.launch {
-                        room.liveTimeline.sendMessage(
-                            body = event.info.body,
-                            htmlBody = event.info.htmlBody,
-                            intentionalMentions = emptyList(),
-                        ).onFailure {
-                            Timber.e(it, "Failed to force-send scheduled message")
-                            snackbarDispatcher.post(SnackbarMessage(CommonStrings.common_error))
-                        }
-                    }
                 }
                 is MessageComposerEvent.SendUri -> {
                     val inReplyToEventId = (messageComposerContext.composerMode as? MessageComposerMode.Reply)?.eventId
@@ -488,7 +429,6 @@ class MessageComposerPresenter(
             showAttachmentSourcePicker = showAttachmentSourcePicker,
             showTextFormatting = showTextFormatting,
             canShareLocation = canShareLocation.value,
-            scheduledMessageInfos = scheduledMessages.toImmutableList(),
             suggestions = suggestions.toImmutableList(),
             resolveMentionDisplay = resolveMentionDisplay,
             resolveAtRoomMentionDisplay = resolveAtRoomMentionDisplay,
@@ -537,47 +477,6 @@ class MessageComposerPresenter(
             }
                 .collect()
         }
-    }
-
-    private fun CoroutineScope.scheduleSend(
-        scheduledTimeMillis: Long,
-        message: Message,
-        markdownTextEditorState: MarkdownTextEditorState,
-        richTextEditorState: RichTextEditorState,
-    ) = launch {
-        if (scheduledTimeMillis <= System.currentTimeMillis()) {
-            snackbarDispatcher.post(SnackbarMessage(R.string.schedule_send_past_time))
-            return@launch
-        }
-        if (message.markdown.isBlank()) {
-            snackbarDispatcher.post(SnackbarMessage(R.string.schedule_send_empty_message))
-            return@launch
-        }
-        val capturedMode = messageComposerContext.composerMode
-        if (capturedMode !is MessageComposerMode.Normal && capturedMode !is MessageComposerMode.Attachment) {
-            snackbarDispatcher.post(SnackbarMessage(CommonStrings.common_error))
-            return@launch
-        }
-        val requestBuilder = scheduledSendRequestBuilderFactory.create(
-            sessionId = room.sessionId,
-            roomId = room.roomId,
-            body = message.markdown,
-            htmlBody = message.html,
-            scheduledTimeMillis = scheduledTimeMillis,
-        )
-        val workId = java.util.UUID.randomUUID().toString()
-        workManagerScheduler.submit(requestBuilder)
-        // Persist metadata for the management UI
-        scheduledSendManager.save(
-            ScheduledMessageInfo(
-                workId = workId,
-                sessionId = room.sessionId.value,
-                roomId = room.roomId.value,
-                body = message.markdown,
-                htmlBody = message.html,
-                scheduledTimeMillis = scheduledTimeMillis,
-            )
-        )
     }
 
     private fun CoroutineScope.sendMessage(

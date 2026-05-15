@@ -9,7 +9,6 @@
 package io.element.android.features.messages.impl.messagecomposer
 
 import androidx.compose.runtime.Stable
-import io.element.android.features.messages.impl.scheduledsend.ScheduledMessageInfo
 import io.element.android.libraries.architecture.AsyncAction
 import io.element.android.libraries.textcomposer.mentions.ResolvedSuggestion
 import io.element.android.libraries.textcomposer.model.MessageComposerMode
@@ -26,7 +25,6 @@ data class MessageComposerState(
     val showAttachmentSourcePicker: Boolean,
     val showTextFormatting: Boolean,
     val canShareLocation: Boolean,
-    val scheduledMessageInfos: ImmutableList<ScheduledMessageInfo> = persistentListOf(),
     val suggestions: ImmutableList<ResolvedSuggestion>,
     val resolveMentionDisplay: (String, String) -> TextDisplay,
     val resolveAtRoomMentionDisplay: () -> TextDisplay,

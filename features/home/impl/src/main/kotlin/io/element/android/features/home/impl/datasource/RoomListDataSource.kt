@@ -232,8 +232,8 @@ class RoomListDataSource(
 
     private suspend fun buildAndCacheItem(roomSummaries: List<RoomSummary>, index: Int): RoomListRoomSummary? {
         val roomListSummary = roomSummaries.getOrNull(index)?.let { summary ->
+            val participantDetails = summary.participantDetails()
             if (_showRoomBadges.value) {
-                val participantDetails = summary.participantDetails()
                 roomListRoomSummaryFactory.create(
                     roomSummary = summary,
                     participantHeroes = participantDetails.heroes,
@@ -242,6 +242,7 @@ class RoomListDataSource(
             } else {
                 roomListRoomSummaryFactory.create(
                     roomSummary = summary,
+                    participantHeroes = participantDetails.heroes,
                     skipBridgeDetection = true,
                 )
             }

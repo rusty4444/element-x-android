@@ -683,6 +683,7 @@ class RoomListPresenterTest {
             sessionCoroutineScope = backgroundScope,
             dateTimeObserver = FakeDateTimeObserver(),
             analyticsService = FakeAnalyticsService(),
+            sessionPreferencesStore = sessionPreferencesStore,
         ),
         searchPresenter = searchPresenter,
         sessionPreferencesStore = sessionPreferencesStore,

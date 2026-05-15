@@ -211,6 +211,10 @@ class MessageComposerPresenter(
             sessionPreferencesStore.isShowEncryptionWarningEnabled()
         }.collectAsState(initial = true)
 
+        val scheduledMessages by remember {
+            scheduledSendManager.observeForRoom(room.sessionId, room.roomId)
+        }.collectAsState(initial = emptyList())
+
         LaunchedEffect(cameraPermissionState.permissionGranted) {
             if (cameraPermissionState.permissionGranted) {
                 when (pendingEvent) {
@@ -283,8 +287,15 @@ class MessageComposerPresenter(
                     // composition cycle rather than being delayed until the next recomposition
                     // (e.g. when leaving the room).
                     snackbarDispatcher.post(SnackbarMessage(R.string.schedule_send_scheduled))
+                    // Capture the message text and clear the compose field synchronously so
+                    // the text doesn't remain visible after scheduling
+                    val message = currentComposerMessage(markdownTextEditorState, richTextEditorState, withMentions = true)
+                    if (message.markdown.isNotBlank()) {
+                        markdownTextEditorState.text.update("", true)
+                    }
                     sessionCoroutineScope.scheduleSend(
                         scheduledTimeMillis = event.scheduledTimeMillis,
+                        message = message,
                         markdownTextEditorState = markdownTextEditorState,
                         richTextEditorState = richTextEditorState,
                     )
@@ -477,9 +488,7 @@ class MessageComposerPresenter(
             showAttachmentSourcePicker = showAttachmentSourcePicker,
             showTextFormatting = showTextFormatting,
             canShareLocation = canShareLocation.value,
-            scheduledMessageInfos = scheduledSendManager
-                .getForRoom(room.sessionId, room.roomId)
-                .toImmutableList(),
+            scheduledMessageInfos = scheduledMessages.toImmutableList(),
             suggestions = suggestions.toImmutableList(),
             resolveMentionDisplay = resolveMentionDisplay,
             resolveAtRoomMentionDisplay = resolveAtRoomMentionDisplay,
@@ -532,6 +541,7 @@ class MessageComposerPresenter(
 
     private fun CoroutineScope.scheduleSend(
         scheduledTimeMillis: Long,
+        message: Message,
         markdownTextEditorState: MarkdownTextEditorState,
         richTextEditorState: RichTextEditorState,
     ) = launch {
@@ -539,7 +549,6 @@ class MessageComposerPresenter(
             snackbarDispatcher.post(SnackbarMessage(R.string.schedule_send_past_time))
             return@launch
         }
-        val message = currentComposerMessage(markdownTextEditorState, richTextEditorState, withMentions = true)
         if (message.markdown.isBlank()) {
             snackbarDispatcher.post(SnackbarMessage(R.string.schedule_send_empty_message))
             return@launch
@@ -549,7 +558,6 @@ class MessageComposerPresenter(
             snackbarDispatcher.post(SnackbarMessage(CommonStrings.common_error))
             return@launch
         }
-        resetComposer(markdownTextEditorState, richTextEditorState, fromEdit = false)
         val requestBuilder = scheduledSendRequestBuilderFactory.create(
             sessionId = room.sessionId,
             roomId = room.roomId,

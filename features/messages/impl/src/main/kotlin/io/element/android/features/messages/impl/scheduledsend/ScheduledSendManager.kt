@@ -15,6 +15,9 @@ import dev.zacsweers.metro.SingleIn
 import io.element.android.libraries.di.annotations.ApplicationContext
 import io.element.android.libraries.matrix.api.core.RoomId
 import io.element.android.libraries.matrix.api.core.SessionId
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.map
 import timber.log.Timber
 
 data class ScheduledMessageInfo(
@@ -80,6 +83,7 @@ interface ScheduledSendManager {
     fun save(info: ScheduledMessageInfo)
     fun getAll(): List<ScheduledMessageInfo>
     fun getForRoom(sessionId: SessionId, roomId: RoomId): List<ScheduledMessageInfo>
+    fun observeForRoom(sessionId: SessionId, roomId: RoomId): Flow<List<ScheduledMessageInfo>>
     fun remove(workId: String)
     fun clearAll()
 }
@@ -93,13 +97,13 @@ class DefaultScheduledSendManager(
         context.getSharedPreferences("scheduled_send_v1", Context.MODE_PRIVATE)
     }
 
-    private fun keyFor(workId: String): String = "sched_$workId"
+    private val _allItems = MutableStateFlow<List<ScheduledMessageInfo>>(emptyList())
 
-    override fun save(info: ScheduledMessageInfo) {
-        prefs.edit().putString(keyFor(info.workId), ScheduledMessageInfo.encode(info)).apply()
+    init {
+        _allItems.value = loadAll()
     }
 
-    override fun getAll(): List<ScheduledMessageInfo> = prefs.all.entries.asSequence()
+    private fun loadAll(): List<ScheduledMessageInfo> = prefs.all.entries.asSequence()
         .filter { (key, _) -> key.startsWith("sched_") }
         .mapNotNull { (_, value) ->
             (value as? String)?.let { ScheduledMessageInfo.decode(it) }
@@ -107,15 +111,31 @@ class DefaultScheduledSendManager(
         .sortedBy { it.scheduledTimeMillis }
         .toList()
 
+    private fun keyFor(workId: String): String = "sched_$workId"
+
+    override fun save(info: ScheduledMessageInfo) {
+        prefs.edit().putString(keyFor(info.workId), ScheduledMessageInfo.encode(info)).apply()
+        _allItems.value = loadAll()
+    }
+
+    override fun getAll(): List<ScheduledMessageInfo> = loadAll()
+
     override fun getForRoom(sessionId: SessionId, roomId: RoomId): List<ScheduledMessageInfo> =
-        getAll().filter { it.sessionId == sessionId.value && it.roomId == roomId.value }
+        _allItems.value.filter { it.sessionId == sessionId.value && it.roomId == roomId.value }
+
+    override fun observeForRoom(sessionId: SessionId, roomId: RoomId): Flow<List<ScheduledMessageInfo>> =
+        _allItems.map { list ->
+            list.filter { it.sessionId == sessionId.value && it.roomId == roomId.value }
+        }
 
     override fun remove(workId: String) {
         prefs.edit().remove(keyFor(workId)).apply()
+        _allItems.value = loadAll()
     }
 
     override fun clearAll() {
         val keys = prefs.all.keys.filter { it.startsWith("sched_") }
         prefs.edit().apply { keys.forEach { remove(it) } }.apply()
+        _allItems.value = loadAll()
     }
 }

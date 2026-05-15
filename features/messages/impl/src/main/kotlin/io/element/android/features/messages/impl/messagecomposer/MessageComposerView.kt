@@ -78,8 +78,8 @@ internal fun ScheduledMessageBanner(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 4.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp),
+            .padding(horizontal = 12.dp, vertical = 2.dp),
+        verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
         scheduledMessages.forEach { info ->
             ScheduledMessageBubble(
@@ -137,7 +137,7 @@ private fun ScheduledMessageBubble(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp),
+                .padding(8.dp),
         ) {
             // Scheduled time label
             Row(
@@ -158,14 +158,14 @@ private fun ScheduledMessageBubble(
                 )
                 Spacer(Modifier.weight(1f))
             }
-            // Message preview
+            // Message preview — single line with ellipsis to keep the banner compact
             Text(
                 text = info.formattedPreview(),
                 style = ElementTheme.typography.fontBodyMdRegular,
                 color = ElementTheme.colors.textPrimary,
-                maxLines = 2,
+                maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.padding(vertical = 4.dp),
+                modifier = Modifier.padding(vertical = 2.dp),
             )
             // Action buttons
             Row(

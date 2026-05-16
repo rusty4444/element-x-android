@@ -169,6 +169,18 @@ fun TimelineView(
                 )
             }
 
+            // Hoist stable callbacks outside LazyColumn items block to prevent lambda re-creation per item
+            val stableOnUserDataClick = remember(onUserDataClick) { onUserDataClick }
+            val stableOnLinkClick = remember(onLinkClick) { onLinkClick }
+            val stableOnContentClick = remember(onContentClick) { onContentClick }
+            val stableOnMessageLongClick = remember(onMessageLongClick) { onMessageLongClick }
+            val stableOnMessageDoubleTap = remember(onMessageDoubleTap) { onMessageDoubleTap }
+            val stableOnSwipeToReply = remember(onSwipeToReply) { onSwipeToReply }
+            val stableOnReactionClick = remember(onReactionClick) { onReactionClick }
+            val stableOnReactionLongClick = remember(onReactionLongClick) { onReactionLongClick }
+            val stableOnMoreReactionsClick = remember(onMoreReactionsClick) { onMoreReactionsClick }
+            val stableOnReadReceiptClick = remember(onReadReceiptClick) { onReadReceiptClick }
+
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
@@ -181,7 +193,7 @@ fun TimelineView(
                 items(
                     items = state.timelineItems,
                     contentType = { timelineItem -> timelineItem.contentType() },
-                    key = { timelineItem -> timelineItem.identifier() },
+                    key = { timelineItem -> timelineItem.identifier().value },
                 ) { timelineItem ->
                     TimelineItemRow(
                         timelineItem = timelineItem,
@@ -192,18 +204,18 @@ fun TimelineView(
                         isLastOutgoingMessage = state.isLastOutgoingMessage(timelineItem.identifier()),
                         focusedEventId = state.focusedEventId,
                         displayThreadSummaries = state.displayThreadSummaries,
-                        onUserDataClick = onUserDataClick,
-                        onLinkClick = onLinkClick,
+                        onUserDataClick = stableOnUserDataClick,
+                        onLinkClick = stableOnLinkClick,
                         onLinkLongClick = ::onLinkLongClick,
-                        onContentClick = onContentClick,
-                        onLongClick = onMessageLongClick,
-                        onDoubleTap = onMessageDoubleTap,
+                        onContentClick = stableOnContentClick,
+                        onLongClick = stableOnMessageLongClick,
+                        onDoubleTap = stableOnMessageDoubleTap,
                         inReplyToClick = ::inReplyToClick,
-                        onReactionClick = onReactionClick,
-                        onReactionLongClick = onReactionLongClick,
-                        onMoreReactionsClick = onMoreReactionsClick,
-                        onReadReceiptClick = onReadReceiptClick,
-                        onSwipeToReply = onSwipeToReply,
+                        onReactionClick = stableOnReactionClick,
+                        onReactionLongClick = stableOnReactionLongClick,
+                        onMoreReactionsClick = stableOnMoreReactionsClick,
+                        onReadReceiptClick = stableOnReadReceiptClick,
+                        onSwipeToReply = stableOnSwipeToReply,
                         eventSink = state.eventSink,
                     )
                 }
@@ -276,7 +288,7 @@ private fun TimelinePrefetchingHelper(
             }
 
         val isCloseToStartOfLoadedTimelineFlow = combine(layoutInfoFlow, firstVisibleItemIndexFlow) { layoutInfo, firstVisibleItemIndex ->
-            firstVisibleItemIndex + layoutInfo.visibleItemsInfo.size >= layoutInfo.totalItemsCount - 40
+            firstVisibleItemIndex + layoutInfo.visibleItemsInfo.size >= layoutInfo.totalItemsCount - 15
         }
 
         // If we have no timeline items, we need to back paginate to load some messages. This usually happens on all timelines except for live ones.

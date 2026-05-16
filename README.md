@@ -56,17 +56,13 @@ Rooms connected via bridges display a small bridge icon badge in the room list, 
 
 Set a custom background image per room via Room Details or the top bar menu. The image is stored client-locally and displayed behind the timeline at a subtle alpha. Backgrounds can be changed or cleared at any time.
 
-### Schedule send
-
-Schedule text messages for later delivery from the room top bar. The composer contents are queued locally with Android WorkManager and sent automatically when the selected time arrives and network connectivity is available.
-
 ### Encryption status badge
 
 An optional hideable encryption warning badge appears in the composer area, showing the current encryption state of the room and allowing users to verify or review security settings.
 
 ## Latest fork release
 
-The latest fork APK is [v0.8.7](https://github.com/rusty4444/element-x-android/releases/tag/v0.8.7). This release includes bridge room badges detected by participant usernames (not just room names), tighter badge-to-timestamp spacing, consistent gradient top bars for all rooms, fixed compose field positioning above the system home indicator, edge-to-edge top bars, encryption status badge, schedule send, room backgrounds, and all previous QoL features.
+The latest fork APK is [v0.9.3](https://github.com/rusty4444/element-x-android/releases/tag/v0.9.3). This release includes major performance optimisations (image decode size clamping, stable LazyColumn keys, lambda hoisting, BubbleState memoisation, reduced prefetch threshold), plus all previous QoL features. **Note:** the scheduled send feature has been removed as it was unreliable.
 
 [<img src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" alt="Get it on Google Play" height="80">](https://play.google.com/store/apps/details?id=io.element.android.x)[<img src="https://fdroid.gitlab.io/artwork/badge/get-it-on.png" alt="Get it on F-Droid" height="80">](https://f-droid.org/packages/io.element.android.x)
 

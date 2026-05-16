@@ -460,11 +460,13 @@ private fun TimelineItemEventRowContent(
         }
 
         // Message bubble
-        val bubbleState = BubbleState(
-            groupPosition = event.groupPosition,
-            isMine = event.isMine,
-            timelineRoomInfo = timelineRoomInfo,
-        )
+        val bubbleState = remember(event.groupPosition, event.isMine, timelineRoomInfo) {
+            BubbleState(
+                groupPosition = event.groupPosition,
+                isMine = event.isMine,
+                timelineRoomInfo = timelineRoomInfo,
+            )
+        }
         MessageEventBubble(
             modifier = Modifier
                 .constrainAs(message) {

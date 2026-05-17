@@ -69,7 +69,7 @@ class RustBaseRoom(
     private val roomDispatcher = coroutineDispatchers.io.limitedParallelism(32)
 
     // ...except getMember methods as it could quickly fill the roomDispatcher...
-    private val roomMembersDispatcher = coroutineDispatchers.io.limitedParallelism(8)
+    private val roomMembersDispatcher = coroutineDispatchers.io.limitedParallelism(16)
 
     internal val roomMemberListFetcher = RoomMemberListFetcher(innerRoom, roomMembersDispatcher)
 

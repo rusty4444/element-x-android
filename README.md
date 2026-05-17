@@ -48,10 +48,6 @@ The coloured heading bar now has clearer spacing before the room filter chips, a
 
 The room list header extends seamlessly behind the status bar, and that same edge-to-edge treatment now carries into individual room screens so the purple header gradient flows to the very top of the phone screen without a black gap.
 
-### Bridge room badges
-
-Rooms connected via bridges display a small bridge icon badge in the room list, making it easy to tell bridged conversations from native Matrix rooms.
-
 ### Room backgrounds
 
 Set a custom background image per room via Room Details or the top bar menu. The image is stored client-locally and displayed behind the timeline at a subtle alpha. Backgrounds can be changed or cleared at any time.
@@ -62,7 +58,7 @@ An optional hideable encryption warning badge appears in the composer area, show
 
 ## Latest fork release
 
-The latest fork APK is [v0.10.0](https://github.com/rusty4444/element-x-android/releases/tag/v0.10.0). This release includes a major performance audit and optimisation sweep: SQLite page cache and connection pool tuning, hero member JNI caching to eliminate 40× redundant calls per sync tick, IO thread parallelism reduced from 64 to 4 to match the database pool, 100ms debounce on room list updates, R8 full optimisation enabled, and native ABIs restricted to arm64-v8a (dropping APK size from 330MB to ~85MB). The result is faster cold starts, smoother scrolling, and dramatically less CPU contention on sync. Previous QoL features (double-tap react, grouped image grid, accent themes, group avatars, room backgrounds, bridge badges, edge-to-edge bars, multi-image picker, encryption status badge, unread count badges) are all retained.
+The latest fork APK is [v0.10.1](https://github.com/rusty4444/element-x-android/releases/tag/v0.10.1). This release keeps the arm64-v8a, R8-optimised gplay APK and adds another room-list responsiveness pass: group avatar hero lookups are cached per room for roughly six months instead of being invalidated by every latest-event timestamp, custom-avatar and DM rooms now skip hero member lookups immediately, and Matrix SDK dispatcher parallelism has been raised for session, room-factory, and room-member work. Previous QoL features (double-tap react, grouped image grid, accent themes, group avatars, room backgrounds, edge-to-edge bars, multi-image picker, encryption status badge, unread count badges) are all retained.
 
 [<img src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" alt="Get it on Google Play" height="80">](https://play.google.com/store/apps/details?id=io.element.android.x)[<img src="https://fdroid.gitlab.io/artwork/badge/get-it-on.png" alt="Get it on F-Droid" height="80">](https://f-droid.org/packages/io.element.android.x)
 

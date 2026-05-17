@@ -49,6 +49,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.seconds
 
 private const val PAGE_SIZE = 20
@@ -56,6 +57,7 @@ private const val EXTENDED_VISIBILITY_RANGE_SIZE = 40
 private const val SUBSCRIBE_TO_VISIBLE_ROOMS_DEBOUNCE_IN_MILLIS = 300L
 private const val PAGINATION_THRESHOLD = 3 * PAGE_SIZE
 private const val HERO_MEMBER_SCAN_LIMIT = 100L
+private val HERO_CACHE_TTL = 183.days
 
 @Inject
 @SingleIn(SessionScope::class)
@@ -94,7 +96,7 @@ class RoomListDataSource(
      */
     private data class CachedHeroes(
         val heroes: List<AvatarData>,
-        val latestEventTimestamp: Long?,
+        val cachedAtMillis: Long,
     )
     private val heroCache = mutableMapOf<RoomId, CachedHeroes>()
 
@@ -102,6 +104,7 @@ class RoomListDataSource(
 
     val loadingState = roomList.loadingState
 
+    @OptIn(FlowPreview::class)
     fun launchIn(coroutineScope: CoroutineScope) {
         roomList
             .summaries
@@ -114,8 +117,6 @@ class RoomListDataSource(
 
     suspend fun updateFilter(filter: RoomListFilter) {
         roomList.updateFilter(filter)
-        // Clear cache when filters change (different rooms visible)
-        heroCache.clear()
     }
 
     suspend fun updateVisibleRange(visibleRange: IntRange) = coroutineScope {
@@ -244,13 +245,15 @@ class RoomListDataSource(
 
     private suspend fun RoomSummary.participantHeroes(): List<AvatarData> {
         val roomInfo = info
-        if (roomInfo.isSpace || roomInfo.activeMembersCount <= 1) {
+        if (roomInfo.isSpace || roomInfo.activeMembersCount <= 1 || roomInfo.avatarUrl != null || roomInfo.isDm) {
             return emptyList()
         }
 
-        // Check cache first — only re-fetch if the latest event timestamp changed
+        // Check cache first — room hero avatars are cosmetic, so keep them stable for a long time
+        // instead of re-fetching room members on every sync tick/latest event update.
         val cached = heroCache[roomId]
-        if (cached != null && cached.latestEventTimestamp == latestEventTimestamp) {
+        val now = System.currentTimeMillis()
+        if (cached != null && now - cached.cachedAtMillis < HERO_CACHE_TTL.inWholeMilliseconds) {
             return cached.heroes
         }
 
@@ -263,10 +266,6 @@ class RoomListDataSource(
         val activeMembers = joinedMembers
             .filter { member -> member.membership == RoomMembershipState.JOIN && member.userId != matrixClient.sessionId }
 
-        if (roomInfo.avatarUrl != null || roomInfo.isDm) {
-            return emptyList()
-        }
-
         val heroes = activeMembers.asSequence()
             .withoutBridgeBotHeroes()
             .sortedWith(compareByDescending { member -> member.avatarUrl != null })
@@ -275,7 +274,7 @@ class RoomListDataSource(
             .toList()
 
         // Store in cache
-        heroCache[roomId] = CachedHeroes(heroes = heroes, latestEventTimestamp = latestEventTimestamp)
+        heroCache[roomId] = CachedHeroes(heroes = heroes, cachedAtMillis = now)
 
         return heroes
     }

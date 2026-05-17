@@ -14,15 +14,22 @@ import io.element.android.features.home.impl.FakeDateTimeObserver
 import io.element.android.libraries.androidutils.system.DateTimeObserver
 import io.element.android.libraries.dateformatter.test.FakeDateFormatter
 import io.element.android.libraries.matrix.api.roomlist.RoomListService
+import io.element.android.libraries.matrix.test.A_ROOM_ID
 import io.element.android.libraries.matrix.test.FakeMatrixClient
 import io.element.android.libraries.matrix.test.notificationsettings.FakeNotificationSettingsService
+import io.element.android.libraries.matrix.test.room.FakeBaseRoom
+import io.element.android.libraries.matrix.test.room.FakeJoinedRoom
+import io.element.android.libraries.matrix.test.room.aRemoteLatestEvent
+import io.element.android.libraries.matrix.test.room.aRoomMember
 import io.element.android.libraries.matrix.test.room.aRoomSummary
 import io.element.android.libraries.matrix.test.roomlist.FakeDynamicRoomList
 import io.element.android.libraries.matrix.test.roomlist.FakeRoomListService
 import io.element.android.services.analytics.test.FakeAnalyticsService
 import io.element.android.tests.testutils.testCoroutineDispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 import java.time.Instant
@@ -101,13 +108,70 @@ class RoomListDataSourceTest {
         }
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun `room heroes are cached per room even when latest event timestamp changes`() = runTest {
+        var getMembersCallCount = 0
+        val joinedRoom = FakeJoinedRoom(
+            baseRoom = FakeBaseRoom(
+                getMembersResult = {
+                    getMembersCallCount++
+                    Result.success(listOf(aRoomMember()))
+                }
+            )
+        )
+        val matrixClient = FakeMatrixClient().apply {
+            givenGetRoomResult(A_ROOM_ID, joinedRoom)
+        }
+        val roomList = FakeDynamicRoomList().apply {
+            summaries.emit(
+                listOf(
+                    aRoomSummary(
+                        activeMembersCount = 2,
+                        latestEvent = aRemoteLatestEvent(timestamp = 1L),
+                    )
+                )
+            )
+        }
+        val roomListService = FakeRoomListService(createRoomListLambda = { roomList })
+        val dateTimeObserver = FakeDateTimeObserver()
+        val roomListDataSource = createRoomListDataSource(
+            matrixClient = matrixClient,
+            roomListService = roomListService,
+            dateTimeObserver = dateTimeObserver,
+        )
+
+        roomListDataSource.roomSummariesFlow.test {
+            roomListDataSource.launchIn(backgroundScope)
+            awaitItem()
+            assertThat(getMembersCallCount).isEqualTo(1)
+
+            roomList.summaries.emit(
+                listOf(
+                    aRoomSummary(
+                        activeMembersCount = 2,
+                        latestEvent = aRemoteLatestEvent(timestamp = 2L),
+                    )
+                )
+            )
+            advanceTimeBy(101)
+            awaitItem()
+
+            dateTimeObserver.given(DateTimeObserver.Event.DateChanged(Instant.MIN, Instant.now()))
+            awaitItem()
+
+            assertThat(getMembersCallCount).isEqualTo(1)
+        }
+    }
+
     private fun TestScope.createRoomListDataSource(
+        matrixClient: FakeMatrixClient = FakeMatrixClient(),
         roomListService: FakeRoomListService = FakeRoomListService(),
         roomListRoomSummaryFactory: RoomListRoomSummaryFactory = aRoomListRoomSummaryFactory(),
         notificationSettingsService: FakeNotificationSettingsService = FakeNotificationSettingsService(),
         dateTimeObserver: FakeDateTimeObserver = FakeDateTimeObserver(),
     ) = RoomListDataSource(
-        matrixClient = FakeMatrixClient(),
+        matrixClient = matrixClient,
         roomListService = roomListService,
         roomListRoomSummaryFactory = roomListRoomSummaryFactory,
         coroutineDispatchers = testCoroutineDispatchers(),

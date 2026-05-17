@@ -62,7 +62,7 @@ An optional hideable encryption warning badge appears in the composer area, show
 
 ## Latest fork release
 
-The latest fork APK is [v0.9.3](https://github.com/rusty4444/element-x-android/releases/tag/v0.9.3). This release includes major performance optimisations (image decode size clamping, stable LazyColumn keys, lambda hoisting, BubbleState memoisation, reduced prefetch threshold), plus all previous QoL features. **Note:** the scheduled send feature has been removed as it was unreliable.
+The latest fork APK is [v0.10.0](https://github.com/rusty4444/element-x-android/releases/tag/v0.10.0). This release includes a major performance audit and optimisation sweep: SQLite page cache and connection pool tuning, hero member JNI caching to eliminate 40× redundant calls per sync tick, IO thread parallelism reduced from 64 to 4 to match the database pool, 100ms debounce on room list updates, R8 full optimisation enabled, and native ABIs restricted to arm64-v8a (dropping APK size from 330MB to ~85MB). The result is faster cold starts, smoother scrolling, and dramatically less CPU contention on sync. Previous QoL features (double-tap react, grouped image grid, accent themes, group avatars, room backgrounds, bridge badges, edge-to-edge bars, multi-image picker, encryption status badge, unread count badges) are all retained.
 
 [<img src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" alt="Get it on Google Play" height="80">](https://play.google.com/store/apps/details?id=io.element.android.x)[<img src="https://fdroid.gitlab.io/artwork/badge/get-it-on.png" alt="Get it on F-Droid" height="80">](https://f-droid.org/packages/io.element.android.x)
 

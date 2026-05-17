@@ -88,6 +88,16 @@ class RoomListDataSource(
         old?.roomId == new?.roomId
     }
 
+    /**
+     * Cache for hero member data keyed by room ID.
+     * Avoids expensive JNI getMembers() calls on every sync tick.
+     */
+    private data class CachedHeroes(
+        val heroes: List<AvatarData>,
+        val latestEventTimestamp: Long?,
+    )
+    private val heroCache = mutableMapOf<RoomId, CachedHeroes>()
+
     val roomSummariesFlow: Flow<ImmutableList<RoomListRoomSummary>> = _roomSummariesFlow
 
     val loadingState = roomList.loadingState
@@ -95,6 +105,7 @@ class RoomListDataSource(
     fun launchIn(coroutineScope: CoroutineScope) {
         roomList
             .summaries
+            .debounce(100)
             .onEach { roomSummaries ->
                 replaceWith(roomSummaries)
             }
@@ -103,6 +114,8 @@ class RoomListDataSource(
 
     suspend fun updateFilter(filter: RoomListFilter) {
         roomList.updateFilter(filter)
+        // Clear cache when filters change (different rooms visible)
+        heroCache.clear()
     }
 
     suspend fun updateVisibleRange(visibleRange: IntRange) = coroutineScope {
@@ -235,6 +248,13 @@ class RoomListDataSource(
             return emptyList()
         }
 
+        // Check cache first — only re-fetch if the latest event timestamp changed
+        val cached = heroCache[roomId]
+        if (cached != null && cached.latestEventTimestamp == latestEventTimestamp) {
+            return cached.heroes
+        }
+
+        // Cache miss or stale — fetch via JNI
         val joinedMembers = matrixClient.getJoinedRoom(roomId)
             ?.getMembers(limit = roomInfo.activeMembersCount.coerceAtMost(HERO_MEMBER_SCAN_LIMIT).toInt())
             ?.getOrNull()
@@ -247,12 +267,17 @@ class RoomListDataSource(
             return emptyList()
         }
 
-        return activeMembers.asSequence()
+        val heroes = activeMembers.asSequence()
             .withoutBridgeBotHeroes()
             .sortedWith(compareByDescending { member -> member.avatarUrl != null })
             .take(4)
             .map { member -> member.getAvatarData(size = AvatarSize.RoomListItem) }
             .toList()
+
+        // Store in cache
+        heroCache[roomId] = CachedHeroes(heroes = heroes, latestEventTimestamp = latestEventTimestamp)
+
+        return heroes
     }
 
     private suspend fun rebuildAllRoomSummaries() {

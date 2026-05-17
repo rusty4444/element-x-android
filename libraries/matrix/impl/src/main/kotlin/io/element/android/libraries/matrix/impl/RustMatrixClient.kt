@@ -150,7 +150,7 @@ class RustMatrixClient(
     override val sessionId: UserId = UserId(innerClient.userId())
     override val deviceId: DeviceId = DeviceId(innerClient.deviceId())
     override val sessionCoroutineScope = appCoroutineScope.childScope(dispatchers.main, "Session-$sessionId")
-    private val sessionDispatcher = dispatchers.io.limitedParallelism(64)
+    private val sessionDispatcher = dispatchers.io.limitedParallelism(4)
 
     private val innerRoomListService = innerSyncService.roomListService()
 

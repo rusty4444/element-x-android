@@ -47,9 +47,10 @@ android {
         versionCode = Versions.VERSION_CODE
         versionName = Versions.VERSION_NAME
 
-        // Keep abiFilter for the universalApk
+        // Only bundle arm64-v8a native libs — avoids 302MB universal APK with 4 redundant ABIs.
+        // arm64-v8a covers ~99% of modern phones.
         ndk {
-            abiFilters += listOf("armeabi-v7a", "x86", "arm64-v8a", "x86_64")
+            abiFilters += listOf("arm64-v8a")
         }
 
         // Ref: https://developer.android.com/studio/build/configure-apk-splits.html#configure-abi-split
@@ -58,7 +59,7 @@ android {
             abi {
                 val buildingAppBundle = gradle.startParameter.taskNames.any { it.contains("bundle") }
 
-                // Fork: disable ABI splits to avoid universal APK packaging conflicts
+                // Fork: ABI splits disabled — the ndk abiFilter handles size reduction instead
                 isEnable = false
             }
         }

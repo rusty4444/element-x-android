@@ -22,5 +22,4 @@ sealed interface AdvancedSettingsEvents {
     data class SetHideInviteAvatars(val value: Boolean) : AdvancedSettingsEvents
     data class SetAccentColor(val accentColor: AccentColorOption) : AdvancedSettingsEvents
     data class SetShowEncryptionWarning(val enabled: Boolean) : AdvancedSettingsEvents
-    data class SetShowRoomBadges(val enabled: Boolean) : AdvancedSettingsEvents
 }

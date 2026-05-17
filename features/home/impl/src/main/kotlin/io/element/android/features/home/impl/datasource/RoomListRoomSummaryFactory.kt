@@ -10,7 +10,6 @@ package io.element.android.features.home.impl.datasource
 
 import dev.zacsweers.metro.Inject
 import io.element.android.features.home.impl.model.LatestEvent
-import io.element.android.features.home.impl.model.RoomBridgeBadge
 import io.element.android.features.home.impl.model.RoomListRoomSummary
 import io.element.android.features.home.impl.model.RoomSummaryDisplayType
 import io.element.android.libraries.core.extensions.orEmpty
@@ -37,22 +36,9 @@ class RoomListRoomSummaryFactory(
     fun create(
         roomSummary: RoomSummary,
         participantHeroes: List<AvatarData> = emptyList(),
-        bridgeDetectionUserIds: List<String> = emptyList(),
-        skipBridgeDetection: Boolean = false,
     ): RoomListRoomSummary {
         val roomInfo = roomSummary.info
         val avatarData = roomInfo.getAvatarData(size = AvatarSize.RoomListItem)
-        // Extract hero user IDs for badge detection — bridges use usernames starting with
-        // a prefix like @gmessages_, @meta_, @linkedin_, etc. (GH#23)
-        // info.heroes (MatrixUser) are available for some rooms; bridgeDetectionUserIds are unfiltered
-        // member IDs from the room list data source so bridge users are not lost when hidden from avatars.
-        val heroUserIds = if (skipBridgeDetection) {
-            emptyList()
-        } else {
-            roomInfo.heroes.map { it.userId.value } +
-                participantHeroes.map { it.id } +
-                bridgeDetectionUserIds
-        }
         return RoomListRoomSummary(
             id = roomSummary.roomId.value,
             roomId = roomSummary.roomId,
@@ -66,11 +52,6 @@ class RoomListRoomSummaryFactory(
                 mode = DateFormatterMode.TimeOrDate,
                 useRelative = true,
             ),
-            bridgeBadge = if (skipBridgeDetection) {
-                RoomBridgeBadge.DISABLED
-            } else {
-                RoomBridgeBadge.from(roomInfo.name, roomInfo.aliases, heroUserIds)
-            },
             latestEvent = computeLatestEvent(roomSummary.latestEvent, roomInfo.isDm),
             avatarData = avatarData,
             userDefinedNotificationMode = roomInfo.userDefinedNotificationMode,

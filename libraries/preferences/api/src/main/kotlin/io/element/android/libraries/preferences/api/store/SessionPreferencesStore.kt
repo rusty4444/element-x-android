@@ -38,8 +38,5 @@ interface SessionPreferencesStore {
     suspend fun setShowEncryptionWarning(enabled: Boolean)
     fun isShowEncryptionWarningEnabled(): Flow<Boolean>
 
-    suspend fun setShowRoomBadges(enabled: Boolean)
-    fun isShowRoomBadgesEnabled(): Flow<Boolean>
-
     suspend fun clear()
 }

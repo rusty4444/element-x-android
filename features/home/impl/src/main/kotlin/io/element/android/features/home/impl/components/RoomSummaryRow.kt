@@ -26,14 +26,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -48,7 +46,6 @@ import io.element.android.compound.theme.ElementTheme
 import io.element.android.compound.tokens.generated.CompoundIcons
 import io.element.android.features.home.impl.R
 import io.element.android.features.home.impl.model.LatestEvent
-import io.element.android.features.home.impl.model.RoomBridgeBadge
 import io.element.android.features.home.impl.model.RoomListRoomSummary
 import io.element.android.features.home.impl.model.RoomListRoomSummaryProvider
 import io.element.android.features.home.impl.model.RoomSummaryDisplayType
@@ -132,7 +129,6 @@ internal fun RoomSummaryRow(
                     NameAndTimestampRow(
                         name = room.name,
                         timestamp = room.timestamp,
-                        bridgeBadge = room.bridgeBadge,
                         isHighlighted = room.isHighlighted
                     )
                     MessagePreviewAndIndicatorRow(room = room)
@@ -149,7 +145,6 @@ internal fun RoomSummaryRow(
                     NameAndTimestampRow(
                         name = room.name,
                         timestamp = null,
-                        bridgeBadge = room.bridgeBadge,
                         isHighlighted = room.isHighlighted
                     )
                     if (room.canonicalAlias != null) {
@@ -225,7 +220,6 @@ private fun RoomSummaryScaffoldRow(
 private fun NameAndTimestampRow(
     name: String?,
     timestamp: String?,
-    bridgeBadge: RoomBridgeBadge,
     isHighlighted: Boolean,
     modifier: Modifier = Modifier
 ) {
@@ -245,94 +239,18 @@ private fun NameAndTimestampRow(
             overflow = TextOverflow.Ellipsis
         )
         if (timestamp != null) {
-            // Timestamp and badge grouped so spacing is only between name and (timestamp+badge), not between timestamp and badge
-            Row(horizontalArrangement = spacedBy(4.dp)) {
-                Text(
-                    text = timestamp,
-                    style = ElementTheme.typography.fontBodySmMedium,
-                    color = if (isHighlighted) {
-                        ElementTheme.colors.unreadIndicator
-                    } else {
-                        ElementTheme.colors.roomListRoomMessageDate
-                    },
-                )
-                RoomBridgeBadgeView(bridgeBadge = bridgeBadge)
-            }
+            Text(
+                text = timestamp,
+                style = ElementTheme.typography.fontBodySmMedium,
+                color = if (isHighlighted) {
+                    ElementTheme.colors.unreadIndicator
+                } else {
+                    ElementTheme.colors.roomListRoomMessageDate
+                },
+            )
         }
     }
 }
-
-@Composable
-private fun RoomBridgeBadgeView(
-    bridgeBadge: RoomBridgeBadge,
-    modifier: Modifier = Modifier,
-) {
-    if (bridgeBadge == RoomBridgeBadge.DISABLED) return
-    Box(
-        modifier = modifier
-            .height(18.dp)
-            .widthIn(min = 18.dp)
-            .background(
-                brush = bridgeBadge.backgroundBrush,
-                shape = RoundedCornerShape(5.dp),
-            )
-            .padding(horizontal = 5.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text = bridgeBadge.logoText,
-            style = ElementTheme.typography.fontBodySmMedium,
-            color = bridgeBadge.foregroundColor,
-            maxLines = 1,
-        )
-    }
-}
-
-private val RoomBridgeBadge.logoText: String
-    get() = when (this) {
-        RoomBridgeBadge.WHATSAPP -> "W"
-        RoomBridgeBadge.META -> "f"
-        RoomBridgeBadge.GMESSAGES -> "G"
-        RoomBridgeBadge.MATRIX -> "✦"
-        RoomBridgeBadge.X -> "𝕏"
-        RoomBridgeBadge.DISCORD -> "D"
-        RoomBridgeBadge.LINKEDIN -> "in"
-        RoomBridgeBadge.TELEGRAM -> "✈"
-        RoomBridgeBadge.SIGNAL -> "S"
-        RoomBridgeBadge.SLACK -> "#"
-        RoomBridgeBadge.INSTAGRAM -> "◎"
-        RoomBridgeBadge.IMESSAGE -> "i"
-        RoomBridgeBadge.GENERIC_BRIDGE -> "↔"
-        RoomBridgeBadge.DISABLED -> ""
-    }
-
-private val RoomBridgeBadge.backgroundBrush: Brush
-    get() = when (this) {
-        RoomBridgeBadge.WHATSAPP -> Brush.linearGradient(listOf(Color(0xFF25D366), Color(0xFF25D366)))
-        RoomBridgeBadge.META -> Brush.linearGradient(listOf(Color(0xFF0866FF), Color(0xFF0866FF)))
-        RoomBridgeBadge.GMESSAGES -> Brush.horizontalGradient(
-            colors = listOf(
-                Color(0xFF4285F4), // Blue
-                Color(0xFFEA4335), // Red
-                Color(0xFFFBBC05), // Yellow
-                Color(0xFF34C759), // Green
-            )
-        )
-        RoomBridgeBadge.MATRIX -> Brush.linearGradient(listOf(Color(0xFF000000), Color(0xFF000000)))
-        RoomBridgeBadge.X -> Brush.linearGradient(listOf(Color(0xFF000000), Color(0xFF000000)))
-        RoomBridgeBadge.DISCORD -> Brush.linearGradient(listOf(Color(0xFF5865F2), Color(0xFF5865F2)))
-        RoomBridgeBadge.LINKEDIN -> Brush.linearGradient(listOf(Color(0xFF0A66C2), Color(0xFF0A66C2)))
-        RoomBridgeBadge.TELEGRAM -> Brush.linearGradient(listOf(Color(0xFF229ED9), Color(0xFF229ED9)))
-        RoomBridgeBadge.SIGNAL -> Brush.linearGradient(listOf(Color(0xFF3A76F0), Color(0xFF3A76F0)))
-        RoomBridgeBadge.SLACK -> Brush.linearGradient(listOf(Color(0xFF611F69), Color(0xFF611F69)))
-        RoomBridgeBadge.INSTAGRAM -> Brush.linearGradient(listOf(Color(0xFFE4405F), Color(0xFFE4405F)))
-        RoomBridgeBadge.IMESSAGE -> Brush.linearGradient(listOf(Color(0xFF34C759), Color(0xFF34C759)))
-        RoomBridgeBadge.GENERIC_BRIDGE -> Brush.linearGradient(listOf(Color(0xFF6B7280), Color(0xFF6B7280)))
-        RoomBridgeBadge.DISABLED -> Brush.linearGradient(listOf(Color.Transparent, Color.Transparent))
-    }
-
-private val RoomBridgeBadge.foregroundColor: Color
-    get() = Color.White
 
 @Composable
 private fun InviteSubtitle(

@@ -31,7 +31,6 @@ import io.element.android.libraries.matrix.api.roomlist.RoomSummary
 import io.element.android.libraries.matrix.api.roomlist.updateVisibleRange
 import io.element.android.libraries.matrix.ui.model.getAvatarData
 import io.element.android.libraries.matrix.ui.model.withoutBridgeBotHeroes
-import io.element.android.libraries.preferences.api.store.SessionPreferencesStore
 import io.element.android.services.analytics.api.AnalyticsService
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
@@ -42,7 +41,6 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
@@ -57,6 +55,7 @@ private const val PAGE_SIZE = 20
 private const val EXTENDED_VISIBILITY_RANGE_SIZE = 40
 private const val SUBSCRIBE_TO_VISIBLE_ROOMS_DEBOUNCE_IN_MILLIS = 300L
 private const val PAGINATION_THRESHOLD = 3 * PAGE_SIZE
+private const val HERO_MEMBER_SCAN_LIMIT = 100L
 
 @Inject
 @SingleIn(SessionScope::class)
@@ -70,12 +69,10 @@ class RoomListDataSource(
     private val sessionCoroutineScope: CoroutineScope,
     private val dateTimeObserver: DateTimeObserver,
     private val analyticsService: AnalyticsService,
-    private val sessionPreferencesStore: SessionPreferencesStore,
 ) {
     init {
         observeNotificationSettings()
         observeDateTimeChanges()
-        observeShowRoomBadges()
     }
 
     private val roomList = roomListService.createRoomList(
@@ -84,7 +81,6 @@ class RoomListDataSource(
         coroutineScope = sessionCoroutineScope
     )
     private val _roomSummariesFlow = MutableSharedFlow<ImmutableList<RoomListRoomSummary>>(replay = 1)
-    private val _showRoomBadges = MutableStateFlow(true)
 
     private val lock = Mutex()
     private val diffCache = MutableListDiffCache<RoomListRoomSummary>()
@@ -159,15 +155,6 @@ class RoomListDataSource(
             .launchIn(sessionCoroutineScope)
     }
 
-    private fun observeShowRoomBadges() {
-        sessionPreferencesStore.isShowRoomBadgesEnabled()
-            .onEach { enabled ->
-                _showRoomBadges.value = enabled
-                rebuildAllRoomSummaries()
-            }
-            .launchIn(sessionCoroutineScope)
-    }
-
     private suspend fun replaceWith(roomSummaries: List<RoomSummary>) = withContext(coroutineDispatchers.computation) {
         lock.withLock {
             diffCacheUpdater.updateWith(roomSummaries)
@@ -232,72 +219,40 @@ class RoomListDataSource(
 
     private suspend fun buildAndCacheItem(roomSummaries: List<RoomSummary>, index: Int): RoomListRoomSummary? {
         val roomListSummary = roomSummaries.getOrNull(index)?.let { summary ->
-            val participantDetails = summary.participantDetails()
-            if (_showRoomBadges.value) {
-                roomListRoomSummaryFactory.create(
-                    roomSummary = summary,
-                    participantHeroes = participantDetails.heroes,
-                    bridgeDetectionUserIds = participantDetails.bridgeDetectionUserIds,
-                )
-            } else {
-                roomListRoomSummaryFactory.create(
-                    roomSummary = summary,
-                    participantHeroes = participantDetails.heroes,
-                    skipBridgeDetection = true,
-                )
-            }
+            val participantHeroes = summary.participantHeroes()
+            roomListRoomSummaryFactory.create(
+                roomSummary = summary,
+                participantHeroes = participantHeroes,
+            )
         }
         diffCache[index] = roomListSummary
         return roomListSummary
     }
 
-    private suspend fun RoomSummary.participantDetails(): ParticipantDetails {
+    private suspend fun RoomSummary.participantHeroes(): List<AvatarData> {
         val roomInfo = info
         if (roomInfo.isSpace || roomInfo.activeMembersCount <= 1) {
-            return ParticipantDetails.Empty
+            return emptyList()
         }
 
         val joinedMembers = matrixClient.getJoinedRoom(roomId)
-            ?.getMembers(limit = roomInfo.activeMembersCount.coerceAtMost(BRIDGE_BADGE_MEMBER_SCAN_LIMIT).toInt())
+            ?.getMembers(limit = roomInfo.activeMembersCount.coerceAtMost(HERO_MEMBER_SCAN_LIMIT).toInt())
             ?.getOrNull()
             .orEmpty()
 
         val activeMembers = joinedMembers
             .filter { member -> member.membership == RoomMembershipState.JOIN && member.userId != matrixClient.sessionId }
 
-        val bridgeDetectionUserIds = activeMembers.map { member -> member.userId.value }
-
-        val heroes = if (roomInfo.avatarUrl != null || roomInfo.isDm) {
-            emptyList()
-        } else {
-            activeMembers.asSequence()
-                .withoutBridgeBotHeroes()
-                .sortedWith(compareByDescending { member -> member.avatarUrl != null })
-                .take(4)
-                .map { member -> member.getAvatarData(size = AvatarSize.RoomListItem) }
-                .toList()
+        if (roomInfo.avatarUrl != null || roomInfo.isDm) {
+            return emptyList()
         }
 
-        return ParticipantDetails(
-            heroes = heroes,
-            bridgeDetectionUserIds = bridgeDetectionUserIds,
-        )
-    }
-
-    private data class ParticipantDetails(
-        val heroes: List<AvatarData>,
-        val bridgeDetectionUserIds: List<String>,
-    ) {
-        companion object {
-            val Empty = ParticipantDetails(
-                heroes = emptyList(),
-                bridgeDetectionUserIds = emptyList(),
-            )
-        }
-    }
-
-    private companion object {
-        const val BRIDGE_BADGE_MEMBER_SCAN_LIMIT = 100L
+        return activeMembers.asSequence()
+            .withoutBridgeBotHeroes()
+            .sortedWith(compareByDescending { member -> member.avatarUrl != null })
+            .take(4)
+            .map { member -> member.getAvatarData(size = AvatarSize.RoomListItem) }
+            .toList()
     }
 
     private suspend fun rebuildAllRoomSummaries() {

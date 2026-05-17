@@ -169,7 +169,6 @@ internal fun aRoomListRoomSummary(
     isMarkedUnread: Boolean = false,
     latestEvent: LatestEvent = LatestEvent.Synced(LAST_MESSAGE),
     timestamp: String? = latestEvent.takeIf { it !is LatestEvent.None }?.let { "88:88" },
-    bridgeBadge: RoomBridgeBadge = RoomBridgeBadge.MATRIX,
     notificationMode: RoomNotificationMode? = null,
     hasRoomCall: Boolean = false,
     activeCallIntent: CallIntent? = null,
@@ -206,5 +205,4 @@ internal fun aRoomListRoomSummary(
     heroes = heroes.toImmutableList(),
     isTombstoned = isTombstoned,
     isSpace = isSpace,
-    bridgeBadge = bridgeBadge,
 )

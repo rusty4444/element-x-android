@@ -16,14 +16,13 @@ import androidx.activity.result.contract.ActivityResultContract
  * An [ActivityResultContract] that opens the system document picker for multiple
  * visual media files (images and videos).
  *
- * Unlike [androidx.activity.result.contract.ActivityResultContracts.PickMultipleVisualMedia],
- * which only shows images in multi-select mode, this contract uses
- * [Intent.ACTION_OPEN_DOCUMENT] with [Intent.EXTRA_MIME_TYPES] set to both
- * `image/*` and `video/*`, ensuring both media types appear with multi-select
- * on all Android versions.
+ * Unlike PickMultipleVisualMedia which only shows images in multi-select mode,
+ * this contract uses ACTION_OPEN_DOCUMENT with EXTRA_MIME_TYPES set to both
+ * image and video wildcard types, ensuring both media types appear with
+ * multi-select on all Android versions.
  *
  * The input is the MIME type string to use as the primary type filter
- * (e.g. `"image/*"`). Videos are added via EXTRA_MIME_TYPES.
+ * (e.g. "image/ *"). Videos are added via EXTRA_MIME_TYPES.
  */
 class OpenMultipleVisualMedia : ActivityResultContract<String, List<Uri>>() {
 

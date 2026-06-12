@@ -19,7 +19,6 @@ import androidx.core.content.FileProvider
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
 import io.element.android.libraries.di.annotations.ApplicationContext
-import io.element.android.libraries.core.mimetype.MimeTypes
 import io.element.android.libraries.mediapickers.api.ComposeMultiImagePickerLauncher
 import io.element.android.libraries.mediapickers.api.ComposePickerLauncher
 import io.element.android.libraries.mediapickers.api.MultiImagePickerLauncher
@@ -98,26 +97,6 @@ class DefaultPickerProvider(
             rememberPickerLauncher(type = PickerType.Video) { uri ->
                 val mimeType = uri?.let { context.contentResolver.getType(it) }
                 onResult(uri, mimeType)
-            }
-        }
-    }
-
-    /**
-     * Remembers and returns a [PickerLauncher] for multiple gallery items (images and video).
-     * Uses [OpenMultipleVisualMedia] which opens the system document picker with both
-     * image and video MIME types, enabling multi-select for both media types.
-     * [onResult] will be called with the selected URIs and their resolved MIME types.
-     */
-    @Composable
-    override fun registerGalleryMultiPicker(
-        onResult: (uris: List<Uri>, mimeTypes: List<String>) -> Unit
-    ): PickerLauncher<String, List<Uri>> {
-        return if (LocalInspectionMode.current) {
-            NoOpPickerLauncher { onResult(emptyList(), emptyList()) }
-        } else {
-            rememberPickerLauncher(type = PickerType.MultiImageAndVideo) { uris ->
-                val mimeTypes = uris.map { context.contentResolver.getType(it) ?: MimeTypes.OctetStream }
-                onResult(uris, mimeTypes)
             }
         }
     }

@@ -190,6 +190,9 @@ class MessageComposerPresenter(
         val multiImagePicker = mediaPickerProvider.registerMultiImagePicker { uris ->
             handlePickedMultipleUris(uris)
         }
+        val galleryVideoPicker = mediaPickerProvider.registerGalleryVideoPicker { uri, mimeType ->
+            handlePickedMedia(uri, mimeType ?: MimeTypes.Mp4)
+        }
         val isFullScreen = rememberSaveable {
             mutableStateOf(false)
         }
@@ -316,6 +319,10 @@ class MessageComposerPresenter(
                 MessageComposerEvent.PickAttachmentSource.Image -> localCoroutineScope.launch {
                     showAttachmentSourcePicker = false
                     multiImagePicker.launch()
+                }
+                MessageComposerEvent.PickAttachmentSource.VideoFromGallery -> localCoroutineScope.launch {
+                    showAttachmentSourcePicker = false
+                    galleryVideoPicker.launch()
                 }
                 MessageComposerEvent.PickAttachmentSource.FromFiles -> localCoroutineScope.launch {
                     showAttachmentSourcePicker = false

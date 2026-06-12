@@ -41,13 +41,6 @@ sealed interface PickerType<Input, Output> {
         }
     }
 
-    data object MultiImageAndVideo : PickerType<String, List<@JvmSuppressWildcards Uri>> {
-        override fun getContract() = OpenMultipleVisualMedia()
-        override fun getDefaultRequest(): String {
-            return "image/*"
-        }
-    }
-
     data object MultiImage : PickerType<PickVisualMediaRequest, List<Uri>> {
         override fun getContract() = ActivityResultContracts.PickMultipleVisualMedia()
         override fun getDefaultRequest(): PickVisualMediaRequest {

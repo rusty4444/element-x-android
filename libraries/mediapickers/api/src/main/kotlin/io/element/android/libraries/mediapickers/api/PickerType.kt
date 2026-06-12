@@ -34,6 +34,20 @@ sealed interface PickerType<Input, Output> {
         }
     }
 
+    data object Video : PickerType<PickVisualMediaRequest, Uri?> {
+        override fun getContract() = ActivityResultContracts.PickVisualMedia()
+        override fun getDefaultRequest(): PickVisualMediaRequest {
+            return PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.VideoOnly)
+        }
+    }
+
+    data object MultiImageAndVideo : PickerType<String, List<@JvmSuppressWildcards Uri>> {
+        override fun getContract() = ActivityResultContracts.GetMultipleContents()
+        override fun getDefaultRequest(): String {
+            return "*/*"
+        }
+    }
+
     object Camera {
         data class Photo(val destUri: Uri) : PickerType<Uri, Boolean> {
             override fun getContract() = ActivityResultContracts.TakePicture()

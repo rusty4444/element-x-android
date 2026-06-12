@@ -31,6 +31,19 @@ class FakePickerProvider : PickerProvider {
     }
 
     @Composable
+    override fun registerGalleryVideoPicker(onResult: (uri: Uri?, mimeType: String?) -> Unit): PickerLauncher<PickVisualMediaRequest, Uri?> {
+        return NoOpPickerLauncher { onResult(result, mimeType) }
+    }
+
+    @Composable
+    override fun registerGalleryMultiPicker(onResult: (uris: List<Uri>, mimeTypes: List<String>) -> Unit): PickerLauncher<String, List<Uri>> {
+        return NoOpPickerLauncher {
+            val uris = result?.let { listOf(it) }.orEmpty()
+            onResult(uris, uris.map { mimeType })
+        }
+    }
+
+    @Composable
     override fun registerFilePicker(mimeType: String, onResult: (Uri?, String?) -> Unit): PickerLauncher<String, Uri?> {
         return NoOpPickerLauncher { onResult(result, this.mimeType) }
     }

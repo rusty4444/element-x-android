@@ -103,9 +103,8 @@ class DefaultPickerProvider(
     }
 
     /**
-     * Remembers and returns a [PickerLauncher] for multiple gallery items (images + video).
-     * Uses [ActivityResultContracts.GetMultipleContents] with "*/*" MIME type to allow
-     * selecting both photos and videos in a single picker session.
+     * Remembers and returns a [PickerLauncher] for multiple gallery items (images and video).
+     * Uses GetMultipleContents to allow selecting both photos and videos in a single picker.
      * [onResult] will be called with the selected URIs and their resolved MIME types.
      */
     @Composable

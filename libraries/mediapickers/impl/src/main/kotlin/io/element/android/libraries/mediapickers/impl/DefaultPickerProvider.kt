@@ -104,7 +104,8 @@ class DefaultPickerProvider(
 
     /**
      * Remembers and returns a [PickerLauncher] for multiple gallery items (images and video).
-     * Uses GetMultipleContents to allow selecting both photos and videos in a single picker.
+     * Uses [OpenMultipleVisualMedia] which opens the system document picker with both
+     * image and video MIME types, enabling multi-select for both media types.
      * [onResult] will be called with the selected URIs and their resolved MIME types.
      */
     @Composable

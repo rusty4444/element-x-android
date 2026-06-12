@@ -127,6 +127,7 @@ class RoomDetailsPresenter(
         val isDeveloperModeEnabled by remember {
             appPreferencesStore.isDeveloperModeEnabledFlow()
         }.collectAsState(initial = false)
+        val roomBackgroundUri by appPreferencesStore.getRoomBackgroundFlow(room.roomId.value).collectAsState(initial = null)
 
         val roomNotificationSettingsState by room.roomNotificationSettingsStateFlow.collectAsState()
 
@@ -149,6 +150,18 @@ class RoomDetailsPresenter(
                     }
                 }
                 is RoomDetailsEvent.SetFavorite -> scope.setFavorite(event.isFavorite)
+                is RoomDetailsEvent.SetRoomBackground -> {
+                    scope.launch(dispatchers.io) {
+                        appPreferencesStore.setRoomBackground(room.roomId.value, event.uri)
+                    }
+                    snackbarDispatcher.post(SnackbarMessage(R.string.screen_room_background_set_success))
+                }
+                RoomDetailsEvent.ClearRoomBackground -> {
+                    scope.launch(dispatchers.io) {
+                        appPreferencesStore.setRoomBackground(room.roomId.value, null)
+                    }
+                    snackbarDispatcher.post(SnackbarMessage(R.string.screen_room_background_cleared))
+                }
                 is RoomDetailsEvent.CopyToClipboard -> {
                     clipboardHelper.copyPlainText(event.text)
                     snackbarDispatcher.post(SnackbarMessage(CommonStrings.common_copied_to_clipboard))
@@ -182,6 +195,7 @@ class RoomDetailsPresenter(
             leaveRoomState = leaveRoomState,
             roomNotificationSettings = roomNotificationSettingsState.roomNotificationSettings(),
             isFavorite = isFavorite,
+            roomBackgroundUri = roomBackgroundUri,
             displayRolesAndPermissionsSettings = !isDm && permissions.canEditRolesAndPermissions,
             isPublic = joinRule == JoinRule.Public,
             heroes = roomInfo.heroes.toImmutableList(),

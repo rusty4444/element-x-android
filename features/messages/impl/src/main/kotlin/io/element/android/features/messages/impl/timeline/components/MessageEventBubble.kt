@@ -8,7 +8,7 @@
 
 package io.element.android.features.messages.impl.timeline.components
 
-import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -17,9 +17,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithCache
@@ -28,6 +28,10 @@ import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.layer.CompositingStrategy
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
@@ -61,20 +65,39 @@ fun MessageEventBubble(
     interactionSource: MutableInteractionSource,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
+    onDoubleTap: () -> Unit,
     modifier: Modifier = Modifier,
     content: @Composable BoxScope.() -> Unit = {},
 ) {
+    // Use rememberUpdatedState to avoid stale captured callbacks when
+    // the same BubbleState remains equal across recompositions.
+    val onClickState = rememberUpdatedState(onClick)
+    val onLongClickState = rememberUpdatedState(onLongClick)
+    val onDoubleTapState = rememberUpdatedState(onDoubleTap)
+
     val clickableModifier = if (isTalkbackActive()) {
         Modifier
     } else {
         Modifier
-            .combinedClickable(
-                onClick = onClick,
-                onLongClick = onLongClick,
-                indication = ripple(),
-                interactionSource = interactionSource
-            )
-            .onKeyboardContextMenuAction(onLongClick)
+            .semantics(mergeDescendants = false) {
+                // Properly expose click semantics for accessibility / keyboard / tests
+                onClick(label = "Open message", action = { true })
+                stateDescription = "Message"
+            }
+            .pointerInput(Unit) {
+                detectTapGestures(
+                    onDoubleTap = {
+                        onDoubleTapState.value()
+                    },
+                    onLongPress = {
+                        onLongClickState.value()
+                    },
+                    onTap = {
+                        onClickState.value()
+                    },
+                )
+            }
+            .onKeyboardContextMenuAction(onLongClickState.value)
     }
 
     val cutTopStart = state.cutTopStart
@@ -194,6 +217,7 @@ internal fun MessageEventBubblePreview(@PreviewParameter(BubbleStateProvider::cl
             interactionSource = remember { MutableInteractionSource() },
             onClick = {},
             onLongClick = {},
+            onDoubleTap = {},
         ) {
             // Render the state as a text to better understand the previews
             Box(

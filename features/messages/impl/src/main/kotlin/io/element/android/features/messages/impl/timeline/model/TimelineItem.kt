@@ -44,12 +44,14 @@ sealed interface TimelineItem {
         is Event -> id
         is Virtual -> id
         is GroupedEvents -> id
+        is ImageGrid -> id
     }
 
     fun isEvent(eventId: EventId?): Boolean {
         if (eventId == null) return false
         return when (this) {
             is Event -> this.eventId == eventId
+            is ImageGrid -> events.any { it.eventId == eventId }
             else -> false
         }
     }
@@ -58,12 +60,14 @@ sealed interface TimelineItem {
         is Event -> content.type
         is Virtual -> model.type
         is GroupedEvents -> "groupedEvent"
+        is ImageGrid -> "imageGrid"
     }
 
     fun formattedDate(): String? = when (this) {
         is Event -> sentDate.takeIf { it.isNotEmpty() }
         is Virtual -> (model as? TimelineItemDaySeparatorModel)?.formattedDate?.takeIf { it.isNotEmpty() }
         is GroupedEvents -> null
+        is ImageGrid -> events.firstOrNull()?.sentDate?.takeIf { it.isNotEmpty() }
     }
 
     data class Virtual(
@@ -145,6 +149,11 @@ sealed interface TimelineItem {
         val id: UniqueId,
         val events: ImmutableList<Event>,
         val aggregatedReadReceipts: ImmutableList<ReadReceiptData>,
+    ) : TimelineItem
+
+    data class ImageGrid(
+        val id: UniqueId,
+        val events: ImmutableList<Event>,
     ) : TimelineItem
 }
 

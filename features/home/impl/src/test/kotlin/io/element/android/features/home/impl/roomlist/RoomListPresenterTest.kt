@@ -672,6 +672,7 @@ class RoomListPresenterTest {
         client = client,
         leaveRoomPresenter = { leaveRoomState },
         roomListDataSource = RoomListDataSource(
+            matrixClient = client,
             roomListService = client.roomListService,
             roomListRoomSummaryFactory = aRoomListRoomSummaryFactory(
                 dateFormatter = dateFormatter,

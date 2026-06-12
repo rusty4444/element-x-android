@@ -19,7 +19,11 @@ import androidx.core.content.FileProvider
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
 import io.element.android.libraries.di.annotations.ApplicationContext
+import io.element.android.libraries.core.mimetype.MimeTypes
+import io.element.android.libraries.mediapickers.api.ComposeMultiImagePickerLauncher
 import io.element.android.libraries.mediapickers.api.ComposePickerLauncher
+import io.element.android.libraries.mediapickers.api.MultiImagePickerLauncher
+import io.element.android.libraries.mediapickers.api.NoOpMultiImagePickerLauncher
 import io.element.android.libraries.mediapickers.api.NoOpPickerLauncher
 import io.element.android.libraries.mediapickers.api.PickerLauncher
 import io.element.android.libraries.mediapickers.api.PickerProvider
@@ -81,6 +85,44 @@ class DefaultPickerProvider(
     }
 
     /**
+     * Remembers and returns a [PickerLauncher] for a gallery video only.
+     * [onResult] will be called with either the selected file's [Uri] or `null` if nothing was selected.
+     */
+    @Composable
+    override fun registerGalleryVideoPicker(
+        onResult: (uri: Uri?, mimeType: String?) -> Unit
+    ): PickerLauncher<PickVisualMediaRequest, Uri?> {
+        return if (LocalInspectionMode.current) {
+            NoOpPickerLauncher { onResult(null, null) }
+        } else {
+            rememberPickerLauncher(type = PickerType.Video) { uri ->
+                val mimeType = uri?.let { context.contentResolver.getType(it) }
+                onResult(uri, mimeType)
+            }
+        }
+    }
+
+    /**
+     * Remembers and returns a [PickerLauncher] for multiple gallery items (images + video).
+     * Uses [ActivityResultContracts.GetMultipleContents] with "*/*" MIME type to allow
+     * selecting both photos and videos in a single picker session.
+     * [onResult] will be called with the selected URIs and their resolved MIME types.
+     */
+    @Composable
+    override fun registerGalleryMultiPicker(
+        onResult: (uris: List<Uri>, mimeTypes: List<String>) -> Unit
+    ): PickerLauncher<String, List<Uri>> {
+        return if (LocalInspectionMode.current) {
+            NoOpPickerLauncher { onResult(emptyList(), emptyList()) }
+        } else {
+            rememberPickerLauncher(type = PickerType.MultiImageAndVideo) { uris ->
+                val mimeTypes = uris.map { context.contentResolver.getType(it) ?: MimeTypes.OctetStream }
+                onResult(uris, mimeTypes)
+            }
+        }
+    }
+
+    /**
      * Remembers and returns a [PickerLauncher] for a file of a certain [mimeType] (any type of file, by default).
      * [onResult] will be called with either the selected file's [Uri] or `null` if nothing was selected.
      */
@@ -135,6 +177,26 @@ class DefaultPickerProvider(
                 // Execute callback
                 onResult(if (success) tmpFileUri else null)
             }
+        }
+    }
+
+    /**
+     * Remembers and returns a [MultiImagePickerLauncher] for picking multiple images from the gallery.
+     * [onResult] will be called with the list of selected [Uri]s (can be empty if nothing was selected).
+     */
+    @Composable
+    override fun registerMultiImagePicker(
+        onResult: (List<Uri>) -> Unit
+    ): MultiImagePickerLauncher {
+        // Tests and UI preview can't handle Contexts, so we might as well disable the whole picker
+        return if (LocalInspectionMode.current) {
+            NoOpMultiImagePickerLauncher()
+        } else {
+            val contract = PickerType.MultiImage.getContract()
+            val managedLauncher = rememberLauncherForActivityResult(contract = contract) { uris ->
+                onResult(uris)
+            }
+            remember { ComposeMultiImagePickerLauncher { request -> managedLauncher.launch(request) } }
         }
     }
 

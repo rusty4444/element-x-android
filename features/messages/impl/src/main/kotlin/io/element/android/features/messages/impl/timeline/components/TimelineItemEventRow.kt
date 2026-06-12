@@ -147,6 +147,7 @@ fun TimelineItemEventRow(
     displayThreadSummaries: Boolean,
     onEventClick: () -> Unit,
     onLongClick: () -> Unit,
+    onDoubleTap: () -> Unit,
     onLinkClick: (Link) -> Unit,
     onLinkLongClick: (Link) -> Unit,
     onUserDataClick: (MatrixUser) -> Unit,
@@ -225,6 +226,7 @@ fun TimelineItemEventRow(
                         interactionSource = interactionSource,
                         onContentClick = onContentClick,
                         onLongClick = onLongClick,
+                        onDoubleTap = onDoubleTap,
                         inReplyToClick = ::inReplyToClick,
                         onUserDataClick = ::onUserDataClick,
                         onReactionClick = { emoji -> onReactionClick(emoji, event) },
@@ -259,6 +261,7 @@ fun TimelineItemEventRow(
                 interactionSource = interactionSource,
                 onContentClick = onContentClick,
                 onLongClick = onLongClick,
+                onDoubleTap = onDoubleTap,
                 inReplyToClick = ::inReplyToClick,
                 onUserDataClick = ::onUserDataClick,
                 onReactionClick = { emoji -> onReactionClick(emoji, event) },
@@ -410,6 +413,7 @@ private fun TimelineItemEventRowContent(
     interactionSource: MutableInteractionSource,
     onContentClick: () -> Unit,
     onLongClick: () -> Unit,
+    onDoubleTap: () -> Unit,
     inReplyToClick: () -> Unit,
     onUserDataClick: () -> Unit,
     onReactionClick: (emoji: String) -> Unit,
@@ -456,11 +460,13 @@ private fun TimelineItemEventRowContent(
         }
 
         // Message bubble
-        val bubbleState = BubbleState(
-            groupPosition = event.groupPosition,
-            isMine = event.isMine,
-            timelineRoomInfo = timelineRoomInfo,
-        )
+        val bubbleState = remember(event.groupPosition, event.isMine, timelineRoomInfo) {
+            BubbleState(
+                groupPosition = event.groupPosition,
+                isMine = event.isMine,
+                timelineRoomInfo = timelineRoomInfo,
+            )
+        }
         MessageEventBubble(
             modifier = Modifier
                 .constrainAs(message) {
@@ -481,6 +487,7 @@ private fun TimelineItemEventRowContent(
             interactionSource = interactionSource,
             onClick = onContentClick,
             onLongClick = onLongClick,
+            onDoubleTap = onDoubleTap,
         ) {
             MessageEventBubbleContent(
                 event = event,

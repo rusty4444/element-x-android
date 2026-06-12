@@ -12,12 +12,19 @@ import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedFactory
 import dev.zacsweers.metro.AssistedInject
 import io.element.android.libraries.core.coroutine.CoroutineDispatchers
+import io.element.android.libraries.designsystem.components.avatar.AvatarData
+import io.element.android.libraries.designsystem.components.avatar.AvatarSize
+import io.element.android.libraries.matrix.api.MatrixClient
 import io.element.android.libraries.matrix.api.room.CurrentUserMembership
+import io.element.android.libraries.matrix.api.room.RoomMembershipState
+import io.element.android.libraries.matrix.api.room.isDm
 import io.element.android.libraries.matrix.api.roomlist.RoomList
 import io.element.android.libraries.matrix.api.roomlist.RoomListFilter
 import io.element.android.libraries.matrix.api.roomlist.RoomListService
+import io.element.android.libraries.matrix.api.roomlist.RoomSummary
 import io.element.android.libraries.matrix.api.roomlist.updateVisibleRange
 import io.element.android.libraries.matrix.ui.model.SelectRoomInfo
+import io.element.android.libraries.matrix.ui.model.getAvatarData
 import io.element.android.libraries.matrix.ui.model.toSelectRoomInfo
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
@@ -36,6 +43,7 @@ private const val PAGE_SIZE = 30
 @AssistedInject
 class RoomSelectSearchDataSource(
     @Assisted coroutineScope: CoroutineScope,
+    private val matrixClient: MatrixClient,
     roomListService: RoomListService,
     coroutineDispatchers: CoroutineDispatchers,
 ) {
@@ -55,7 +63,7 @@ class RoomSelectSearchDataSource(
             roomSummaries
                 .filter { it.info.currentUserMembership == CurrentUserMembership.JOINED }
                 .distinctBy { it.roomId } // This should be removed once we're sure no duplicate Rooms can be received
-                .map { roomSummary -> roomSummary.toSelectRoomInfo() }
+                .map { roomSummary -> roomSummary.toSelectRoomInfo(roomSummary.participantHeroes()) }
                 .toImmutableList()
         }
         .flowOn(coroutineDispatchers.computation)
@@ -71,5 +79,31 @@ class RoomSelectSearchDataSource(
             RoomListFilter.NormalizedMatchRoomName(searchQuery)
         }
         roomList.updateFilter(filter)
+    }
+
+    private suspend fun RoomSummary.participantHeroes(): ImmutableList<AvatarData> {
+        val roomInfo = info
+        if (roomInfo.avatarUrl != null || roomInfo.isDm || roomInfo.isSpace || roomInfo.activeMembersCount <= 1) {
+            return roomInfo.heroes
+                .take(4)
+                .map { user -> user.getAvatarData(size = AvatarSize.RoomSelectRoomListItem) }
+                .toImmutableList()
+        }
+        return matrixClient.getJoinedRoom(roomId)
+            ?.getMembers(limit = 5)
+            ?.getOrNull()
+            .orEmpty()
+            .asSequence()
+            .filter { member -> member.membership == RoomMembershipState.JOIN && member.userId != matrixClient.sessionId }
+            .sortedWith(compareByDescending { member -> member.avatarUrl != null })
+            .take(4)
+            .map { member -> member.getAvatarData(size = AvatarSize.RoomSelectRoomListItem) }
+            .toList()
+            .ifEmpty {
+                roomInfo.heroes
+                    .take(4)
+                    .map { user -> user.getAvatarData(size = AvatarSize.RoomSelectRoomListItem) }
+            }
+            .toImmutableList()
     }
 }

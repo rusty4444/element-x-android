@@ -91,6 +91,7 @@ fun TimelineItemImageView(
                 AsyncImage(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .widthIn(max = 800.dp)
                         .then(if (isLoaded) Modifier.background(Color.White) else Modifier)
                         .then(
                             if (!isTalkbackActive() && onContentClick != null) {

@@ -29,6 +29,7 @@ import io.element.android.compound.theme.ElementTheme
 import io.element.android.features.messages.impl.timeline.TimelineEvent
 import io.element.android.features.messages.impl.timeline.TimelineRoomInfo
 import io.element.android.features.messages.impl.timeline.components.event.TimelineItemEventContentView
+import io.element.android.features.messages.impl.timeline.components.event.TimelineItemImageGridView
 import io.element.android.features.messages.impl.timeline.components.layout.ContentAvoidingLayoutData
 import io.element.android.features.messages.impl.timeline.model.TimelineItem
 import io.element.android.features.messages.impl.timeline.model.event.TimelineItemLegacyCallInviteContent
@@ -66,6 +67,7 @@ internal fun TimelineItemRow(
     onLinkLongClick: (Link) -> Unit,
     onContentClick: (TimelineItem.Event) -> Unit,
     onLongClick: (TimelineItem.Event) -> Unit,
+    onDoubleTap: (TimelineItem.Event) -> Unit,
     inReplyToClick: (EventId) -> Unit,
     onReactionClick: (key: String, TimelineItem.Event) -> Unit,
     onReactionLongClick: (key: String, TimelineItem.Event) -> Unit,
@@ -170,6 +172,7 @@ internal fun TimelineItemRow(
                             displayThreadSummaries = displayThreadSummaries,
                             onEventClick = { onContentClick(timelineItem) },
                             onLongClick = { onLongClick(timelineItem) },
+                            onDoubleTap = { onDoubleTap(timelineItem) },
                             onLinkClick = onLinkClick,
                             onLinkLongClick = onLinkLongClick,
                             onUserDataClick = onUserDataClick,
@@ -208,6 +211,59 @@ internal fun TimelineItemRow(
                     onMoreReactionsClick = onMoreReactionsClick,
                     onReadReceiptClick = onReadReceiptClick,
                     eventSink = eventSink,
+                )
+            }
+            is TimelineItem.ImageGrid -> {
+                val baseEvent = timelineItem.events.last()
+                TimelineItemEventRow(
+                    modifier = Modifier
+                        .semantics(mergeDescendants = true) {
+                            contentDescription = baseEvent.safeSenderName
+                            isTraversalGroup = baseEvent.failedToSend || baseEvent.messageShield != null
+                        }
+                        .then(
+                            if (isTalkbackActive()) {
+                                Modifier
+                                    .combinedClickable(
+                                        onClick = { onContentClick(baseEvent) },
+                                        onLongClick = { onLongClick(baseEvent) },
+                                        onLongClickLabel = stringResource(CommonStrings.action_open_context_menu),
+                                    )
+                                    .onKeyboardContextMenuAction { onLongClick(baseEvent) }
+                            } else {
+                                Modifier
+                            }
+                        ),
+                    event = baseEvent,
+                    timelineMode = timelineMode,
+                    timelineRoomInfo = timelineRoomInfo,
+                    renderReadReceipts = renderReadReceipts,
+                    timelineProtectionState = timelineProtectionState,
+                    isLastOutgoingMessage = isLastOutgoingMessage,
+                    displayThreadSummaries = displayThreadSummaries,
+                    onEventClick = { onContentClick(baseEvent) },
+                    onLongClick = { onLongClick(baseEvent) },
+                    onDoubleTap = { onDoubleTap(baseEvent) },
+                    onLinkClick = onLinkClick,
+                    onLinkLongClick = onLinkLongClick,
+                    onUserDataClick = onUserDataClick,
+                    inReplyToClick = inReplyToClick,
+                    onReactionClick = onReactionClick,
+                    onReactionLongClick = onReactionLongClick,
+                    onMoreReactionsClick = onMoreReactionsClick,
+                    onReadReceiptClick = onReadReceiptClick,
+                    onSwipeToReply = { onSwipeToReply(baseEvent) },
+                    eventSink = eventSink,
+                    eventContentView = { contentModifier, _ ->
+                        TimelineItemImageGridView(
+                            events = timelineItem.events,
+                            hideMediaContent = { event -> timelineProtectionState.hideMediaContent(event.eventId) },
+                            onShowContentClick = { event -> timelineProtectionState.eventSink(TimelineProtectionEvent.ShowContent(event.eventId)) },
+                            onContentClick = onContentClick,
+                            onLongClick = onLongClick,
+                            modifier = contentModifier,
+                        )
+                    },
                 )
             }
         }

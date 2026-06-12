@@ -30,6 +30,7 @@ private val hideInviteAvatarsKey = booleanPreferencesKey("hideInviteAvatars")
 private val timelineMediaPreviewValueKey = stringPreferencesKey("timelineMediaPreviewValue")
 private val logLevelKey = stringPreferencesKey("logLevel")
 private val traceLogPacksKey = stringPreferencesKey("traceLogPacks")
+private val accentColorKey = stringPreferencesKey("accentColor")
 
 @ContributesBinding(AppScope::class)
 class DefaultAppPreferencesStore(
@@ -141,6 +142,36 @@ class DefaultAppPreferencesStore(
                 ?.mapNotNull { value -> TraceLogPack.entries.find { it.key == value } }
                 ?.toSet()
                 ?: emptySet()
+        }
+    }
+
+    override suspend fun setAccentColor(accentColor: String) {
+        store.edit { prefs ->
+            prefs[accentColorKey] = accentColor
+        }
+    }
+
+    override fun getAccentColorFlow(): Flow<String?> {
+        return store.data.map { prefs ->
+            prefs[accentColorKey]
+        }
+    }
+
+    override suspend fun setRoomBackground(roomId: String, uri: String?) {
+        val key = stringPreferencesKey("roomBackground:$roomId")
+        store.edit { prefs ->
+            if (uri != null) {
+                prefs[key] = uri
+            } else {
+                prefs.remove(key)
+            }
+        }
+    }
+
+    override fun getRoomBackgroundFlow(roomId: String): Flow<String?> {
+        val key = stringPreferencesKey("roomBackground:$roomId")
+        return store.data.map { prefs ->
+            prefs[key]
         }
     }
 

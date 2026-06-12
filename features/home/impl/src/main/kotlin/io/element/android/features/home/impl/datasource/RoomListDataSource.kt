@@ -15,15 +15,22 @@ import io.element.android.libraries.androidutils.diff.DiffCacheUpdater
 import io.element.android.libraries.androidutils.diff.MutableListDiffCache
 import io.element.android.libraries.androidutils.system.DateTimeObserver
 import io.element.android.libraries.core.coroutine.CoroutineDispatchers
+import io.element.android.libraries.designsystem.components.avatar.AvatarData
+import io.element.android.libraries.designsystem.components.avatar.AvatarSize
 import io.element.android.libraries.di.SessionScope
 import io.element.android.libraries.di.annotations.SessionCoroutineScope
+import io.element.android.libraries.matrix.api.MatrixClient
 import io.element.android.libraries.matrix.api.core.RoomId
 import io.element.android.libraries.matrix.api.notificationsettings.NotificationSettingsService
+import io.element.android.libraries.matrix.api.room.RoomMembershipState
+import io.element.android.libraries.matrix.api.room.isDm
 import io.element.android.libraries.matrix.api.roomlist.RoomList
 import io.element.android.libraries.matrix.api.roomlist.RoomListFilter
 import io.element.android.libraries.matrix.api.roomlist.RoomListService
 import io.element.android.libraries.matrix.api.roomlist.RoomSummary
 import io.element.android.libraries.matrix.api.roomlist.updateVisibleRange
+import io.element.android.libraries.matrix.ui.model.getAvatarData
+import io.element.android.libraries.matrix.ui.model.withoutBridgeBotHeroes
 import io.element.android.services.analytics.api.AnalyticsService
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
@@ -42,16 +49,20 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.seconds
 
 private const val PAGE_SIZE = 20
 private const val EXTENDED_VISIBILITY_RANGE_SIZE = 40
 private const val SUBSCRIBE_TO_VISIBLE_ROOMS_DEBOUNCE_IN_MILLIS = 300L
 private const val PAGINATION_THRESHOLD = 3 * PAGE_SIZE
+private const val HERO_MEMBER_SCAN_LIMIT = 100L
+private val HERO_CACHE_TTL = 183.days
 
 @Inject
 @SingleIn(SessionScope::class)
 class RoomListDataSource(
+    private val matrixClient: MatrixClient,
     private val roomListService: RoomListService,
     private val roomListRoomSummaryFactory: RoomListRoomSummaryFactory,
     private val coroutineDispatchers: CoroutineDispatchers,
@@ -79,13 +90,25 @@ class RoomListDataSource(
         old?.roomId == new?.roomId
     }
 
+    /**
+     * Cache for hero member data keyed by room ID.
+     * Avoids expensive JNI getMembers() calls on every sync tick.
+     */
+    private data class CachedHeroes(
+        val heroes: List<AvatarData>,
+        val cachedAtMillis: Long,
+    )
+    private val heroCache = mutableMapOf<RoomId, CachedHeroes>()
+
     val roomSummariesFlow: Flow<ImmutableList<RoomListRoomSummary>> = _roomSummariesFlow
 
     val loadingState = roomList.loadingState
 
+    @OptIn(FlowPreview::class)
     fun launchIn(coroutineScope: CoroutineScope) {
         roomList
             .summaries
+            .debounce(100)
             .onEach { roomSummaries ->
                 replaceWith(roomSummaries)
             }
@@ -121,6 +144,7 @@ class RoomListDataSource(
                 currentRoomList.getOrNull(index)?.roomId
             }
             roomListService.subscribeToVisibleRooms(roomIds)
+            rebuildAllRoomSummaries()
         }
     }
 
@@ -165,7 +189,11 @@ class RoomListDataSource(
                     val pairs = cachingResults.getOrDefault(cachedItem.roomId, mutableListOf())
                     pairs.add(CacheResult(index, fromCache = true))
                     cachingResults[cachedItem.roomId] = pairs
-                    cachedItem
+                    if (cachedItem.heroes.isEmpty()) {
+                        buildAndCacheItem(roomSummaries, index) ?: cachedItem
+                    } else {
+                        cachedItem
+                    }
                 } ?: run {
                     roomSummaries.getOrNull(index)?.roomId?.let {
                         // Add the non-cached item to the caching results
@@ -203,10 +231,52 @@ class RoomListDataSource(
         }
     }
 
-    private fun buildAndCacheItem(roomSummaries: List<RoomSummary>, index: Int): RoomListRoomSummary? {
-        val roomListSummary = roomSummaries.getOrNull(index)?.let { roomListRoomSummaryFactory.create(it) }
+    private suspend fun buildAndCacheItem(roomSummaries: List<RoomSummary>, index: Int): RoomListRoomSummary? {
+        val roomListSummary = roomSummaries.getOrNull(index)?.let { summary ->
+            val participantHeroes = summary.participantHeroes()
+            roomListRoomSummaryFactory.create(
+                roomSummary = summary,
+                participantHeroes = participantHeroes,
+            )
+        }
         diffCache[index] = roomListSummary
         return roomListSummary
+    }
+
+    private suspend fun RoomSummary.participantHeroes(): List<AvatarData> {
+        val roomInfo = info
+        if (roomInfo.isSpace || roomInfo.activeMembersCount <= 1 || roomInfo.avatarUrl != null || roomInfo.isDm) {
+            return emptyList()
+        }
+
+        // Check cache first — room hero avatars are cosmetic, so keep them stable for a long time
+        // instead of re-fetching room members on every sync tick/latest event update.
+        val cached = heroCache[roomId]
+        val now = System.currentTimeMillis()
+        if (cached != null && now - cached.cachedAtMillis < HERO_CACHE_TTL.inWholeMilliseconds) {
+            return cached.heroes
+        }
+
+        // Cache miss or stale — fetch via JNI
+        val joinedMembers = matrixClient.getJoinedRoom(roomId)
+            ?.getMembers(limit = roomInfo.activeMembersCount.coerceAtMost(HERO_MEMBER_SCAN_LIMIT).toInt())
+            ?.getOrNull()
+            .orEmpty()
+
+        val activeMembers = joinedMembers
+            .filter { member -> member.membership == RoomMembershipState.JOIN && member.userId != matrixClient.sessionId }
+
+        val heroes = activeMembers.asSequence()
+            .withoutBridgeBotHeroes()
+            .sortedWith(compareByDescending { member -> member.avatarUrl != null })
+            .take(4)
+            .map { member -> member.getAvatarData(size = AvatarSize.RoomListItem) }
+            .toList()
+
+        // Store in cache
+        heroCache[roomId] = CachedHeroes(heroes = heroes, cachedAtMillis = now)
+
+        return heroes
     }
 
     private suspend fun rebuildAllRoomSummaries() {

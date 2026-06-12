@@ -8,6 +8,7 @@
 
 package io.element.android.features.home.impl.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -24,6 +25,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -32,6 +34,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextOverflow
@@ -234,16 +238,17 @@ private fun NameAndTimestampRow(
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
-        // Timestamp
-        Text(
-            text = timestamp ?: "",
-            style = ElementTheme.typography.fontBodySmMedium,
-            color = if (isHighlighted) {
-                ElementTheme.colors.unreadIndicator
-            } else {
-                ElementTheme.colors.roomListRoomMessageDate
-            },
-        )
+        if (timestamp != null) {
+            Text(
+                text = timestamp,
+                style = ElementTheme.typography.fontBodySmMedium,
+                color = if (isHighlighted) {
+                    ElementTheme.colors.unreadIndicator
+                } else {
+                    ElementTheme.colors.roomListRoomMessageDate
+                },
+            )
+        }
     }
 }
 
@@ -340,7 +345,7 @@ private fun MessagePreviewAndIndicatorRow(
         // Call and unread
         Row(
             modifier = Modifier
-                .height(16.dp)
+                .heightIn(min = 20.dp)
                 // Used to force this line to be read aloud earlier than the latest event when using Talkback
                 .zIndex(-1f),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -359,10 +364,18 @@ private fun MessagePreviewAndIndicatorRow(
                 MentionIndicatorAtom()
             }
             if (room.hasNewContent) {
-                val contentDescription = stringResource(CommonStrings.a11y_notifications_new_messages)
-                UnreadIndicatorAtom(
+                val unreadCount = room.numberOfUnreadMessages.takeIf { it > 0 }
+                    ?: room.numberOfUnreadNotifications.takeIf { it > 0 }
+                val contentDescription = if (unreadCount != null) {
+                    stringResource(CommonStrings.a11y_notifications_new_messages) + ": $unreadCount"
+                } else {
+                    stringResource(CommonStrings.a11y_notifications_new_messages)
+                }
+                UnreadCountBadge(
+                    count = unreadCount,
                     color = tint,
                     contentDescription = contentDescription,
+                    isMarkedUnread = room.isMarkedUnread,
                 )
             }
         }
@@ -430,6 +443,49 @@ private fun MentionIndicatorAtom() {
         imageVector = CompoundIcons.Mention(),
         tint = ElementTheme.colors.unreadIndicator,
     )
+}
+
+/**
+ * Beeper-style unread count badge.
+ * Shows a numeric count inside a colored pill when available, otherwise shows a dot.
+ * Falls back to a dot for manually marked-unread rooms.
+ */
+@Composable
+private fun UnreadCountBadge(
+    count: Long?,
+    color: Color,
+    contentDescription: String,
+    isMarkedUnread: Boolean,
+) {
+    val hasCount = count != null && !isMarkedUnread
+    if (hasCount) {
+        // Use the accent color from the theme for the badge background
+        Box(
+            modifier = Modifier
+                .padding(start = 2.dp)
+                .heightIn(min = 18.dp)
+                .widthIn(min = 18.dp)
+                .background(
+                    color = ElementTheme.colors.bgBadgeAccent,
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(10.dp),
+                )
+                .semantics { this.contentDescription = contentDescription },
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text = if (count > 99) "99+" else count.toString(),
+                color = ElementTheme.colors.textBadgeAccent,
+                style = ElementTheme.typography.fontBodySmMedium,
+                modifier = Modifier.padding(horizontal = 5.dp),
+            )
+        }
+    } else {
+        // Dot for marked-unread or when no count available
+        UnreadIndicatorAtom(
+            color = color,
+            contentDescription = contentDescription,
+        )
+    }
 }
 
 @PreviewsDayNight

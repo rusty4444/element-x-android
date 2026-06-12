@@ -8,6 +8,7 @@
 
 package io.element.android.libraries.designsystem.theme.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -17,7 +18,10 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.Stable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
@@ -27,6 +31,50 @@ import io.element.android.libraries.designsystem.components.button.BackButton
 import io.element.android.libraries.designsystem.preview.ElementThemedPreview
 import io.element.android.libraries.designsystem.preview.PreviewGroup
 import io.element.android.libraries.designsystem.theme.aliasScreenTitle
+
+/** Default colors for top app bars themed to Element design system. */
+@OptIn(ExperimentalMaterial3Api::class)
+object ElementTopAppBarDefaults {
+    @Composable
+    fun elementTopAppBarColors(
+        showBackgroundThrough: Boolean = false,
+        showGradient: Boolean = false,
+    ): TopAppBarColors {
+        val containerColor = when {
+            showBackgroundThrough -> Color.Transparent
+            showGradient -> Color.Transparent
+            else -> ElementTheme.colors.bgSubtleSecondary
+        }
+        return TopAppBarDefaults.topAppBarColors(
+            containerColor = containerColor,
+            titleContentColor = ElementTheme.colors.textPrimary,
+            navigationIconContentColor = ElementTheme.colors.textPrimary,
+            actionIconContentColor = ElementTheme.colors.textActionPrimary,
+        )
+    }
+
+    @Stable
+    @Composable
+    fun Modifier.roomAppBarBackground(
+        showBackgroundThrough: Boolean = false,
+        showGradient: Boolean = false,
+    ): Modifier {
+        return when {
+            showBackgroundThrough || showGradient -> {
+                this.background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            ElementTheme.colors.bgCanvasDefault.copy(alpha = 0.95f),
+                            ElementTheme.colors.bgCanvasDefault.copy(alpha = 0.7f),
+                            Color.Transparent,
+                        ),
+                    ),
+                )
+            }
+            else -> this
+        }
+    }
+}
 
 /**
  * A top app bar that displays a title string, navigation icon, and actions.
@@ -46,7 +94,7 @@ fun TopAppBar(
     navigationIcon: @Composable () -> Unit = {},
     actions: @Composable RowScope.() -> Unit = {},
     windowInsets: WindowInsets = TopAppBarDefaults.windowInsets,
-    colors: TopAppBarColors = TopAppBarDefaults.topAppBarColors(),
+    colors: TopAppBarColors = ElementTopAppBarDefaults.elementTopAppBarColors(),
     scrollBehavior: TopAppBarScrollBehavior? = null
 ) {
     TopAppBar(
@@ -86,7 +134,7 @@ fun TopAppBar(
     navigationIcon: @Composable () -> Unit = {},
     actions: @Composable RowScope.() -> Unit = {},
     windowInsets: WindowInsets = TopAppBarDefaults.windowInsets,
-    colors: TopAppBarColors = TopAppBarDefaults.topAppBarColors(),
+    colors: TopAppBarColors = ElementTopAppBarDefaults.elementTopAppBarColors(),
     scrollBehavior: TopAppBarScrollBehavior? = null
 ) {
     androidx.compose.material3.TopAppBar(

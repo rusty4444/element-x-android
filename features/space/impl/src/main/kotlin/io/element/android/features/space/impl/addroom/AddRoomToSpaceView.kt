@@ -47,7 +47,6 @@ import io.element.android.libraries.designsystem.theme.components.TopAppBar
 import io.element.android.libraries.designsystem.utils.OnVisibleRangeChangeEffect
 import io.element.android.libraries.matrix.ui.components.SelectedRoom
 import io.element.android.libraries.matrix.ui.model.SelectRoomInfo
-import io.element.android.libraries.matrix.ui.model.getAvatarData
 import io.element.android.libraries.ui.strings.CommonStrings
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
@@ -227,9 +226,7 @@ private fun RoomListItem(
     AvatarListItem(
         avatarData = roomInfo.getAvatarData(size = AvatarSize.RoomSelectRoomListItem),
         avatarType = AvatarType.Room(
-            heroes = roomInfo.heroes.map { user ->
-                user.getAvatarData(size = AvatarSize.RoomSelectRoomListItem)
-            }.toImmutableList(),
+            heroes = roomInfo.getHeroAvatarData(size = AvatarSize.RoomSelectRoomListItem).toImmutableList(),
             isTombstoned = roomInfo.isTombstoned,
         ),
         headline = roomInfo.name ?: stringResource(id = CommonStrings.common_no_room_name),

@@ -51,6 +51,7 @@ dependencies {
     implementation(projects.libraries.mediaupload.api)
     implementation(projects.libraries.permissions.api)
     implementation(projects.libraries.preferences.api)
+    implementation(projects.libraries.workmanager.api)
     implementation(projects.libraries.recentemojis.api)
     implementation(projects.libraries.roomselect.api)
     implementation(projects.libraries.slashcommands.api)

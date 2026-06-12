@@ -8,6 +8,10 @@
 
 package io.element.android.features.messages.impl
 
+import android.content.Intent
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
@@ -26,9 +30,10 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBars
-import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -40,8 +45,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
@@ -51,6 +58,7 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
@@ -89,7 +97,9 @@ import io.element.android.features.messages.impl.timeline.model.TimelineItem
 import io.element.android.features.messages.impl.timeline.model.TimelineItemGroupPosition
 import io.element.android.features.messages.impl.timeline.model.event.aTimelineItemStateEventContent
 import io.element.android.features.messages.impl.timeline.model.event.aTimelineItemTextContent
+import io.element.android.features.messages.impl.timeline.model.event.canReact
 import io.element.android.features.messages.impl.topbars.MessagesViewTopBar
+import io.element.android.features.messages.impl.topbars.RoomBarMode
 import io.element.android.features.messages.impl.topbars.ThreadTopBar
 import io.element.android.features.messages.impl.voicemessages.composer.VoiceMessagePermissionRationaleDialog
 import io.element.android.features.messages.impl.voicemessages.composer.VoiceMessageSendingFailedDialog
@@ -124,8 +134,12 @@ import io.element.android.libraries.matrix.api.user.MatrixUser
 import io.element.android.libraries.textcomposer.model.TextEditorState
 import io.element.android.libraries.ui.strings.CommonStrings
 import io.element.android.wysiwyg.link.Link
+import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import timber.log.Timber
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Locale
 import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
@@ -141,6 +155,8 @@ fun MessagesView(
     onJoinCallClick: (isAudioCall: Boolean) -> Unit,
     onViewAllPinnedMessagesClick: () -> Unit,
     onThreadsListClick: () -> Unit,
+    onSetRoomBackground: (Uri) -> Unit,
+    onClearRoomBackground: () -> Unit,
     modifier: Modifier = Modifier,
     forceJumpToBottomVisibility: Boolean = false,
     knockRequestsBannerView: @Composable () -> Unit,
@@ -156,11 +172,23 @@ fun MessagesView(
     val snackbarHostState = rememberSnackbarHostState(snackbarMessage = state.snackbarMessage)
 
     var maxComposerHeightPx by remember { mutableIntStateOf(120) }
+    var showBackgroundPicker by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument(),
+        onResult = { uri ->
+            if (uri != null) {
+                context.contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                onSetRoomBackground(uri)
+            }
+        },
+    )
 
     // This is needed because the composer is inside an AndroidView that can't be affected by the FocusManager in Compose
     val localView = LocalView.current
 
     fun hidingKeyboard(block: () -> Unit) {
+        localView.clearFocus()
         localView.hideKeyboard()
         block()
     }
@@ -174,6 +202,7 @@ fun MessagesView(
     }
 
     fun onMessageLongClick(event: TimelineItem.Event) {
+        localView.performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS)
         Timber.v("OnMessageLongClicked= ${event.id}")
         hidingKeyboard {
             state.actionListState.eventSink(
@@ -190,7 +219,23 @@ fun MessagesView(
     }
 
     fun onEmojiReactionClick(emoji: String, event: TimelineItem.Event) {
+        localView.clearFocus()
+        localView.hideKeyboard()
         state.eventSink(MessagesEvent.ToggleReaction(emoji, event.eventOrTransactionId))
+    }
+
+    fun onMessageDoubleTap(event: TimelineItem.Event) {
+        // Only react if the user can send reactions and the content is reactable
+        if (!state.timelineState.timelineRoomInfo.userHasPermissionToSendReaction) {
+            return
+        }
+        if (!event.content.canReact()) {
+            return
+        }
+        localView.performHapticFeedback(android.view.HapticFeedbackConstants.CONFIRM)
+        Timber.v("onMessageDoubleTap= ${event.id}")
+        // Use the same heart emoji as the suggested reactions so they aggregate
+        state.eventSink(MessagesEvent.ToggleReaction("❤️", event.eventOrTransactionId))
     }
 
     fun onEmojiReactionLongClick(emoji: String, event: TimelineItem.Event) {
@@ -206,8 +251,8 @@ fun MessagesView(
     ExpandableBottomSheetLayout(
         modifier = modifier
             .fillMaxSize()
+            .navigationBarsPadding()
             .imePadding()
-            .systemBarsPadding()
             .onSizeChanged { size ->
                 // Let the composer takes at max half of the available height.
                 // The value will be different if the soft keyboard is displayed
@@ -215,8 +260,10 @@ fun MessagesView(
                 maxComposerHeightPx = (size.height * 0.5f).toInt()
             },
         content = {
-            Scaffold(
-                contentWindowInsets = WindowInsets.statusBars,
+            Box(modifier = Modifier.fillMaxSize()) {
+                Scaffold(
+                    containerColor = if (state.roomBackgroundUri != null) Color.Transparent else ElementTheme.colors.bgCanvasDefault,
+                    contentWindowInsets = WindowInsets(0),
                 topBar = {
                     if (state.timelineState.timelineMode is Timeline.Mode.Thread) {
                         ThreadTopBar(
@@ -236,12 +283,14 @@ fun MessagesView(
                             sharedHistoryIcon = state.topBarSharedHistoryIcon,
                             onBackClick = { hidingKeyboard { onBackClick() } },
                             onRoomDetailsClick = { hidingKeyboard { onRoomDetailsClick() } },
+                            barMode = if (state.roomBackgroundUri != null) RoomBarMode.HAS_ROOM_BG else RoomBarMode.GRADIENT,
                             menuActions = {
                                 MessagesMenuActions(
                                     displayThreads = state.timelineState.timelineMode !is Timeline.Mode.Thread && state.threads.hasThreads,
                                     roomCallState = state.roomCallState,
                                     onJoinCallClick = onJoinCallClick,
-                                    onThreadsListClick = onThreadsListClick
+                                    onThreadsListClick = onThreadsListClick,
+                                    onSetRoomBackgroundClick = { showBackgroundPicker = true },
                                 )
                             }
                         )
@@ -252,11 +301,13 @@ fun MessagesView(
                         modifier = Modifier
                             .padding(padding)
                             .consumeWindowInsets(padding)
+                            .navigationBarsPadding()
                     ) {
                         MessagesViewContent(
                             state = state,
                             onContentClick = ::onContentClick,
                             onMessageLongClick = ::onMessageLongClick,
+                            onMessageDoubleTap = ::onMessageDoubleTap,
                             onUserDataClick = {
                                 hidingKeyboard {
                                     state.eventSink(MessagesEvent.OnUserClicked(it))
@@ -309,6 +360,7 @@ fun MessagesView(
                     )
                 },
             )
+        }
         },
         bottomSheetContent = {
             MessagesViewComposerBottomSheetContents(
@@ -408,6 +460,35 @@ fun MessagesView(
         },
         state = state.linkState,
     )
+
+    // Room background picker dialog
+    if (showBackgroundPicker) {
+        val dialogSubmitText = if (state.roomBackgroundUri != null) {
+            stringResource(id = R.string.screen_room_clear_background_action)
+        } else {
+            stringResource(id = R.string.screen_room_set_background_action)
+        }
+        ConfirmationDialog(
+            title = stringResource(id = R.string.screen_room_set_background_title),
+            content = stringResource(
+                id = if (state.roomBackgroundUri != null) {
+                    R.string.screen_room_current_background_message
+                } else {
+                    R.string.screen_room_set_background_message
+                },
+            ),
+            submitText = dialogSubmitText,
+            onSubmitClick = {
+                if (state.roomBackgroundUri != null) {
+                    onClearRoomBackground()
+                } else {
+                    imagePickerLauncher.launch(arrayOf("image/*"))
+                }
+                showBackgroundPicker = false
+            },
+            onDismiss = { showBackgroundPicker = false },
+        )
+    }
 }
 
 @Composable
@@ -416,6 +497,7 @@ internal fun MessagesMenuActions(
     roomCallState: RoomCallState,
     onJoinCallClick: (isAudioCall: Boolean) -> Unit,
     onThreadsListClick: () -> Unit,
+    onSetRoomBackgroundClick: () -> Unit,
 ) {
     if (displayThreads) {
         Icon(
@@ -430,6 +512,11 @@ internal fun MessagesMenuActions(
         onJoinCallClick = onJoinCallClick,
     )
     Spacer(Modifier.width(8.dp))
+    Icon(
+        modifier = Modifier.clickable(enabled = true, onClick = onSetRoomBackgroundClick),
+        imageVector = CompoundIcons.Image(),
+        contentDescription = stringResource(R.string.screen_room_set_background_action),
+    )
 }
 
 @Composable
@@ -457,6 +544,7 @@ private fun MessagesViewContent(
     onMoreReactionsClick: (TimelineItem.Event) -> Unit,
     onReadReceiptClick: (TimelineItem.Event) -> Unit,
     onMessageLongClick: (TimelineItem.Event) -> Unit,
+    onMessageDoubleTap: (TimelineItem.Event) -> Unit,
     onSendLocationClick: () -> Unit,
     onCreatePollClick: () -> Unit,
     onViewAllPinnedMessagesClick: () -> Unit,
@@ -509,6 +597,7 @@ private fun MessagesViewContent(
                 onLinkClick = { link -> onLinkClick(link, false) },
                 onContentClick = onContentClick,
                 onMessageLongClick = onMessageLongClick,
+                onMessageDoubleTap = onMessageDoubleTap,
                 onSwipeToReply = onSwipeToReply,
                 onReactionClick = onReactionClick,
                 onReactionLongClick = onReactionLongClick,
@@ -517,6 +606,7 @@ private fun MessagesViewContent(
                 forceJumpToBottomVisibility = forceJumpToBottomVisibility,
                 nestedScrollConnection = scrollBehavior.nestedScrollConnection,
                 floatingDateTopOffset = pinnedBannerHeightDp,
+                roomBackgroundUri = state.roomBackgroundUri,
             )
 
             if (state.timelineState.timelineMode !is Timeline.Mode.Thread) {
@@ -632,9 +722,11 @@ internal fun MessagesViewPreview(@PreviewParameter(MessagesStateProvider::class)
         onCreatePollClick = {},
         onJoinCallClick = {},
         onViewAllPinnedMessagesClick = { },
+        onThreadsListClick = {},
+        onSetRoomBackground = {},
+        onClearRoomBackground = {},
         forceJumpToBottomVisibility = true,
         knockRequestsBannerView = {},
-        onThreadsListClick = {},
     )
 }
 
@@ -688,6 +780,8 @@ internal fun MessagesViewA11yPreview() = ElementPreview {
         onJoinCallClick = {},
         onViewAllPinnedMessagesClick = {},
         onThreadsListClick = {},
+        onSetRoomBackground = {},
+        onClearRoomBackground = {},
         forceJumpToBottomVisibility = true,
         knockRequestsBannerView = {},
     )

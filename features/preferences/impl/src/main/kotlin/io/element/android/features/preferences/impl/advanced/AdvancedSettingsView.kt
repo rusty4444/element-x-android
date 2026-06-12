@@ -79,6 +79,14 @@ fun AdvancedSettingsView(
                 state.eventSink(AdvancedSettingsEvents.SetTheme(themeOption))
             }
         )
+        PreferenceDropdown(
+            title = stringResource(id = R.string.screen_advanced_settings_accent_color),
+            selectedOption = state.accentColor,
+            options = state.availableAccentColorOptions,
+            onSelectOption = { accentOption ->
+                state.eventSink(AdvancedSettingsEvents.SetAccentColor(accentOption))
+            }
+        )
         ListItem(
             headlineContent = {
                 Text(text = stringResource(id = CommonStrings.action_view_source))
@@ -102,6 +110,18 @@ fun AdvancedSettingsView(
                 checked = state.isSharePresenceEnabled,
             ),
             onClick = { state.eventSink(AdvancedSettingsEvents.SetSharePresenceEnabled(!state.isSharePresenceEnabled)) }
+        )
+        ListItem(
+            headlineContent = {
+                Text(text = stringResource(id = R.string.screen_advanced_settings_show_encryption_warning))
+            },
+            supportingContent = {
+                Text(text = stringResource(id = R.string.screen_advanced_settings_show_encryption_warning_description))
+            },
+            trailingContent = ListItemContent.Switch(
+                checked = state.isShowEncryptionWarningEnabled,
+            ),
+            onClick = { state.eventSink(AdvancedSettingsEvents.SetShowEncryptionWarning(!state.isShowEncryptionWarningEnabled)) }
         )
         val compressImages = state.mediaOptimizationState?.shouldCompressImages
 

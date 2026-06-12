@@ -182,6 +182,7 @@ private fun TimelineItemGroupedEventsRowContent(
                         onLinkLongClick = onLinkLongClick,
                         onContentClick = onClick,
                         onLongClick = onLongClick,
+                        onDoubleTap = {},
                         inReplyToClick = inReplyToClick,
                         onReactionClick = onReactionClick,
                         onReactionLongClick = onReactionLongClick,

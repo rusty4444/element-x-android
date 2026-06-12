@@ -38,12 +38,11 @@ val SemanticColors.unreadIndicator
 val SemanticColors.placeholderBackground
     get() = bgSubtleSecondary
 
-// This color is not present in Semantic color, so put hard-coded value for now
-@OptIn(CoreColorToken::class)
+// "My messages" bubble — uses the accent theme's subtle color so it tints with the chosen theme
 val SemanticColors.messageFromMeBackground
-    get() = if (isLight) LightColorTokens.colorGray400 else DarkColorTokens.colorGray500
+    get() = if (isLight) bgSubtlePrimary else bgSubtleSecondary
 
-// This color is not present in Semantic color, so put hard-coded value for now
+// "Others' messages" bubble — always a neutral gray so accents don't compete
 @OptIn(CoreColorToken::class)
 val SemanticColors.messageFromOtherBackground
     get() = if (isLight) LightColorTokens.colorGray300 else DarkColorTokens.colorGray400

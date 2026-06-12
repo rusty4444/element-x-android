@@ -228,6 +228,7 @@ private fun AndroidComposeUiTest<ComponentActivity>.setTimelineView(
             onLinkClick = onLinkClick,
             onContentClick = onMessageClick,
             onMessageLongClick = onMessageLongClick,
+            onMessageDoubleTap = {},
             onSwipeToReply = onSwipeToReply,
             onReactionClick = onReactionClick,
             onReactionLongClick = onReactionLongClick,

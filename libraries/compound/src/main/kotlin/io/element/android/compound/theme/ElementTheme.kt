@@ -101,16 +101,17 @@ fun ElementTheme(
     materialColorsLight: ColorScheme = compoundLight.toMaterialColorScheme(),
     materialColorsDark: ColorScheme = compoundDark.toMaterialColorScheme(),
     typography: Typography = compoundTypography,
+    accentColor: AccentColor = AccentColor.Default,
     content: @Composable () -> Unit,
 ) {
     val darkTheme = theme.isDark()
     val currentCompoundColor = when {
         darkTheme -> if (theme == Theme.Black) {
-            compoundDark.copy(bgCanvasDefault = Color.Black)
+            compoundDark.copy(bgCanvasDefault = Color.Black).withAccentColor(accentColor, isDark = true)
         } else {
-            compoundDark
+            compoundDark.withAccentColor(accentColor, isDark = true)
         }
-        else -> compoundLight
+        else -> compoundLight.withAccentColor(accentColor, isDark = false)
     }
 
     val colorScheme = when {

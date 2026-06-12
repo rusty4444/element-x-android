@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
@@ -41,9 +42,11 @@ import io.element.android.libraries.designsystem.components.avatar.AvatarSize
 import io.element.android.libraries.designsystem.components.avatar.AvatarType
 import io.element.android.libraries.designsystem.components.avatar.anAvatarData
 import io.element.android.libraries.designsystem.components.button.BackButton
+import io.element.android.libraries.designsystem.modifiers.backgroundVerticalGradient
 import io.element.android.libraries.designsystem.preview.ElementPreview
 import io.element.android.libraries.designsystem.preview.PreviewsDayNight
 import io.element.android.libraries.designsystem.preview.ROOM_NAME
+import io.element.android.libraries.designsystem.theme.components.ElementTopAppBarDefaults
 import io.element.android.libraries.designsystem.theme.components.HorizontalDivider
 import io.element.android.libraries.designsystem.theme.components.Icon
 import io.element.android.libraries.designsystem.theme.components.Text
@@ -55,6 +58,18 @@ import io.element.android.libraries.ui.strings.CommonStrings
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
+
+/** Background mode for room app bars. */
+enum class RoomBarMode {
+    /** Room background image exists — bar is transparent with gradient overlay. */
+    HAS_ROOM_BG,
+
+    /** No room background but a theme/accent is set — use gradient. */
+    GRADIENT,
+
+    /** Default — use bgSubtleSecondary solid fill. */
+    DEFAULT,
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -68,10 +83,23 @@ internal fun MessagesViewTopBar(
     onRoomDetailsClick: () -> Unit,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
+    barMode: RoomBarMode = RoomBarMode.DEFAULT,
     menuActions: @Composable RowScope.() -> Unit,
 ) {
+    val hasTransparency = barMode != RoomBarMode.DEFAULT
+    val bgModifier = if (hasTransparency) {
+        Modifier.backgroundVerticalGradient()
+    } else {
+        Modifier
+    }
     TopAppBar(
-        modifier = modifier,
+        modifier = modifier
+            .then(bgModifier)
+            .statusBarsPadding(),
+        colors = ElementTopAppBarDefaults.elementTopAppBarColors(
+            showBackgroundThrough = barMode == RoomBarMode.HAS_ROOM_BG,
+            showGradient = barMode == RoomBarMode.GRADIENT,
+        ),
         navigationIcon = {
             BackButton(onClick = onBackClick)
         },
@@ -202,6 +230,7 @@ internal fun MessagesViewTopBarPreview() = ElementPreview {
                 displayThreads = displayThreads,
                 onJoinCallClick = {},
                 onThreadsListClick = {},
+                onSetRoomBackgroundClick = {},
             )
         }
     )

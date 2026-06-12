@@ -33,7 +33,6 @@ class OpenMultipleVisualMedia : ActivityResultContract<String, List<Uri>>() {
     override fun createIntent(context: android.content.Context, input: String): Intent {
         return Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
             addCategory(Intent.CATEGORY_OPENABLE)
-            type = input
             putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
             putExtra(Intent.EXTRA_MIME_TYPES, MIME_TYPES)
         }

@@ -11,6 +11,7 @@ package io.element.android.features.preferences.impl.advanced
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.res.stringResource
+import io.element.android.compound.theme.AccentColor
 import io.element.android.libraries.designsystem.components.preferences.DropdownOption
 import io.element.android.libraries.preferences.api.store.VideoCompressionPreset
 import io.element.android.libraries.ui.strings.CommonStrings
@@ -19,9 +20,12 @@ import kotlinx.collections.immutable.ImmutableList
 data class AdvancedSettingsState(
     val isDeveloperModeEnabled: Boolean,
     val isSharePresenceEnabled: Boolean,
+    val isShowEncryptionWarningEnabled: Boolean,
     val mediaOptimizationState: MediaOptimizationState?,
     val theme: ThemeOption,
     val availableThemeOptions: ImmutableList<ThemeOption>,
+    val accentColor: AccentColorOption,
+    val availableAccentColorOptions: ImmutableList<AccentColorOption>,
     val mediaPreviewConfigState: MediaPreviewConfigState,
     val eventSink: (AdvancedSettingsEvents) -> Unit
 )
@@ -62,5 +66,46 @@ enum class ThemeOption : DropdownOption {
         @Composable
         @ReadOnlyComposable
         override fun getText(): String = stringResource(CommonStrings.common_black)
+    }
+}
+
+enum class AccentColorOption(private val accentColor: AccentColor) : DropdownOption {
+    Green(AccentColor.Green) {
+        @Composable
+        @ReadOnlyComposable
+        override fun getText(): String = stringResource(CommonStrings.common_accent_color_green)
+    },
+    Purple(AccentColor.Purple) {
+        @Composable
+        @ReadOnlyComposable
+        override fun getText(): String = stringResource(CommonStrings.common_accent_color_purple)
+    },
+    Orange(AccentColor.Orange) {
+        @Composable
+        @ReadOnlyComposable
+        override fun getText(): String = stringResource(CommonStrings.common_accent_color_orange)
+    },
+    Blue(AccentColor.Blue) {
+        @Composable
+        @ReadOnlyComposable
+        override fun getText(): String = stringResource(CommonStrings.common_accent_color_blue)
+    },
+    Pink(AccentColor.Pink) {
+        @Composable
+        @ReadOnlyComposable
+        override fun getText(): String = stringResource(CommonStrings.common_accent_color_pink)
+    },
+    Teal(AccentColor.Teal) {
+        @Composable
+        @ReadOnlyComposable
+        override fun getText(): String = stringResource(CommonStrings.common_accent_color_teal)
+    };
+
+    fun toAccentColor(): AccentColor = accentColor
+
+    companion object {
+        fun fromAccentColor(accentColor: AccentColor): AccentColorOption {
+            return entries.first { it.accentColor == accentColor }
+        }
     }
 }

@@ -393,14 +393,19 @@ class TimelinePresenter(
         }
         val prevMostRecentItemIdValue = prevMostRecentItemId.value
         val newMostRecentItemId = newMostRecentItem?.identifier()
+        val newMostRecentEvent = when (newMostRecentItem) {
+            is TimelineItem.Event -> newMostRecentItem
+            is TimelineItem.ImageGrid -> newMostRecentItem.events.lastOrNull()
+            else -> null
+        }
         val hasNewEvent = prevMostRecentItemIdValue != null &&
-            newMostRecentItem is TimelineItem.Event &&
-            newMostRecentItem.origin != TimelineItemEventOrigin.PAGINATION &&
+            newMostRecentEvent != null &&
+            newMostRecentEvent.origin != TimelineItemEventOrigin.PAGINATION &&
             newMostRecentItemId != prevMostRecentItemIdValue
 
         if (hasNewEvent) {
             // Scroll to bottom if the new event is from me, even if sent from another device
-            val fromMe = newMostRecentItem.isMine
+            val fromMe = newMostRecentEvent.isMine
             newEventState.value = if (fromMe) {
                 NewEventState.FromMe
             } else {
@@ -436,8 +441,10 @@ class TimelinePresenter(
     private fun getLastEventIdBeforeOrAt(index: Int, items: ImmutableList<TimelineItem>): EventId? {
         for (i in index until items.count()) {
             val item = items[i]
-            if (item is TimelineItem.Event) {
-                return item.eventId
+            when (item) {
+                is TimelineItem.Event -> return item.eventId
+                is TimelineItem.ImageGrid -> return item.events.firstNotNullOfOrNull { it.eventId }
+                else -> Unit
             }
         }
         return null

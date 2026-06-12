@@ -29,6 +29,7 @@ import io.element.android.libraries.matrix.api.room.RoomNotificationMode
 import io.element.android.libraries.matrix.api.roomlist.RoomListService
 import io.element.android.libraries.matrix.api.roomlist.RoomSummary
 import io.element.android.libraries.matrix.ui.model.getAvatarData
+import io.element.android.libraries.matrix.ui.model.withoutBridgeBotHeroes
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.FlowPreview
@@ -135,7 +136,7 @@ class EditDefaultNotificationSettingPresenter(
                 EditNotificationSettingRoomInfo(
                     roomId = roomSummary.roomId,
                     name = roomSummary.info.name,
-                    heroesAvatar = roomSummary.info.heroes.map { hero ->
+                    heroesAvatar = roomSummary.info.heroes.withoutBridgeBotHeroes().map { hero ->
                         hero.getAvatarData(AvatarSize.CustomRoomNotificationSetting)
                     }.toImmutableList(),
                     avatarData = roomSummary.info.getAvatarData(AvatarSize.CustomRoomNotificationSetting),

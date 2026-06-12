@@ -127,6 +127,7 @@ fun aMessagesState(
         hasThreads = false,
         hasUnreadThreads = false,
     ),
+    roomBackgroundUri: String? = null,
     eventSink: (MessagesEvent) -> Unit = {},
 ) = MessagesState(
     roomId = RoomId("!id:domain"),
@@ -156,6 +157,7 @@ fun aMessagesState(
     topBarSharedHistoryIcon = topBarSharedHistoryIcon,
     successorRoom = successorRoom,
     threads = threads,
+    roomBackgroundUri = roomBackgroundUri,
     eventSink = eventSink,
 )
 

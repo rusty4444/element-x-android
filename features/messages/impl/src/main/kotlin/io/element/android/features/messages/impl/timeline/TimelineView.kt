@@ -39,9 +39,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.rememberNestedScrollInteropConnection
@@ -49,6 +51,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import coil3.compose.AsyncImage
 import io.element.android.compound.theme.ElementTheme
 import io.element.android.compound.tokens.generated.CompoundIcons
 import io.element.android.features.messages.impl.crypto.sendfailure.resolve.ResolveVerifiedUserSendFailureView
@@ -109,6 +112,7 @@ fun TimelineView(
     forceJumpToBottomVisibility: Boolean = false,
     nestedScrollConnection: NestedScrollConnection = rememberNestedScrollInteropConnection(),
     floatingDateTopOffset: Dp = 0.dp,
+    roomBackgroundUri: String? = null,
 ) {
     fun clearFocusRequestState() {
         state.eventSink(TimelineEvent.ClearFocusRequestState)
@@ -153,6 +157,30 @@ fun TimelineView(
     // Animate alpha when timeline is first displayed, to avoid flashes or glitching when viewing rooms
     AnimatedVisibility(visible = true, enter = fadeIn()) {
         Box(modifier) {
+            // Room background image (rendered behind the timeline)
+            if (roomBackgroundUri != null) {
+                AsyncImage(
+                    model = roomBackgroundUri,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .alpha(0.15f),
+                    contentScale = ContentScale.Crop,
+                )
+            }
+
+            // Hoist stable callbacks outside LazyColumn items block to prevent lambda re-creation per item
+            val stableOnUserDataClick = remember(onUserDataClick) { onUserDataClick }
+            val stableOnLinkClick = remember(onLinkClick) { onLinkClick }
+            val stableOnContentClick = remember(onContentClick) { onContentClick }
+            val stableOnMessageLongClick = remember(onMessageLongClick) { onMessageLongClick }
+            val stableOnMessageDoubleTap = remember(onMessageDoubleTap) { onMessageDoubleTap }
+            val stableOnSwipeToReply = remember(onSwipeToReply) { onSwipeToReply }
+            val stableOnReactionClick = remember(onReactionClick) { onReactionClick }
+            val stableOnReactionLongClick = remember(onReactionLongClick) { onReactionLongClick }
+            val stableOnMoreReactionsClick = remember(onMoreReactionsClick) { onMoreReactionsClick }
+            val stableOnReadReceiptClick = remember(onReadReceiptClick) { onReadReceiptClick }
+
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
@@ -165,7 +193,7 @@ fun TimelineView(
                 items(
                     items = state.timelineItems,
                     contentType = { timelineItem -> timelineItem.contentType() },
-                    key = { timelineItem -> timelineItem.identifier() },
+                    key = { timelineItem -> timelineItem.identifier().value },
                 ) { timelineItem ->
                     TimelineItemRow(
                         timelineItem = timelineItem,
@@ -176,18 +204,18 @@ fun TimelineView(
                         isLastOutgoingMessage = state.isLastOutgoingMessage(timelineItem.identifier()),
                         focusedEventId = state.focusedEventId,
                         displayThreadSummaries = state.displayThreadSummaries,
-                        onUserDataClick = onUserDataClick,
-                        onLinkClick = onLinkClick,
+                        onUserDataClick = stableOnUserDataClick,
+                        onLinkClick = stableOnLinkClick,
                         onLinkLongClick = ::onLinkLongClick,
-                        onContentClick = onContentClick,
-                        onLongClick = onMessageLongClick,
-                        onDoubleTap = onMessageDoubleTap,
+                        onContentClick = stableOnContentClick,
+                        onLongClick = stableOnMessageLongClick,
+                        onDoubleTap = stableOnMessageDoubleTap,
                         inReplyToClick = ::inReplyToClick,
-                        onReactionClick = onReactionClick,
-                        onReactionLongClick = onReactionLongClick,
-                        onMoreReactionsClick = onMoreReactionsClick,
-                        onReadReceiptClick = onReadReceiptClick,
-                        onSwipeToReply = onSwipeToReply,
+                        onReactionClick = stableOnReactionClick,
+                        onReactionLongClick = stableOnReactionLongClick,
+                        onMoreReactionsClick = stableOnMoreReactionsClick,
+                        onReadReceiptClick = stableOnReadReceiptClick,
+                        onSwipeToReply = stableOnSwipeToReply,
                         eventSink = state.eventSink,
                     )
                 }
@@ -260,7 +288,7 @@ private fun TimelinePrefetchingHelper(
             }
 
         val isCloseToStartOfLoadedTimelineFlow = combine(layoutInfoFlow, firstVisibleItemIndexFlow) { layoutInfo, firstVisibleItemIndex ->
-            firstVisibleItemIndex + layoutInfo.visibleItemsInfo.size >= layoutInfo.totalItemsCount - 40
+            firstVisibleItemIndex + layoutInfo.visibleItemsInfo.size >= layoutInfo.totalItemsCount - 15
         }
 
         // If we have no timeline items, we need to back paginate to load some messages. This usually happens on all timelines except for live ones.

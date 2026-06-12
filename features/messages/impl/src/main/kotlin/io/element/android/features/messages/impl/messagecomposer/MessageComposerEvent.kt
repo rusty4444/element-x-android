@@ -17,12 +17,13 @@ sealed interface MessageComposerEvent {
     data object ToggleFullScreenState : MessageComposerEvent
     data object SendMessage : MessageComposerEvent
     data class SendUri(val uri: Uri) : MessageComposerEvent
+    data class SendUris(val uris: List<Uri>) : MessageComposerEvent
     data object CloseSpecialMode : MessageComposerEvent
     data class SetMode(val composerMode: MessageComposerMode) : MessageComposerEvent
     data object AddAttachment : MessageComposerEvent
     data object DismissAttachmentMenu : MessageComposerEvent
     sealed interface PickAttachmentSource : MessageComposerEvent {
-        data object FromGallery : PickAttachmentSource
+        data object Image : PickAttachmentSource
         data object FromFiles : PickAttachmentSource
         data object PhotoFromCamera : PickAttachmentSource
         data object VideoFromCamera : PickAttachmentSource

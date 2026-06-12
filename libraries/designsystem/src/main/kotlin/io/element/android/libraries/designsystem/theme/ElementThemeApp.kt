@@ -16,6 +16,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
+import io.element.android.compound.theme.AccentColor
 import io.element.android.compound.theme.ElementTheme
 import io.element.android.compound.theme.Theme
 import io.element.android.compound.theme.mapToTheme
@@ -25,6 +26,7 @@ import io.element.android.libraries.core.meta.BuildType
 import io.element.android.libraries.featureflag.api.FeatureFlagService
 import io.element.android.libraries.featureflag.api.FeatureFlags
 import io.element.android.libraries.preferences.api.store.AppPreferencesStore
+import kotlinx.coroutines.flow.map
 
 val LocalBuildMeta = staticCompositionLocalOf {
     BuildMeta(
@@ -67,6 +69,12 @@ fun ElementThemeApp(
     val theme by remember(isBlackThemeAllowed) {
         appPreferencesStore.getThemeFlow().mapToTheme(allowBlackTheme = isBlackThemeAllowed)
     }.collectAsState(initial = Theme.System)
+    val accentColor by remember {
+        appPreferencesStore.getAccentColorFlow().map { name ->
+            name?.let { runCatching { AccentColor.valueOf(it) }.getOrDefault(AccentColor.Default) }
+                ?: AccentColor.Default
+        }
+    }.collectAsState(initial = AccentColor.Green)
     LaunchedEffect(theme) {
         AppCompatDelegate.setDefaultNightMode(
             when (theme) {
@@ -81,6 +89,7 @@ fun ElementThemeApp(
     ) {
         ElementTheme(
             theme = theme,
+            accentColor = accentColor,
             content = content,
             compoundLight = compoundLight,
             compoundDark = compoundDark,

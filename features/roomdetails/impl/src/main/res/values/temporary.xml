@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Local, per-room background setting -->
+    <string name="screen_room_set_background_title">Room background</string>
+    <string name="screen_room_set_background_action">Choose background</string>
+    <string name="screen_room_set_background_message">Choose a photo from your library to set as this room's background on this device.</string>
+    <string name="screen_room_clear_background_action">Clear background</string>
+    <string name="screen_room_current_background_message">Choose a new background, or clear the current background for this room on this device.</string>
+    <string name="screen_room_background_configured">Custom background set on this device</string>
+    <string name="screen_room_background_not_configured">No custom background set</string>
+    <string name="screen_room_background_set_success">Room background updated</string>
+    <string name="screen_room_background_cleared">Room background cleared</string>
+</resources>

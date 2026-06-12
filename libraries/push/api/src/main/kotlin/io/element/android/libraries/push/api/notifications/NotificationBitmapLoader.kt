@@ -28,6 +28,15 @@ interface NotificationBitmapLoader {
     ): Bitmap?
 
     /**
+     * Get a room icon composed from room heroes when the room does not have a custom avatar.
+     */
+    suspend fun getClusterBitmap(
+        heroes: List<AvatarData>,
+        imageLoader: ImageLoader,
+        targetSize: Long = AVATAR_THUMBNAIL_SIZE_IN_PIXEL,
+    ): Bitmap?
+
+    /**
      * Get icon of a user.
      * Before Android P, this does nothing because the icon won't be used
      * @param avatarData the data related to the Avatar

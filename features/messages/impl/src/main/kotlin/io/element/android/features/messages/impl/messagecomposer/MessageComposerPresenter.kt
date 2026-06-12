@@ -33,6 +33,7 @@ import im.vector.app.features.analytics.plan.Composer
 import im.vector.app.features.analytics.plan.Interaction
 import io.element.android.features.location.api.LocationService
 import io.element.android.features.messages.impl.MessagesNavigator
+import io.element.android.features.messages.impl.R
 import io.element.android.features.messages.impl.attachments.Attachment
 import io.element.android.features.messages.impl.attachments.Attachment.Media
 import io.element.android.features.messages.impl.attachments.preview.error.sendAttachmentError
@@ -82,6 +83,7 @@ import io.element.android.libraries.textcomposer.model.MessageComposerMode
 import io.element.android.libraries.textcomposer.model.Suggestion
 import io.element.android.libraries.textcomposer.model.TextEditorState
 import io.element.android.libraries.textcomposer.model.rememberMarkdownTextEditorState
+import io.element.android.libraries.ui.strings.CommonStrings
 import io.element.android.services.analytics.api.AnalyticsService
 import io.element.android.services.analyticsproviders.api.trackers.captureInteraction
 import io.element.android.wysiwyg.compose.RichTextEditorState
@@ -176,9 +178,6 @@ class MessageComposerPresenter(
             canShareLocation.value = locationService.isServiceAvailable()
         }
 
-        val galleryMediaPicker = mediaPickerProvider.registerGalleryPicker { uri, mimeType ->
-            handlePickedMedia(uri, mimeType)
-        }
         val filesPicker = mediaPickerProvider.registerFilePicker(AnyMimeTypes) { uri, mimeType ->
             handlePickedMedia(uri, mimeType ?: MimeTypes.OctetStream)
         }
@@ -188,6 +187,9 @@ class MessageComposerPresenter(
         val cameraVideoPicker = mediaPickerProvider.registerCameraVideoPicker { uri ->
             handlePickedMedia(uri, MimeTypes.Mp4)
         }
+        val multiImagePicker = mediaPickerProvider.registerMultiImagePicker { uris ->
+            handlePickedMultipleUris(uris)
+        }
         val isFullScreen = rememberSaveable {
             mutableStateOf(false)
         }
@@ -195,6 +197,10 @@ class MessageComposerPresenter(
 
         val sendTypingNotifications by remember {
             sessionPreferencesStore.isSendTypingNotificationsEnabled()
+        }.collectAsState(initial = true)
+
+        val showEncryptionWarning by remember {
+            sessionPreferencesStore.isShowEncryptionWarningEnabled()
         }.collectAsState(initial = true)
 
         LaunchedEffect(cameraPermissionState.permissionGranted) {
@@ -222,11 +228,12 @@ class MessageComposerPresenter(
             }
         }
 
+        val roomEncryptionValue = if (showEncryptionWarning) roomInfo.isEncrypted == true else null
         val textEditorState by rememberUpdatedState(
             if (showTextFormatting) {
-                TextEditorState.Rich(richTextEditorState, roomInfo.isEncrypted == true)
+                TextEditorState.Rich(richTextEditorState, roomEncryptionValue)
             } else {
-                TextEditorState.Markdown(markdownTextEditorState, roomInfo.isEncrypted == true)
+                TextEditorState.Markdown(markdownTextEditorState, roomEncryptionValue)
             }
         )
 
@@ -280,6 +287,25 @@ class MessageComposerPresenter(
                     // Reset composer since the attachment has been sent
                     messageComposerContext.composerMode = MessageComposerMode.Normal
                 }
+                is MessageComposerEvent.SendUris -> {
+                    val inReplyToEventId = (messageComposerContext.composerMode as? MessageComposerMode.Reply)?.eventId
+                    event.uris.forEach { uri ->
+                        sessionCoroutineScope.sendAttachment(
+                            attachment = Media(
+                                localMedia = localMediaFactory.createFromUri(
+                                    uri = uri,
+                                    mimeType = null,
+                                    name = null,
+                                    formattedFileSize = null
+                                ),
+                            ),
+                            inReplyToEventId = inReplyToEventId,
+                        )
+                    }
+
+                    // Reset composer since the attachments have been sent
+                    messageComposerContext.composerMode = MessageComposerMode.Normal
+                }
                 is MessageComposerEvent.SetMode -> {
                     localCoroutineScope.setMode(event.composerMode, markdownTextEditorState, richTextEditorState)
                 }
@@ -287,9 +313,9 @@ class MessageComposerPresenter(
                     showAttachmentSourcePicker = true
                 }
                 MessageComposerEvent.DismissAttachmentMenu -> showAttachmentSourcePicker = false
-                MessageComposerEvent.PickAttachmentSource.FromGallery -> localCoroutineScope.launch {
+                MessageComposerEvent.PickAttachmentSource.Image -> localCoroutineScope.launch {
                     showAttachmentSourcePicker = false
-                    galleryMediaPicker.launch()
+                    multiImagePicker.launch()
                 }
                 MessageComposerEvent.PickAttachmentSource.FromFiles -> localCoroutineScope.launch {
                     showAttachmentSourcePicker = false
@@ -619,6 +645,24 @@ class MessageComposerPresenter(
         navigator.navigateToPreviewAttachments(persistentListOf(mediaAttachment), inReplyToEventId)
 
         // Reset composer since the attachment will be sent in a separate flow
+        messageComposerContext.composerMode = MessageComposerMode.Normal
+    }
+
+    private fun handlePickedMultipleUris(uris: List<Uri>) {
+        if (uris.isEmpty()) {
+            return
+        }
+        val attachments = uris.map { uri ->
+            val localMedia = localMediaFactory.createFromUri(
+                uri = uri,
+                mimeType = MimeTypes.Jpeg,
+                name = null,
+                formattedFileSize = null
+            )
+            Attachment.Media(localMedia)
+        }
+        val inReplyToEventId = (messageComposerContext.composerMode as? MessageComposerMode.Reply)?.eventId
+        navigator.navigateToPreviewAttachments(attachments.toImmutableList(), inReplyToEventId)
         messageComposerContext.composerMode = MessageComposerMode.Normal
     }
 

@@ -15,6 +15,9 @@ import io.element.android.features.messages.impl.timeline.model.TimelineItem
 import io.element.android.libraries.di.RoomScope
 import io.element.android.libraries.matrix.api.core.UniqueId
 import kotlinx.collections.immutable.toImmutableList
+import kotlin.math.abs
+
+private const val IMAGE_GRID_MAX_TIME_WINDOW_MILLIS = 5_000L
 
 @SingleIn(RoomScope::class)
 @Inject
@@ -22,31 +25,61 @@ class TimelineItemGrouper {
     /**
      * Keys are identifier of items in a group, only one by group will be kept.
      * Values are the actual groupIds.
+     * Cleared on each group() call to avoid stale groupId assignments when
+     * items change reactable status (e.g., get a reaction or lose one).
      */
     private val groupIds = HashMap<String, String>()
 
     /**
      * Create a new list of [TimelineItem] by grouping some of them into [TimelineItem.GroupedEvents].
+     * The internal groupId cache is cleared each time to ensure stale groupIds
+     * from previous runs don't cause items to stick in/out of groups unexpectedly.
      */
     fun group(from: List<TimelineItem>): List<TimelineItem> {
+        // Clear stale groupIds from previous runs — items may have gained/lost
+        // reactions, replies, etc. which changes their groupability.
+        groupIds.clear()
+
         val result = mutableListOf<TimelineItem>()
         val currentGroup = mutableListOf<TimelineItem.Event>()
-        from.forEach { timelineItem ->
-            if (timelineItem is TimelineItem.Event && timelineItem.canBeGrouped()) {
-                currentGroup.add(0, timelineItem)
-            } else {
-                // timelineItem cannot be grouped
-                if (currentGroup.isNotEmpty()) {
-                    // There is a pending group, create a TimelineItem.GroupedEvents if there is more than 1 Event in the pending group.
-                    result.addGroup(groupIds, currentGroup)
-                    currentGroup.clear()
-                }
-                result.add(timelineItem)
+        val currentImageGrid = mutableListOf<TimelineItem.Event>()
+
+        fun flushCurrentGroup() {
+            if (currentGroup.isNotEmpty()) {
+                result.addGroup(groupIds, currentGroup)
+                currentGroup.clear()
             }
         }
-        if (currentGroup.isNotEmpty()) {
-            result.addGroup(groupIds, currentGroup)
+
+        fun flushCurrentImageGrid() {
+            if (currentImageGrid.isNotEmpty()) {
+                result.addImageGrid(groupIds, currentImageGrid)
+                currentImageGrid.clear()
+            }
         }
+
+        from.forEach { timelineItem ->
+            when {
+                timelineItem is TimelineItem.Event && timelineItem.canBeGroupedAsImageGrid() -> {
+                    flushCurrentGroup()
+                    if (currentImageGrid.isNotEmpty() && !timelineItem.canBeGroupedWithImageGrid(currentImageGrid.first())) {
+                        flushCurrentImageGrid()
+                    }
+                    currentImageGrid.add(0, timelineItem)
+                }
+                timelineItem is TimelineItem.Event && timelineItem.canBeGrouped() -> {
+                    flushCurrentImageGrid()
+                    currentGroup.add(0, timelineItem)
+                }
+                else -> {
+                    flushCurrentGroup()
+                    flushCurrentImageGrid()
+                    result.add(timelineItem)
+                }
+            }
+        }
+        flushCurrentGroup()
+        flushCurrentImageGrid()
         return result
     }
 }
@@ -71,6 +104,29 @@ private fun MutableList<TimelineItem>.addGroup(
             )
         )
     }
+}
+
+private fun MutableList<TimelineItem>.addImageGrid(
+    groupIds: MutableMap<String, String>,
+    groupOfItems: MutableList<TimelineItem.Event>
+) {
+    if (groupOfItems.size == 1) {
+        add(groupOfItems.first())
+    } else {
+        val groupId = groupIds.getOrPutGroupId(groupOfItems)
+        add(
+            TimelineItem.ImageGrid(
+                id = UniqueId(groupId),
+                events = groupOfItems.toImmutableList(),
+            )
+        )
+    }
+}
+
+private fun TimelineItem.Event.canBeGroupedWithImageGrid(other: TimelineItem.Event): Boolean {
+    return senderId == other.senderId &&
+        isMine == other.isMine &&
+        abs(sentTimeMillis - other.sentTimeMillis) <= IMAGE_GRID_MAX_TIME_WINDOW_MILLIS
 }
 
 private fun MutableMap<String, String>.getOrPutGroupId(timelineItems: List<TimelineItem>): String {

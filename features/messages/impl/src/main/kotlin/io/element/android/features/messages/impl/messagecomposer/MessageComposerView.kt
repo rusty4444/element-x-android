@@ -11,6 +11,7 @@ package io.element.android.features.messages.impl.messagecomposer
 import android.net.Uri
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
@@ -31,6 +32,7 @@ import io.element.android.libraries.textcomposer.model.VoiceMessagePlayerEvent
 import io.element.android.libraries.textcomposer.model.VoiceMessageRecorderEvent
 import kotlinx.coroutines.launch
 
+@PreviewsDayNight
 @Composable
 internal fun MessageComposerView(
     state: MessageComposerState,
@@ -95,34 +97,36 @@ internal fun MessageComposerView(
         voiceMessageState.eventSink(VoiceMessageComposerEvent.PlayerEvent(event))
     }
 
-    TextComposer(
-        modifier = modifier,
-        state = state.textEditorState,
-        voiceMessageState = voiceMessageState.voiceMessageState,
-        onRequestFocus = ::onRequestFocus,
-        onSendMessage = ::sendMessage,
-        composerMode = state.mode,
-        showTextFormatting = state.showTextFormatting,
-        onResetComposerMode = ::onCloseSpecialMode,
-        onAddAttachment = ::onAddAttachment,
-        onDismissTextFormatting = ::onDismissTextFormatting,
-        onVoiceRecorderEvent = onVoiceRecorderEvent,
-        onVoicePlayerEvent = onVoicePlayerEvent,
-        onSendVoiceMessage = onSendVoiceMessage,
-        onDeleteVoiceMessage = onDeleteVoiceMessage,
-        onReceiveSuggestion = ::onSuggestionReceived,
-        resolveMentionDisplay = state.resolveMentionDisplay,
-        resolveAtRoomMentionDisplay = state.resolveAtRoomMentionDisplay,
-        onError = ::onError,
-        onTyping = ::onTyping,
-        onSelectRichContent = ::sendUri,
-    )
+    Column(modifier = modifier) {
+        TextComposer(
+            modifier = Modifier.height(IntrinsicSize.Min),
+            state = state.textEditorState,
+            voiceMessageState = voiceMessageState.voiceMessageState,
+            onRequestFocus = ::onRequestFocus,
+            onSendMessage = ::sendMessage,
+            composerMode = state.mode,
+            showTextFormatting = state.showTextFormatting,
+            onResetComposerMode = ::onCloseSpecialMode,
+            onAddAttachment = ::onAddAttachment,
+            onDismissTextFormatting = ::onDismissTextFormatting,
+            onVoiceRecorderEvent = onVoiceRecorderEvent,
+            onVoicePlayerEvent = onVoicePlayerEvent,
+            onSendVoiceMessage = onSendVoiceMessage,
+            onDeleteVoiceMessage = onDeleteVoiceMessage,
+            onReceiveSuggestion = ::onSuggestionReceived,
+            resolveMentionDisplay = state.resolveMentionDisplay,
+            resolveAtRoomMentionDisplay = state.resolveAtRoomMentionDisplay,
+            onError = ::onError,
+            onTyping = ::onTyping,
+            onSelectRichContent = ::sendUri,
+        )
 
-    AsyncActionView(
-        async = state.slashCommandAction,
-        onSuccess = {},
-        onErrorDismiss = { state.eventSink(MessageComposerEvent.ClearSlashError) },
-    )
+        AsyncActionView(
+            async = state.slashCommandAction,
+            onSuccess = {},
+            onErrorDismiss = { state.eventSink(MessageComposerEvent.ClearSlashError) },
+        )
+    }
 }
 
 @PreviewsDayNight

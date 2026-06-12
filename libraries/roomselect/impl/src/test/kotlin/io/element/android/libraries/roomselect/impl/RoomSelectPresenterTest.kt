@@ -16,6 +16,7 @@ import com.google.common.truth.Truth.assertThat
 import io.element.android.libraries.designsystem.theme.components.SearchBarResultState
 import io.element.android.libraries.matrix.api.roomlist.RoomListFilter
 import io.element.android.libraries.matrix.api.roomlist.RoomListService
+import io.element.android.libraries.matrix.test.FakeMatrixClient
 import io.element.android.libraries.matrix.test.room.aRoomSummary
 import io.element.android.libraries.matrix.test.roomlist.FakeDynamicRoomList
 import io.element.android.libraries.matrix.test.roomlist.FakeRoomListService
@@ -166,6 +167,7 @@ internal fun TestScope.createRoomSelectPresenter(
                 coroutineScope = coroutineScope,
                 roomListService = roomListService,
                 coroutineDispatchers = testCoroutineDispatchers(),
+                matrixClient = FakeMatrixClient(roomListService = roomListService),
             )
         }
     }

@@ -62,7 +62,7 @@ class RustRoomFactory(
     private val roomInfoMapper: RoomInfoMapper,
     private val analyticsService: AnalyticsService,
 ) {
-    private val dispatcher = dispatchers.computation.limitedParallelism(1)
+    private val dispatcher = dispatchers.computation.limitedParallelism(4)
     private val mutex = Mutex()
     private val isDestroyed: AtomicBoolean = AtomicBoolean(false)
 

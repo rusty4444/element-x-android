@@ -11,14 +11,18 @@ package io.element.android.features.messages.impl.timeline.groups
 import com.google.common.truth.Truth.assertThat
 import io.element.android.features.messages.impl.fixtures.aMessageEvent
 import io.element.android.features.messages.impl.timeline.aTimelineItemDebugInfo
+import io.element.android.features.messages.impl.timeline.aTimelineItemEvent
 import io.element.android.features.messages.impl.timeline.aTimelineItemReactions
 import io.element.android.features.messages.impl.timeline.model.ReadReceiptData
 import io.element.android.features.messages.impl.timeline.model.TimelineItem
 import io.element.android.features.messages.impl.timeline.model.TimelineItemReadReceipts
+import io.element.android.features.messages.impl.timeline.model.event.TimelineItemImageContent
 import io.element.android.features.messages.impl.timeline.model.event.TimelineItemStateEventContent
+import io.element.android.features.messages.impl.timeline.model.event.aTimelineItemImageContent
 import io.element.android.features.messages.impl.timeline.model.virtual.aTimelineItemDaySeparatorModel
 import io.element.android.libraries.designsystem.components.avatar.anAvatarData
 import io.element.android.libraries.matrix.api.core.UniqueId
+import io.element.android.libraries.matrix.api.core.UserId
 import io.element.android.libraries.matrix.api.timeline.item.event.LocalEventSendState
 import io.element.android.libraries.matrix.test.AN_EVENT_ID
 import io.element.android.libraries.matrix.test.A_USER_ID
@@ -168,5 +172,73 @@ class TimelineItemGrouperTest {
         val actualGroupId = sut.group(groupableItems).first().identifier()
         // Then
         assertThat(actualGroupId).isEqualTo(expectedGroupId)
+    }
+
+    @Test
+    fun `test image grid grouping and ensure reordering`() {
+        val newestImage = anImageEvent(id = "newest", sentTimeMillis = 2_000)
+        val oldestImage = anImageEvent(id = "oldest", sentTimeMillis = 0)
+
+        val result = sut.group(listOf(newestImage, oldestImage))
+
+        assertThat(result).isEqualTo(
+            listOf(
+                TimelineItem.ImageGrid(
+                    id = computeGroupIdWith(oldestImage),
+                    events = listOf(oldestImage, newestImage).toImmutableList(),
+                ),
+            )
+        )
+    }
+
+    @Test
+    fun `test image grid grouping requires same sender inside time window`() {
+        val senderAImage1 = anImageEvent(id = "senderA-1", sentTimeMillis = 10_000)
+        val senderAImage2 = anImageEvent(id = "senderA-2", sentTimeMillis = 6_000)
+        val senderBImage = anImageEvent(id = "senderB", sentTimeMillis = 4_000, senderId = UserId("@other:domain"))
+        val oldSenderAImage = anImageEvent(id = "senderA-old", sentTimeMillis = -2_000)
+
+        val result = sut.group(listOf(senderAImage1, senderAImage2, senderBImage, oldSenderAImage))
+
+        assertThat(result).isEqualTo(
+            listOf(
+                TimelineItem.ImageGrid(
+                    id = computeGroupIdWith(senderAImage2),
+                    events = listOf(senderAImage2, senderAImage1).toImmutableList(),
+                ),
+                senderBImage,
+                oldSenderAImage,
+            )
+        )
+    }
+
+    @Test
+    fun `test image with caption is not grouped into image grid`() {
+        val captionedImage = anImageEvent(
+            id = "captioned",
+            sentTimeMillis = 2_000,
+            content = aTimelineItemImageContent(caption = "Caption")
+        )
+        val plainImage = anImageEvent(id = "plain", sentTimeMillis = 0)
+
+        val result = sut.group(listOf(captionedImage, plainImage))
+
+        assertThat(result).isEqualTo(listOf(captionedImage, plainImage))
+    }
+
+    private fun anImageEvent(
+        id: String,
+        sentTimeMillis: Long,
+        senderId: UserId = UserId("@senderId:domain"),
+        content: TimelineItemImageContent = aTimelineItemImageContent(),
+    ): TimelineItem.Event {
+        return aTimelineItemEvent(
+            content = content,
+            timelineItemReactions = aTimelineItemReactions(count = 0),
+        ).copy(
+            id = UniqueId(id),
+            senderId = senderId,
+            sentTimeMillis = sentTimeMillis,
+        )
     }
 }

@@ -204,5 +204,5 @@ internal fun aRoomListRoomSummary(
     canonicalAlias = canonicalAlias,
     heroes = heroes.toImmutableList(),
     isTombstoned = isTombstoned,
-    isSpace = isSpace
+    isSpace = isSpace,
 )

@@ -44,4 +44,7 @@ interface PickerProvider {
 
     @Composable
     fun registerCameraVideoPicker(onResult: (Uri?) -> Unit): PickerLauncher<Uri, Boolean>
+
+    @Composable
+    fun registerMultiImagePicker(onResult: (List<Uri>) -> Unit): MultiImagePickerLauncher
 }

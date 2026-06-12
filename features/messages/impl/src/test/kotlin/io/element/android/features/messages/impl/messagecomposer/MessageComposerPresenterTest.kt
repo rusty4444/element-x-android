@@ -715,7 +715,7 @@ class MessageComposerPresenterTest {
         )
         presenter.test {
             val initialState = awaitFirstItem()
-            initialState.eventSink(MessageComposerEvent.PickAttachmentSource.FromGallery)
+            initialState.eventSink(MessageComposerEvent.PickAttachmentSource.Image)
             onPreviewAttachmentLambda.assertions().isCalledOnce()
         }
     }
@@ -754,7 +754,7 @@ class MessageComposerPresenterTest {
         )
         presenter.test {
             val initialState = awaitFirstItem()
-            initialState.eventSink(MessageComposerEvent.PickAttachmentSource.FromGallery)
+            initialState.eventSink(MessageComposerEvent.PickAttachmentSource.Image)
             onPreviewAttachmentLambda.assertions().isCalledOnce()
         }
     }
@@ -768,7 +768,7 @@ class MessageComposerPresenterTest {
         }
         presenter.test {
             val initialState = awaitFirstItem()
-            initialState.eventSink(MessageComposerEvent.PickAttachmentSource.FromGallery)
+            initialState.eventSink(MessageComposerEvent.PickAttachmentSource.Image)
             // No crashes here, otherwise it fails
         }
     }

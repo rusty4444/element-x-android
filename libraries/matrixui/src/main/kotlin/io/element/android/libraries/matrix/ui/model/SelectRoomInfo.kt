@@ -16,6 +16,8 @@ import io.element.android.libraries.matrix.api.room.RoomInfo
 import io.element.android.libraries.matrix.api.roomlist.RoomSummary
 import io.element.android.libraries.matrix.api.user.MatrixUser
 import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toImmutableList
 
 data class SelectRoomInfo(
     val roomId: RoomId,
@@ -23,6 +25,7 @@ data class SelectRoomInfo(
     val canonicalAlias: RoomAlias?,
     val avatarUrl: String?,
     val heroes: ImmutableList<MatrixUser>,
+    val heroAvatarData: ImmutableList<AvatarData> = persistentListOf(),
     val isTombstoned: Boolean,
 ) {
     fun getAvatarData(size: AvatarSize) = AvatarData(
@@ -31,15 +34,19 @@ data class SelectRoomInfo(
         url = avatarUrl,
         size = size,
     )
+
+    fun getHeroAvatarData(size: AvatarSize) = heroAvatarData.takeIf { it.isNotEmpty() }
+        ?: heroes.withoutBridgeBotHeroes().map { user -> user.getAvatarData(size = size) }.toImmutableList()
 }
 
-fun RoomSummary.toSelectRoomInfo() = info.toSelectRoomInfo()
+fun RoomSummary.toSelectRoomInfo(heroAvatarData: ImmutableList<AvatarData> = persistentListOf()) = info.toSelectRoomInfo(heroAvatarData)
 
-fun RoomInfo.toSelectRoomInfo() = SelectRoomInfo(
+fun RoomInfo.toSelectRoomInfo(heroAvatarData: ImmutableList<AvatarData> = persistentListOf()) = SelectRoomInfo(
     roomId = id,
     name = name,
     avatarUrl = avatarUrl,
-    heroes = heroes,
+    heroes = heroes.withoutBridgeBotHeroes().toImmutableList(),
+    heroAvatarData = heroAvatarData,
     canonicalAlias = canonicalAlias,
     isTombstoned = successorRoom != null,
 )

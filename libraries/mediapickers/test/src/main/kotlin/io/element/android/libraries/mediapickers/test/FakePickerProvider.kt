@@ -12,6 +12,7 @@ import android.net.Uri
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.compose.runtime.Composable
 import io.element.android.libraries.core.mimetype.MimeTypes
+import io.element.android.libraries.mediapickers.api.MultiImagePickerLauncher
 import io.element.android.libraries.mediapickers.api.NoOpPickerLauncher
 import io.element.android.libraries.mediapickers.api.PickerLauncher
 import io.element.android.libraries.mediapickers.api.PickerProvider
@@ -19,6 +20,7 @@ import io.element.android.libraries.mediapickers.api.PickerProvider
 class FakePickerProvider : PickerProvider {
     private var mimeType = MimeTypes.Any
     private var result: Uri? = null
+    private var multiImageResult: List<Uri> = emptyList()
 
     @Composable
     override fun registerGalleryPicker(onResult: (uri: Uri?, mimeType: String?) -> Unit): PickerLauncher<PickVisualMediaRequest, Uri?> {
@@ -58,11 +60,24 @@ class FakePickerProvider : PickerProvider {
         return NoOpPickerLauncher { onResult(result) }
     }
 
+    @Composable
+    override fun registerMultiImagePicker(onResult: (List<Uri>) -> Unit): MultiImagePickerLauncher {
+        return object : MultiImagePickerLauncher {
+            override fun launch() {
+                onResult(multiImageResult)
+            }
+        }
+    }
+
     fun givenResult(value: Uri?) {
         this.result = value
     }
 
     fun givenMimeType(mimeType: String) {
         this.mimeType = mimeType
+    }
+
+    fun givenMultiImageResult(value: List<Uri>) {
+        this.multiImageResult = value
     }
 }

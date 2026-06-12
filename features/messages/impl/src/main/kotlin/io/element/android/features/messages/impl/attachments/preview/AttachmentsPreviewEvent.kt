@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Element Creations Ltd.
+ * Copyright (c) 2026 Element Creations Ltd.
  * Copyright 2023-2025 New Vector Ltd.
  *
  * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial.
@@ -9,7 +9,8 @@
 package io.element.android.features.messages.impl.attachments.preview
 
 sealed interface AttachmentsPreviewEvent {
-    data object SendAttachment : AttachmentsPreviewEvent
+    data object SendAttachments : AttachmentsPreviewEvent
     data object CancelAndDismiss : AttachmentsPreviewEvent
     data object CancelAndClearSendState : AttachmentsPreviewEvent
+    data class SelectIndex(val index: Int) : AttachmentsPreviewEvent
 }

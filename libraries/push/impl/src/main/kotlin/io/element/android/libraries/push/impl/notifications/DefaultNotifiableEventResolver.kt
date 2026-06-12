@@ -20,6 +20,8 @@ import dev.zacsweers.metro.SingleIn
 import io.element.android.libraries.core.extensions.flatMap
 import io.element.android.libraries.core.extensions.runCatchingExceptions
 import io.element.android.libraries.core.log.logger.LoggerTag
+import io.element.android.libraries.designsystem.components.avatar.AvatarData
+import io.element.android.libraries.designsystem.components.avatar.AvatarSize
 import io.element.android.libraries.di.annotations.ApplicationContext
 import io.element.android.libraries.featureflag.api.FeatureFlagService
 import io.element.android.libraries.featureflag.api.FeatureFlags
@@ -36,6 +38,7 @@ import io.element.android.libraries.matrix.api.media.isPreviewEnabled
 import io.element.android.libraries.matrix.api.notification.NotificationContent
 import io.element.android.libraries.matrix.api.notification.NotificationData
 import io.element.android.libraries.matrix.api.permalink.PermalinkParser
+import io.element.android.libraries.matrix.api.room.RoomMembershipState
 import io.element.android.libraries.matrix.api.room.join.JoinRule
 import io.element.android.libraries.matrix.api.timeline.item.event.AudioMessageType
 import io.element.android.libraries.matrix.api.timeline.item.event.EmoteMessageType
@@ -50,6 +53,8 @@ import io.element.android.libraries.matrix.api.timeline.item.event.TextMessageTy
 import io.element.android.libraries.matrix.api.timeline.item.event.VideoMessageType
 import io.element.android.libraries.matrix.api.timeline.item.event.VoiceMessageType
 import io.element.android.libraries.matrix.ui.messages.toPlainText
+import io.element.android.libraries.matrix.ui.model.getAvatarData
+import io.element.android.libraries.matrix.ui.model.withoutBridgeBotHeroes
 import io.element.android.libraries.push.impl.R
 import io.element.android.libraries.push.impl.db.PushRequest
 import io.element.android.libraries.push.impl.notifications.model.InviteNotifiableEvent
@@ -179,6 +184,7 @@ class DefaultNotifiableEventResolver(
                     roomName = roomDisplayName,
                     roomIsDm = isDm,
                     roomAvatarPath = roomAvatarUrl,
+                    roomHeroes = roomHeroes(client),
                     senderAvatarPath = senderAvatarUrl,
                     hasMentionOrReply = hasMention,
                 )
@@ -229,6 +235,7 @@ class DefaultNotifiableEventResolver(
                     roomName = roomDisplayName,
                     roomIsDm = isDm,
                     roomAvatarPath = roomAvatarUrl,
+                    roomHeroes = roomHeroes(client),
                     senderAvatarPath = senderAvatarUrl,
                 )
                 ResolvedPushEvent.Event(notifiableMessageEvent)
@@ -261,6 +268,7 @@ class DefaultNotifiableEventResolver(
                     roomName = roomDisplayName,
                     roomIsDm = isDm,
                     roomAvatarPath = roomAvatarUrl,
+                    roomHeroes = roomHeroes(client),
                     senderAvatarPath = senderAvatarUrl,
                 )
                 ResolvedPushEvent.Event(notifiableEventMessage)
@@ -417,6 +425,32 @@ class DefaultNotifiableEventResolver(
             else -> null
         }
     }
+
+    private suspend fun NotificationData.roomHeroes(client: MatrixClient): List<AvatarData>? {
+        if (roomAvatarUrl != null || isDm || isSpace) return null
+
+        val room = client.getJoinedRoom(roomId)
+        val memberHeroes = room
+            ?.getMembers(limit = 5)
+            ?.getOrNull()
+            .orEmpty()
+            .asSequence()
+            .filter { member -> member.membership == RoomMembershipState.JOIN && member.userId != client.sessionId }
+            .withoutBridgeBotHeroes()
+            .sortedWith(compareByDescending { member -> member.avatarUrl != null })
+            .take(4)
+            .map { member -> member.getAvatarData(size = AvatarSize.RoomDetailsHeader) }
+            .toList()
+            .takeIf { it.isNotEmpty() }
+
+        return memberHeroes ?: room
+            ?.info()
+            ?.heroes
+            ?.withoutBridgeBotHeroes()
+            ?.take(4)
+            ?.map { user -> user.getAvatarData(size = AvatarSize.RoomDetailsHeader) }
+            ?.takeIf { it.isNotEmpty() }
+    }
 }
 
 @Suppress("LongParameterList")
@@ -439,6 +473,7 @@ internal fun buildNotifiableMessageEvent(
     roomName: String? = null,
     roomIsDm: Boolean = false,
     roomAvatarPath: String? = null,
+    roomHeroes: List<AvatarData>? = null,
     senderAvatarPath: String? = null,
     soundName: String? = null,
     // This is used for >N notification, as the result of a smart reply
@@ -465,6 +500,7 @@ internal fun buildNotifiableMessageEvent(
     roomName = roomName,
     roomIsDm = roomIsDm,
     roomAvatarPath = roomAvatarPath,
+    roomHeroes = roomHeroes,
     senderAvatarPath = senderAvatarPath,
     soundName = soundName,
     outGoingMessage = outGoingMessage,

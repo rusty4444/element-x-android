@@ -37,7 +37,13 @@ data class TimelineState(
     val displayFloatingDateBadge: Boolean,
     val eventSink: (TimelineEvent) -> Unit,
 ) {
-    private val lastTimelineEvent = timelineItems.firstOrNull { it is TimelineItem.Event } as? TimelineItem.Event
+    private val lastTimelineEvent = timelineItems.firstNotNullOfOrNull { item ->
+        when (item) {
+            is TimelineItem.Event -> item
+            is TimelineItem.ImageGrid -> item.events.lastOrNull()
+            else -> null
+        }
+    }
     val hasAnyEvent = lastTimelineEvent != null
     val focusedEventId = focusRequestState.eventId()
 

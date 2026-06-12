@@ -21,10 +21,18 @@ interface SqliteStoreBuilder {
 class RustSqliteStoreBuilder(
     sessionPaths: SessionPaths,
 ) : SqliteStoreBuilder {
+    // 32MB SQLite page cache: positive value = number of 4KB pages (8192 pages × 4KB = 32MB)
+    private val cacheSizePages = 8192u
+    // Connection pool matches the session dispatcher parallelism
+    private val poolMaxSize = 4u
+
     private var inner = SdkSqliteStoreBuilder(
         dataPath = sessionPaths.fileDirectory.absolutePath,
         cachePath = sessionPaths.cacheDirectory.absolutePath,
-    ).journalSizeLimit(25.megaBytes.into(ByteUnit.BYTES).toUInt())
+    )
+        .journalSizeLimit(25.megaBytes.into(ByteUnit.BYTES).toUInt())
+        .cacheSize(cacheSizePages)
+        .poolMaxSize(poolMaxSize)
 
     override fun passphrase(passphrase: String?): SqliteStoreBuilder {
         inner = inner.passphrase(passphrase)

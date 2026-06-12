@@ -15,6 +15,7 @@ import io.element.android.features.home.impl.model.RoomSummaryDisplayType
 import io.element.android.libraries.core.extensions.orEmpty
 import io.element.android.libraries.dateformatter.api.DateFormatter
 import io.element.android.libraries.dateformatter.api.DateFormatterMode
+import io.element.android.libraries.designsystem.components.avatar.AvatarData
 import io.element.android.libraries.designsystem.components.avatar.AvatarSize
 import io.element.android.libraries.eventformatter.api.RoomLatestEventFormatter
 import io.element.android.libraries.matrix.api.room.CallIntentConsensus
@@ -24,6 +25,7 @@ import io.element.android.libraries.matrix.api.roomlist.LatestEventValue
 import io.element.android.libraries.matrix.api.roomlist.RoomSummary
 import io.element.android.libraries.matrix.ui.model.getAvatarData
 import io.element.android.libraries.matrix.ui.model.toInviteSender
+import io.element.android.libraries.matrix.ui.model.withoutBridgeBotHeroes
 import kotlinx.collections.immutable.toImmutableList
 
 @Inject
@@ -31,7 +33,10 @@ class RoomListRoomSummaryFactory(
     private val dateFormatter: DateFormatter,
     private val roomLatestEventFormatter: RoomLatestEventFormatter,
 ) {
-    fun create(roomSummary: RoomSummary): RoomListRoomSummary {
+    fun create(
+        roomSummary: RoomSummary,
+        participantHeroes: List<AvatarData> = emptyList(),
+    ): RoomListRoomSummary {
         val roomInfo = roomSummary.info
         val avatarData = roomInfo.getAvatarData(size = AvatarSize.RoomListItem)
         return RoomListRoomSummary(
@@ -72,9 +77,11 @@ class RoomListRoomSummaryFactory(
                     RoomSummaryDisplayType.ROOM
                 }
             },
-            heroes = roomInfo.heroes.map { user ->
-                user.getAvatarData(size = AvatarSize.RoomListItem)
-            }.toImmutableList(),
+            heroes = (participantHeroes.ifEmpty {
+                roomInfo.heroes.withoutBridgeBotHeroes().map { user ->
+                    user.getAvatarData(size = AvatarSize.RoomListItem)
+                }
+            }).toImmutableList(),
             isTombstoned = roomInfo.successorRoom != null,
             isSpace = roomInfo.isSpace,
         )

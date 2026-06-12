@@ -24,6 +24,42 @@ Double-tap on any message bubble to quickly add a ❤️ reaction — matching t
 
 Room list items now show a numeric badge with the actual unread message count instead of a simple dot. Caps at "99+" for high counts. Falls back to a dot for manually marked-unread rooms.
 
+### Accent themes and message bubbles
+
+Choose from Default, Orange, Purple, Blue, Teal, Pink, Red, Green, Indigo, and Amber accent colours. The accent updates badges, primary actions, borders, icons, gradients, and outgoing message bubbles, with dark-mode-specific subtle surfaces for readability.
+
+### Multi-image attachment picker
+
+The composer has one Image entry that supports multi-select. Selected images open in a horizontal preview carousel with page indicator dots, then send sequentially in order from a single send action.
+
+### Grouped image grid
+
+Consecutive image messages from the same sender within a short time window are automatically displayed as a photo grid — 2×2 for four images, side-by-side for two, or a large-left/stacked-right layout for three — matching the UX of WhatsApp, Telegram, and Messenger. This is a pure client-side feature; no server or bridge changes are required.
+
+### Group avatars with participants
+
+Rooms without a custom avatar use up to four participant avatars instead of a single letter fallback. This is used in open-room headers and on the main chats screen for visible room rows.
+
+### Home screen polish
+
+The coloured heading bar now has clearer spacing before the room filter chips, and the fork keeps its gplay package id (`io.element.android.x.fork`) so it can be installed side-by-side with official Element X.
+
+### Edge-to-edge top bars
+
+The room list header extends seamlessly behind the status bar, and that same edge-to-edge treatment now carries into individual room screens so the purple header gradient flows to the very top of the phone screen without a black gap.
+
+### Room backgrounds
+
+Set a custom background image per room via Room Details or the top bar menu. The image is stored client-locally and displayed behind the timeline at a subtle alpha. Backgrounds can be changed or cleared at any time.
+
+### Encryption status badge
+
+An optional hideable encryption warning badge appears in the composer area, showing the current encryption state of the room and allowing users to verify or review security settings.
+
+## Latest fork release
+
+The latest fork APK is [v0.10.1](https://github.com/rusty4444/element-x-android/releases/tag/v0.10.1). This release keeps the arm64-v8a, R8-optimised gplay APK and adds another room-list responsiveness pass: group avatar hero lookups are cached per room for roughly six months instead of being invalidated by every latest-event timestamp, custom-avatar and DM rooms now skip hero member lookups immediately, and Matrix SDK dispatcher parallelism has been raised for session, room-factory, and room-member work. Previous QoL features (double-tap react, grouped image grid, accent themes, group avatars, room backgrounds, edge-to-edge bars, multi-image picker, encryption status badge, unread count badges) are all retained.
+
 [<img src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" alt="Get it on Google Play" height="80">](https://play.google.com/store/apps/details?id=io.element.android.x)[<img src="https://fdroid.gitlab.io/artwork/badge/get-it-on.png" alt="Get it on F-Droid" height="80">](https://f-droid.org/packages/io.element.android.x)
 
 ## Table of contents

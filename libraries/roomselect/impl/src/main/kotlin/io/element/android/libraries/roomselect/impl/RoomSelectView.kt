@@ -56,7 +56,6 @@ import io.element.android.libraries.designsystem.utils.OnVisibleRangeChangeEffec
 import io.element.android.libraries.matrix.api.core.RoomId
 import io.element.android.libraries.matrix.ui.components.SelectedRoom
 import io.element.android.libraries.matrix.ui.model.SelectRoomInfo
-import io.element.android.libraries.matrix.ui.model.getAvatarData
 import io.element.android.libraries.roomselect.api.RoomSelectMode
 import io.element.android.libraries.ui.strings.CommonStrings
 import kotlinx.collections.immutable.ImmutableList
@@ -231,9 +230,7 @@ private fun RoomSummaryView(
         Avatar(
             avatarData = roomInfo.getAvatarData(size = AvatarSize.RoomSelectRoomListItem),
             avatarType = AvatarType.Room(
-                heroes = roomInfo.heroes.map { user ->
-                    user.getAvatarData(size = AvatarSize.RoomSelectRoomListItem)
-                }.toImmutableList(),
+                heroes = roomInfo.getHeroAvatarData(size = AvatarSize.RoomSelectRoomListItem).toImmutableList(),
                 isTombstoned = roomInfo.isTombstoned,
             ),
         )

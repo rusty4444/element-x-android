@@ -14,6 +14,7 @@ import io.element.android.features.messages.impl.attachments.preview.imageeditor
 import io.element.android.features.messages.impl.attachments.video.MediaOptimizationSelectorState
 import io.element.android.libraries.core.mimetype.MimeTypes
 import io.element.android.libraries.mediaupload.api.MediaUploadInfo
+import io.element.android.libraries.mediaviewer.api.local.LocalMedia
 import io.element.android.libraries.textcomposer.model.TextEditorState
 import kotlinx.collections.immutable.ImmutableList
 
@@ -31,6 +32,8 @@ data class AttachmentsPreviewState(
     val hasPendingEdits: Boolean = false,
     val isApplyingImageEdits: Boolean = false,
     val displayImageEditError: Boolean = false,
+    // Preview media — shows edited version when available
+    val previewMedia: LocalMedia? = null,
 ) {
     val attachment: Attachment
         get() = attachments.getOrElse(selectedIndex) { attachments[0] }

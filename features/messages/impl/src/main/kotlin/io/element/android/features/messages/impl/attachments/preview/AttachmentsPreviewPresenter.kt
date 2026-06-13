@@ -25,6 +25,7 @@ import io.element.android.features.messages.impl.attachments.Attachment
 import io.element.android.features.messages.impl.attachments.preview.imageeditor.AttachmentImageEdits
 import io.element.android.features.messages.impl.attachments.preview.imageeditor.AttachmentImageEditor
 import io.element.android.features.messages.impl.attachments.preview.imageeditor.AttachmentImageEditorState
+import io.element.android.features.messages.impl.attachments.preview.imageeditor.EditedLocalMedia
 import io.element.android.features.messages.impl.attachments.video.MediaOptimizationSelectorPresenter
 import io.element.android.libraries.androidutils.file.TemporaryUriDeleter
 import io.element.android.libraries.androidutils.file.safeDelete
@@ -101,6 +102,7 @@ class AttachmentsPreviewPresenter(
         // Image editor state — only relevant for single image
         var imageEditorState by remember { mutableStateOf<AttachmentImageEditorState?>(null) }
         var pendingEdits by remember { mutableStateOf<AttachmentImageEdits?>(null) }
+        var editedMedia by remember { mutableStateOf<EditedLocalMedia?>(null) }
         var isApplyingImageEdits by remember { mutableStateOf(false) }
         var displayImageEditError by remember { mutableStateOf(false) }
 
@@ -164,40 +166,19 @@ class AttachmentsPreviewPresenter(
                                 } else {
                                     config
                                 }
-                                // If this is a single image with pending edits, export edits first
-                                val editedMedia = if (attachments.size == 1 &&
-                                    pendingEdits?.hasChanges == true
-                                ) {
-                                    isApplyingImageEdits = true
-                                    val result = attachmentImageEditor.exportEdits(
-                                        localMedia = media.localMedia,
-                                        edits = pendingEdits!!,
-                                    )
-                                    isApplyingImageEdits = false
-                                    result.fold(
-                                        onSuccess = { it },
-                                        onFailure = { error ->
-                                            Timber.e(error, "Failed to apply image edits")
-                                            displayImageEditError = true
-                                            return@launch
-                                        }
-                                    )
+                                // If this is a single image with edits already applied, use edited version
+                                val editedAttachment = if (attachments.size == 1 && editedMedia != null) {
+                                    Attachment.Media(editedMedia!!.localMedia)
                                 } else {
                                     null
                                 }
                                 sendAttachment(
-                                    mediaAttachment = if (editedMedia != null) {
-                                        Attachment.Media(editedMedia.localMedia)
-                                    } else {
-                                        media
-                                    },
+                                    mediaAttachment = editedAttachment ?: media,
                                     mediaOptimizationConfig = configForUpload,
                                     caption = caption,
                                     sendActionState = sendActionState,
                                     inReplyToEventId = inReplyToEventId,
                                 )
-                                // Clean up edited temp file
-                                editedMedia?.file?.safeDelete()
                             }
                         }
                         if (isActive) onDoneListener()
@@ -207,6 +188,8 @@ class AttachmentsPreviewPresenter(
                     displayFileTooLargeError = false
                     imageEditorState = null
                     pendingEdits = null
+                    editedMedia?.file?.safeDelete()
+                    editedMedia = null
                     mediaSender.cleanUp()
                     ongoingSendAttachmentJob.value?.cancel()
                     dismissAll(sendActionState)
@@ -251,12 +234,41 @@ class AttachmentsPreviewPresenter(
                     )
                 }
                 AttachmentsPreviewEvent.ApplyImageEdits -> {
-                    // Persist edits so they survive editor close
-                    pendingEdits = imageEditorState?.edits?.takeIf { it.hasChanges }
+                    // Export edits immediately so the preview updates
+                    val edits = imageEditorState?.edits?.takeIf { it.hasChanges }
                     imageEditorState = null
+                    if (edits != null) {
+                        isApplyingImageEdits = true
+                        ongoingSendAttachmentJob.value = coroutineScope.launch {
+                            val result = attachmentImageEditor.exportEdits(
+                                localMedia = currentMediaAttachment.localMedia,
+                                edits = edits,
+                            )
+                            isApplyingImageEdits = false
+                            result.fold(
+                                onSuccess = {
+                                    // Clean up previous edited file
+                                    editedMedia?.file?.safeDelete()
+                                    editedMedia = it
+                                    pendingEdits = edits
+                                },
+                                onFailure = { error ->
+                                    Timber.e(error, "Failed to apply image edits")
+                                    displayImageEditError = true
+                                    pendingEdits = null
+                                    editedMedia = null
+                                }
+                            )
+                        }
+                    } else {
+                        pendingEdits = null
+                        editedMedia = null
+                    }
                 }
                 AttachmentsPreviewEvent.ResetImageEdits -> {
                     pendingEdits = null
+                    editedMedia?.file?.safeDelete()
+                    editedMedia = null
                     imageEditorState = imageEditorState?.copy(
                         edits = AttachmentImageEdits()
                     )
@@ -285,6 +297,7 @@ class AttachmentsPreviewPresenter(
             hasPendingEdits = pendingEdits?.hasChanges == true,
             isApplyingImageEdits = isApplyingImageEdits,
             displayImageEditError = displayImageEditError,
+            previewMedia = editedMedia?.localMedia,
         )
     }
 

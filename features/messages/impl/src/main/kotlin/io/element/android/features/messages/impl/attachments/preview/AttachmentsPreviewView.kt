@@ -249,10 +249,10 @@ private fun AttachmentPreviewContent(
                         }
                     }
                 } else {
-                    when (val attachment = state.attachments[0]) {
-                        is Attachment.Media -> {
-                            localMediaRenderer.Render(attachment.localMedia)
-                        }
+                    val displayMedia = state.previewMedia
+                        ?: (state.attachments[0] as? Attachment.Media)?.localMedia
+                    if (displayMedia != null) {
+                        localMediaRenderer.Render(displayMedia)
                     }
                 }
             }

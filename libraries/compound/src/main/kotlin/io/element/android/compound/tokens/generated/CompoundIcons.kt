@@ -181,6 +181,12 @@ object CompoundIcons {
     @Composable fun EditSolid(): ImageVector {
         return ImageVector.vectorResource(R.drawable.ic_compound_edit_solid)
     }
+    @Composable fun FlipHorizontal(): ImageVector {
+        return ImageVector.vectorResource(R.drawable.ic_compound_flip_horizontal)
+    }
+    @Composable fun FlipVertical(): ImageVector {
+        return ImageVector.vectorResource(R.drawable.ic_compound_flip_vertical)
+    }
     @Composable fun Email(): ImageVector {
         return ImageVector.vectorResource(R.drawable.ic_compound_email)
     }
@@ -752,6 +758,8 @@ object CompoundIcons {
         Earpiece(),
         Edit(),
         EditSolid(),
+        FlipHorizontal(),
+        FlipVertical(),
         Email(),
         EmailSolid(),
         EndCall(),

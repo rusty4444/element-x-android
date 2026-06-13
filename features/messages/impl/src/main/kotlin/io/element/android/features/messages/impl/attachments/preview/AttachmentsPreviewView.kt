@@ -63,8 +63,8 @@ import io.element.android.libraries.designsystem.modifiers.niceClickable
 import io.element.android.libraries.designsystem.preview.ElementPreview
 import io.element.android.libraries.designsystem.preview.ElementPreviewDark
 import io.element.android.libraries.designsystem.preview.PreviewsDayNight
-import io.element.android.libraries.designsystem.theme.components.FilledTonalButton
 import io.element.android.libraries.designsystem.theme.components.Icon
+import io.element.android.libraries.designsystem.theme.components.IconButton
 import io.element.android.libraries.designsystem.theme.components.ListItem
 import io.element.android.libraries.designsystem.theme.components.Scaffold
 import io.element.android.libraries.designsystem.theme.components.Switch
@@ -141,7 +141,7 @@ fun AttachmentsPreviewView(
                         ) {
                             Icon(
                                 imageVector = CompoundIcons.Edit(),
-                                contentDescription = stringResource(CommonStrings.common_edit),
+                                contentDescription = stringResource(CommonStrings.action_edit),
                             )
                         }
                     }
@@ -540,9 +540,9 @@ fun VideoCompressionPreset.title(): String {
 fun VideoCompressionPreset.subtitle(): String {
     return stringResource(
         when (this) {
-            VideoCompressionPreset.STANDARD -> CommonStrings.dialog_video_quality_selector_standard_subtitle
-            VideoCompressionPreset.HIGH -> CommonStrings.dialog_video_quality_selector_high_subtitle
-            VideoCompressionPreset.LOW -> CommonStrings.dialog_video_quality_selector_low_subtitle
+            VideoCompressionPreset.STANDARD -> CommonStrings.common_video_quality_standard_description
+            VideoCompressionPreset.HIGH -> CommonStrings.common_video_quality_high_description
+            VideoCompressionPreset.LOW -> CommonStrings.common_video_quality_low_description
         }
     )
 }

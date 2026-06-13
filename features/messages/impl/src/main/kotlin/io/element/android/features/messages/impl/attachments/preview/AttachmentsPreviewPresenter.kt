@@ -100,6 +100,7 @@ class AttachmentsPreviewPresenter(
 
         // Image editor state — only relevant for single image
         var imageEditorState by remember { mutableStateOf<AttachmentImageEditorState?>(null) }
+        var pendingEdits by remember { mutableStateOf<AttachmentImageEdits?>(null) }
         var isApplyingImageEdits by remember { mutableStateOf(false) }
         var displayImageEditError by remember { mutableStateOf(false) }
 
@@ -163,14 +164,14 @@ class AttachmentsPreviewPresenter(
                                 } else {
                                     config
                                 }
-                                // If this is a single image with edits, export edits first
+                                // If this is a single image with pending edits, export edits first
                                 val editedMedia = if (attachments.size == 1 &&
-                                    imageEditorState?.edits?.hasChanges == true
+                                    pendingEdits?.hasChanges == true
                                 ) {
                                     isApplyingImageEdits = true
                                     val result = attachmentImageEditor.exportEdits(
                                         localMedia = media.localMedia,
-                                        edits = imageEditorState!!.edits,
+                                        edits = pendingEdits!!,
                                     )
                                     isApplyingImageEdits = false
                                     result.fold(
@@ -205,6 +206,7 @@ class AttachmentsPreviewPresenter(
                 AttachmentsPreviewEvent.CancelAndDismiss -> {
                     displayFileTooLargeError = false
                     imageEditorState = null
+                    pendingEdits = null
                     mediaSender.cleanUp()
                     ongoingSendAttachmentJob.value?.cancel()
                     dismissAll(sendActionState)
@@ -225,12 +227,13 @@ class AttachmentsPreviewPresenter(
                 AttachmentsPreviewEvent.OpenImageEditor -> {
                     imageEditorState = AttachmentImageEditorState(
                         localMedia = currentMediaAttachment.localMedia,
-                        edits = AttachmentImageEdits(),
+                        edits = pendingEdits ?: AttachmentImageEdits(),
                         previewDebug = false,
                     )
                 }
                 AttachmentsPreviewEvent.CloseImageEditor -> {
                     imageEditorState = null
+                    // Don't clear pendingEdits — user might send with existing edits
                 }
                 AttachmentsPreviewEvent.RotateImageToTheLeft -> {
                     imageEditorState = imageEditorState?.copy(
@@ -248,9 +251,12 @@ class AttachmentsPreviewPresenter(
                     )
                 }
                 AttachmentsPreviewEvent.ApplyImageEdits -> {
+                    // Persist edits so they survive editor close
+                    pendingEdits = imageEditorState?.edits?.takeIf { it.hasChanges }
                     imageEditorState = null
                 }
                 AttachmentsPreviewEvent.ResetImageEdits -> {
+                    pendingEdits = null
                     imageEditorState = imageEditorState?.copy(
                         edits = AttachmentImageEdits()
                     )
@@ -276,6 +282,7 @@ class AttachmentsPreviewPresenter(
             eventSink = ::handleEvent,
             imageEditorState = imageEditorState,
             canEditImage = canEditImage,
+            hasPendingEdits = pendingEdits?.hasChanges == true,
             isApplyingImageEdits = isApplyingImageEdits,
             displayImageEditError = displayImageEditError,
         )

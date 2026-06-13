@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -23,6 +24,7 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
@@ -306,6 +308,29 @@ private fun AttachmentPreviewContent(
                 content = stringResource(CommonStrings.common_something_went_wrong),
                 onDismiss = { state.eventSink(AttachmentsPreviewEvent.ClearImageEditError) },
             )
+        }
+
+        // Show "edited" indicator when edits are pending
+        if (state.hasPendingEdits) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.Center,
+            ) {
+                Icon(
+                    imageVector = CompoundIcons.Edit(),
+                    contentDescription = null,
+                    modifier = Modifier.size(14.dp),
+                    tint = ElementTheme.colors.iconPrimary,
+                )
+                Spacer(Modifier.width(4.dp))
+                Text(
+                    text = "Edits pending — tap Edit to adjust",
+                    style = ElementTheme.typography.fontBodySmRegular,
+                    color = ElementTheme.colors.textSecondary,
+                )
+            }
         }
 
         AttachmentsPreviewBottomActions(

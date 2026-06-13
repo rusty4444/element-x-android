@@ -28,6 +28,7 @@ data class AttachmentsPreviewState(
     // Image editor fields (single image only)
     val imageEditorState: AttachmentImageEditorState? = null,
     val canEditImage: Boolean = false,
+    val hasPendingEdits: Boolean = false,
     val isApplyingImageEdits: Boolean = false,
     val displayImageEditError: Boolean = false,
 ) {

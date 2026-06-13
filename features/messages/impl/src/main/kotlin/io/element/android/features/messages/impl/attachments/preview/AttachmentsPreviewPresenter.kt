@@ -22,6 +22,9 @@ import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedFactory
 import dev.zacsweers.metro.AssistedInject
 import io.element.android.features.messages.impl.attachments.Attachment
+import io.element.android.features.messages.impl.attachments.preview.imageeditor.AttachmentImageEdits
+import io.element.android.features.messages.impl.attachments.preview.imageeditor.AttachmentImageEditor
+import io.element.android.features.messages.impl.attachments.preview.imageeditor.AttachmentImageEditorState
 import io.element.android.features.messages.impl.attachments.video.MediaOptimizationSelectorPresenter
 import io.element.android.libraries.androidutils.file.TemporaryUriDeleter
 import io.element.android.libraries.androidutils.file.safeDelete
@@ -59,6 +62,7 @@ class AttachmentsPreviewPresenter(
     private val permalinkBuilder: PermalinkBuilder,
     private val temporaryUriDeleter: TemporaryUriDeleter,
     private val mediaOptimizationSelectorPresenterFactory: MediaOptimizationSelectorPresenter.Factory,
+    private val attachmentImageEditor: AttachmentImageEditor,
     @SessionCoroutineScope private val sessionCoroutineScope: CoroutineScope,
     private val dispatchers: CoroutineDispatchers,
     private val mediaOptimizationConfigProvider: MediaOptimizationConfigProvider,
@@ -93,6 +97,15 @@ class AttachmentsPreviewPresenter(
         var selectedIndex by remember { mutableStateOf(0) }
         val currentAttachment = attachments.getOrElse(selectedIndex) { attachments.first() }
         val currentMediaAttachment = currentAttachment as Attachment.Media
+
+        // Image editor state — only relevant for single image
+        var imageEditorState by remember { mutableStateOf<AttachmentImageEditorState?>(null) }
+        var isApplyingImageEdits by remember { mutableStateOf(false) }
+        var displayImageEditError by remember { mutableStateOf(false) }
+
+        // Editing is supported for single image only, and only for still images
+        val isSingleImage = attachments.size == 1 && currentMediaAttachment.localMedia.info.isImageAttachment()
+        val canEditImage = isSingleImage && currentMediaAttachment.localMedia.info.canEditImage()
 
         // Media optimization selector uses the first attachment for settings
         val mediaOptimizationSelectorPresenter = remember(attachments) {
@@ -150,13 +163,40 @@ class AttachmentsPreviewPresenter(
                                 } else {
                                     config
                                 }
+                                // If this is a single image with edits, export edits first
+                                val editedMedia = if (attachments.size == 1 &&
+                                    imageEditorState?.edits?.hasChanges == true
+                                ) {
+                                    isApplyingImageEdits = true
+                                    val result = attachmentImageEditor.exportEdits(
+                                        localMedia = media.localMedia,
+                                        edits = imageEditorState!!.edits,
+                                    )
+                                    isApplyingImageEdits = false
+                                    result.fold(
+                                        onSuccess = { it },
+                                        onFailure = { error ->
+                                            Timber.e(error, "Failed to apply image edits")
+                                            displayImageEditError = true
+                                            return@launch
+                                        }
+                                    )
+                                } else {
+                                    null
+                                }
                                 sendAttachment(
-                                    mediaAttachment = media,
+                                    mediaAttachment = if (editedMedia != null) {
+                                        Attachment.Media(editedMedia.localMedia)
+                                    } else {
+                                        media
+                                    },
                                     mediaOptimizationConfig = configForUpload,
                                     caption = caption,
                                     sendActionState = sendActionState,
                                     inReplyToEventId = inReplyToEventId,
                                 )
+                                // Clean up edited temp file
+                                editedMedia?.file?.safeDelete()
                             }
                         }
                         if (isActive) onDoneListener()
@@ -164,6 +204,7 @@ class AttachmentsPreviewPresenter(
                 }
                 AttachmentsPreviewEvent.CancelAndDismiss -> {
                     displayFileTooLargeError = false
+                    imageEditorState = null
                     mediaSender.cleanUp()
                     ongoingSendAttachmentJob.value?.cancel()
                     dismissAll(sendActionState)
@@ -180,6 +221,48 @@ class AttachmentsPreviewPresenter(
                         SendActionState.Idle
                     }
                 }
+                // Image editor events
+                AttachmentsPreviewEvent.OpenImageEditor -> {
+                    imageEditorState = AttachmentImageEditorState(
+                        localMedia = currentMediaAttachment.localMedia,
+                        edits = AttachmentImageEdits(),
+                        previewDebug = false,
+                    )
+                }
+                AttachmentsPreviewEvent.CloseImageEditor -> {
+                    imageEditorState = null
+                }
+                AttachmentsPreviewEvent.RotateImageToTheLeft -> {
+                    imageEditorState = imageEditorState?.copy(
+                        edits = imageEditorState!!.edits.rotateAntiClockwise()
+                    )
+                }
+                AttachmentsPreviewEvent.FlipImageHorizontally -> {
+                    imageEditorState = imageEditorState?.copy(
+                        edits = imageEditorState!!.edits.flipHorizontally()
+                    )
+                }
+                AttachmentsPreviewEvent.FlipImageVertically -> {
+                    imageEditorState = imageEditorState?.copy(
+                        edits = imageEditorState!!.edits.flipVertically()
+                    )
+                }
+                AttachmentsPreviewEvent.ApplyImageEdits -> {
+                    imageEditorState = null
+                }
+                AttachmentsPreviewEvent.ResetImageEdits -> {
+                    imageEditorState = imageEditorState?.copy(
+                        edits = AttachmentImageEdits()
+                    )
+                }
+                is AttachmentsPreviewEvent.UpdateImageCropRect -> {
+                    imageEditorState = imageEditorState?.copy(
+                        edits = imageEditorState!!.edits.copy(cropRect = event.cropRect)
+                    )
+                }
+                AttachmentsPreviewEvent.ClearImageEditError -> {
+                    displayImageEditError = false
+                }
             }
         }
 
@@ -191,6 +274,10 @@ class AttachmentsPreviewPresenter(
             mediaOptimizationSelectorState = mediaOptimizationSelectorState,
             displayFileTooLargeError = displayFileTooLargeError,
             eventSink = ::handleEvent,
+            imageEditorState = imageEditorState,
+            canEditImage = canEditImage,
+            isApplyingImageEdits = isApplyingImageEdits,
+            displayImageEditError = displayImageEditError,
         )
     }
 

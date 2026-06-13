@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Element Creations Ltd.
+ * Copyright (c) 2026 Element Creations Ltd.
  * Copyright 2023-2025 New Vector Ltd.
  *
  * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial.
@@ -7,8 +7,10 @@
  */
 
 package io.element.android.features.messages.impl.attachments.preview
+
 import androidx.compose.runtime.Immutable
 import io.element.android.features.messages.impl.attachments.Attachment
+import io.element.android.features.messages.impl.attachments.preview.imageeditor.AttachmentImageEditorState
 import io.element.android.features.messages.impl.attachments.video.MediaOptimizationSelectorState
 import io.element.android.libraries.core.mimetype.MimeTypes
 import io.element.android.libraries.mediaupload.api.MediaUploadInfo
@@ -23,6 +25,11 @@ data class AttachmentsPreviewState(
     val mediaOptimizationSelectorState: MediaOptimizationSelectorState,
     val displayFileTooLargeError: Boolean,
     val eventSink: (AttachmentsPreviewEvent) -> Unit,
+    // Image editor fields (single image only)
+    val imageEditorState: AttachmentImageEditorState? = null,
+    val canEditImage: Boolean = false,
+    val isApplyingImageEdits: Boolean = false,
+    val displayImageEditError: Boolean = false,
 ) {
     val attachment: Attachment
         get() = attachments.getOrElse(selectedIndex) { attachments[0] }

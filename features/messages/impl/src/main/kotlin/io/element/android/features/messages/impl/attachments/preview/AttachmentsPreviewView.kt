@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Element Creations Ltd.
+ * Copyright (c) 2026 Element Creations Ltd.
  * Copyright 2023-2025 New Vector Ltd.
  *
  * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial.
@@ -45,6 +45,7 @@ import io.element.android.compound.tokens.generated.CompoundIcons
 import io.element.android.features.messages.impl.R
 import io.element.android.features.messages.impl.attachments.Attachment
 import io.element.android.features.messages.impl.attachments.preview.error.sendAttachmentError
+import io.element.android.features.messages.impl.attachments.preview.imageeditor.AttachmentImageEditorView
 import io.element.android.features.messages.impl.attachments.video.MediaOptimizationSelectorEvent
 import io.element.android.features.messages.impl.attachments.video.MediaOptimizationSelectorState
 import io.element.android.features.messages.impl.attachments.video.VideoUploadEstimation
@@ -62,6 +63,8 @@ import io.element.android.libraries.designsystem.modifiers.niceClickable
 import io.element.android.libraries.designsystem.preview.ElementPreview
 import io.element.android.libraries.designsystem.preview.ElementPreviewDark
 import io.element.android.libraries.designsystem.preview.PreviewsDayNight
+import io.element.android.libraries.designsystem.theme.components.FilledTonalButton
+import io.element.android.libraries.designsystem.theme.components.Icon
 import io.element.android.libraries.designsystem.theme.components.ListItem
 import io.element.android.libraries.designsystem.theme.components.Scaffold
 import io.element.android.libraries.designsystem.theme.components.Switch
@@ -103,6 +106,21 @@ fun AttachmentsPreviewView(
         postCancel()
     }
 
+    // Image editor takes over the full screen when open
+    if (state.imageEditorState != null) {
+        AttachmentImageEditorView(
+            state = state.imageEditorState!!,
+            onRotateClick = { state.eventSink(AttachmentsPreviewEvent.RotateImageToTheLeft) },
+            onFlipHorizontallyClick = { state.eventSink(AttachmentsPreviewEvent.FlipImageHorizontally) },
+            onFlipVerticallyClick = { state.eventSink(AttachmentsPreviewEvent.FlipImageVertically) },
+            onCropRectChange = { state.eventSink(AttachmentsPreviewEvent.UpdateImageCropRect(it)) },
+            onDoneClick = { state.eventSink(AttachmentsPreviewEvent.ApplyImageEdits) },
+            onResetClick = { state.eventSink(AttachmentsPreviewEvent.ResetImageEdits) },
+            onCancelClick = { state.eventSink(AttachmentsPreviewEvent.CloseImageEditor) },
+        )
+        return
+    }
+
     Scaffold(
         modifier = modifier,
         topBar = {
@@ -114,6 +132,20 @@ fun AttachmentsPreviewView(
                     )
                 },
                 title = {},
+                actions = {
+                    // Edit button: only for single image that can be edited
+                    if (state.canEditImage && state.attachments.size == 1) {
+                        IconButton(
+                            onClick = { state.eventSink(AttachmentsPreviewEvent.OpenImageEditor) },
+                            modifier = Modifier.padding(end = 8.dp),
+                        ) {
+                            Icon(
+                                imageVector = CompoundIcons.Edit(),
+                                contentDescription = stringResource(CommonStrings.common_edit),
+                            )
+                        }
+                    }
+                },
             )
         }
     ) { paddingValues ->
@@ -265,6 +297,15 @@ private fun AttachmentPreviewContent(
                     onDismiss = { state.eventSink(AttachmentsPreviewEvent.CancelAndDismiss) },
                 )
             }
+        }
+
+        // Image edit error dialog
+        if (state.displayImageEditError) {
+            AlertDialog(
+                title = stringResource(CommonStrings.common_error),
+                content = stringResource(CommonStrings.common_something_went_wrong),
+                onDismiss = { state.eventSink(AttachmentsPreviewEvent.ClearImageEditError) },
+            )
         }
 
         AttachmentsPreviewBottomActions(
@@ -499,9 +540,9 @@ fun VideoCompressionPreset.title(): String {
 fun VideoCompressionPreset.subtitle(): String {
     return stringResource(
         when (this) {
-            VideoCompressionPreset.STANDARD -> CommonStrings.common_video_quality_standard_description
-            VideoCompressionPreset.HIGH -> CommonStrings.common_video_quality_high_description
-            VideoCompressionPreset.LOW -> CommonStrings.common_video_quality_low_description
+            VideoCompressionPreset.STANDARD -> CommonStrings.dialog_video_quality_selector_standard_subtitle
+            VideoCompressionPreset.HIGH -> CommonStrings.dialog_video_quality_selector_high_subtitle
+            VideoCompressionPreset.LOW -> CommonStrings.dialog_video_quality_selector_low_subtitle
         }
     )
 }

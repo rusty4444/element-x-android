@@ -181,8 +181,16 @@ class MediaGalleryPresenter(
     }
 
     private suspend fun saveOnDisk(mediaItem: MediaItem.Event) {
-        downloadMedia(mediaItem)
-            .mapCatchingExceptions { localMedia ->
+        mediaLoader.downloadMediaFile(
+            source = mediaItem.mediaSource(),
+            mimeType = mediaItem.mediaInfo().mimeType,
+            filename = mediaItem.mediaInfo().filename
+        )
+            .mapCatchingExceptions { mediaFile ->
+                val localMedia = localMediaFactory.createFromMediaFile(
+                    mediaFile = mediaFile,
+                    mediaInfo = mediaItem.mediaInfo()
+                )
                 localMediaActions.saveOnDisk(localMedia)
             }
             .onSuccess {

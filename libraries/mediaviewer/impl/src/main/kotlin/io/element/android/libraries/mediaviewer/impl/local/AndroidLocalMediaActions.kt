@@ -84,7 +84,6 @@ class AndroidLocalMediaActions(
 
     override suspend fun saveOnDisk(localMedia: LocalMedia): Result<Unit> = withContext(coroutineDispatchers.io) {
         runCatchingExceptions {
-            require(localMedia.uri.scheme == ContentResolver.SCHEME_FILE)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 saveOnDiskUsingMediaStore(localMedia)
             } else {
@@ -93,7 +92,7 @@ class AndroidLocalMediaActions(
         }.onSuccess {
             Timber.v("Save on disk succeed")
         }.onFailure {
-            Timber.e(it, "Save on disk failed")
+            Timber.e(it, "Save on disk failed for uri=${localMedia.uri} filename=${localMedia.info.filename}")
         }
     }
 
@@ -201,9 +200,19 @@ class AndroidLocalMediaActions(
     }
 
     private fun LocalMedia.safeFilename(): String {
-        return File(info.filename).name.takeIf { it.isNotBlank() }
-            ?: uri.toFile().name.takeIf { it.isNotBlank() }
-            ?: "download"
+        // Use the original filename if available and non-blank
+        val rawName = File(info.filename).name
+        if (rawName.isNotBlank()) return rawName
+
+        // Fall back to the URI's filename
+        val uriName = uri.toFile().name
+        if (uriName.isNotBlank()) return uriName
+
+        // Last resort: generate one with the right extension from the MIME type
+        val extension = info.mimeType
+            ?.substringAfterLast('/')
+            ?.takeUnless { it == "*" || it == "octet-stream" || it.isBlank() }
+        return if (extension != null) "download.$extension" else "download"
     }
 
     /**

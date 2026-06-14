@@ -165,8 +165,9 @@ class AndroidLocalMediaActions(
     @RequiresApi(Build.VERSION_CODES.Q)
     private fun saveOnDiskUsingMediaStore(localMedia: LocalMedia) {
         val resolver = context.contentResolver
+        val uniqueFilename = localMedia.uniqueDownloadFilename(resolver)
         val contentValues = ContentValues().apply {
-            put(MediaStore.MediaColumns.DISPLAY_NAME, localMedia.safeFilename())
+            put(MediaStore.MediaColumns.DISPLAY_NAME, uniqueFilename)
             put(MediaStore.MediaColumns.MIME_TYPE, localMedia.info.mimeType)
             put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
             put(MediaStore.MediaColumns.IS_PENDING, 1)
@@ -222,6 +223,45 @@ class AndroidLocalMediaActions(
         }
 
         error("Unable to open input stream for $uri (scheme=${uri.scheme})")
+    }
+
+    private fun LocalMedia.uniqueDownloadFilename(resolver: ContentResolver): String {
+        val baseName = safeFilename()
+        // Split into name and extension
+        val dotIndex = baseName.lastIndexOf('.')
+        val stem = if (dotIndex > 0) baseName.substring(0, dotIndex) else baseName
+        val ext = if (dotIndex > 0) baseName.substring(dotIndex) else ""
+
+        // Query existing filenames in Downloads with the same stem
+        val existingNames = mutableSetOf<String>()
+        @Suppress("DEPRECATION")
+        resolver.query(
+            MediaStore.Downloads.EXTERNAL_CONTENT_URI,
+            arrayOf(MediaStore.MediaColumns.DISPLAY_NAME),
+            "${MediaStore.MediaColumns.RELATIVE_PATH}=? AND ${MediaStore.MediaColumns.DISPLAY_NAME} LIKE ?",
+            arrayOf(Environment.DIRECTORY_DOWNLOADS, "$stem%$ext"),
+            null,
+        )?.use { cursor ->
+            val col = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DISPLAY_NAME)
+            while (cursor.moveToNext()) {
+                existingNames.add(cursor.getString(col))
+            }
+        }
+
+        // If the original name is unique, use it
+        if (baseName !in existingNames) return baseName
+
+        // Generate a unique name: "image (1).jpg", "image (2).jpg", ...
+        var counter = 1
+        while (true) {
+            val candidate = "$stem ($counter)$ext"
+            if (candidate !in existingNames) return candidate
+            counter++
+            if (counter > 999) {
+                // Fallback: use timestamp
+                return "$stem-${System.currentTimeMillis()}$ext"
+            }
+        }
     }
 
     private fun LocalMedia.safeFilename(): String {

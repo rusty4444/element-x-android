@@ -388,8 +388,11 @@ private fun MediaViewerPage(
                     )
                 }
                 if (showError) {
+                    val errorText = (downloadedMedia as? AsyncData.Failure)?.error?.let { e ->
+                        e.message ?: e::class.simpleName ?: "Unknown error"
+                    } ?: stringResource(id = CommonStrings.error_unknown)
                     ErrorView(
-                        errorMessage = stringResource(id = CommonStrings.error_unknown),
+                        errorMessage = errorText,
                         onRetry = onRetry,
                         onDismiss = onDismissError
                     )

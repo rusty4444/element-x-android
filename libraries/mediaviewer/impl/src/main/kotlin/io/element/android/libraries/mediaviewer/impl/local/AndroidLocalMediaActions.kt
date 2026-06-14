@@ -83,8 +83,8 @@ class AndroidLocalMediaActions(
     }
 
     override suspend fun saveOnDisk(localMedia: LocalMedia): Result<Unit> = withContext(coroutineDispatchers.io) {
-        require(localMedia.uri.scheme == ContentResolver.SCHEME_FILE)
         runCatchingExceptions {
+            require(localMedia.uri.scheme == ContentResolver.SCHEME_FILE)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 saveOnDiskUsingMediaStore(localMedia)
             } else {
@@ -165,18 +165,17 @@ class AndroidLocalMediaActions(
 
     @RequiresApi(Build.VERSION_CODES.Q)
     private fun saveOnDiskUsingMediaStore(localMedia: LocalMedia) {
+        val resolver = context.contentResolver
         val contentValues = ContentValues().apply {
-            put(MediaStore.MediaColumns.DISPLAY_NAME, localMedia.info.filename)
+            put(MediaStore.MediaColumns.DISPLAY_NAME, localMedia.safeFilename())
             put(MediaStore.MediaColumns.MIME_TYPE, localMedia.info.mimeType)
             put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
         }
-        val resolver = context.contentResolver
         val outputUri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, contentValues)
-        if (outputUri != null) {
-            localMedia.openStream()?.use { input ->
-                resolver.openOutputStream(outputUri).use { output ->
-                    input.copyTo(output!!, DEFAULT_BUFFER_SIZE)
-                }
+            ?: error("Unable to create MediaStore download entry")
+        localMedia.openStream().use { input ->
+            resolver.openOutputStream(outputUri).use { output ->
+                input.copyTo(output ?: error("Unable to open MediaStore output stream"), DEFAULT_BUFFER_SIZE)
             }
         }
     }
@@ -184,17 +183,27 @@ class AndroidLocalMediaActions(
     private fun saveOnDiskUsingExternalStorageApi(localMedia: LocalMedia) {
         val target = File(
             Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
-            localMedia.info.filename
+            localMedia.safeFilename()
         )
-        localMedia.openStream()?.use { input ->
+        localMedia.openStream().use { input ->
             FileOutputStream(target).use { output ->
                 input.copyTo(output)
             }
         }
     }
 
-    private fun LocalMedia.openStream(): InputStream? {
-        return context.contentResolver.openInputStream(uri)
+    private fun LocalMedia.openStream(): InputStream {
+        return when (uri.scheme) {
+            ContentResolver.SCHEME_FILE -> uri.toFile().inputStream()
+            else -> context.contentResolver.openInputStream(uri)
+                ?: error("Unable to open input stream for $uri")
+        }
+    }
+
+    private fun LocalMedia.safeFilename(): String {
+        return File(info.filename).name.takeIf { it.isNotBlank() }
+            ?: uri.toFile().name.takeIf { it.isNotBlank() }
+            ?: "download"
     }
 
     /**

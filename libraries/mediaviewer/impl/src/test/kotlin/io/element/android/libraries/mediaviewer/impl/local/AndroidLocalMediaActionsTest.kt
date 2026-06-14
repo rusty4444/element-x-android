@@ -25,6 +25,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
+import java.io.File
 
 @RunWith(RobolectricTestRunner::class)
 class AndroidLocalMediaActionsTest {
@@ -62,6 +63,17 @@ class AndroidLocalMediaActionsTest {
         val sut = createAndroidLocalMediaActions()
         val result = sut.saveOnDisk(aLocalMedia(Uri.parse("file://afile")))
         assertThat(result.exceptionOrNull()).isNotNull()
+    }
+
+    @Test
+    fun `test AndroidLocalMediaAction save on disk with existing file`() = runTest {
+        val sut = createAndroidLocalMediaActions()
+        val file = File.createTempFile("element-test-image", ".jpg").apply {
+            writeBytes(byteArrayOf(1, 2, 3, 4))
+            deleteOnExit()
+        }
+        val result = sut.saveOnDisk(aLocalMedia(Uri.fromFile(file)))
+        assertThat(result.exceptionOrNull()).isNull()
     }
 
     private fun TestScope.createAndroidLocalMediaActions() = AndroidLocalMediaActions(

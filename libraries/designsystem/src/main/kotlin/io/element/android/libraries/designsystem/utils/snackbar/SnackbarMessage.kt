@@ -24,6 +24,7 @@ import kotlin.random.Random
  */
 data class SnackbarMessage(
     @StringRes val messageResId: Int,
+    val messageText: String? = null,
     val duration: SnackbarDuration = SnackbarDuration.Short,
     @StringRes val actionResId: Int? = null,
     val isDisplayed: AtomicBoolean = AtomicBoolean(false),

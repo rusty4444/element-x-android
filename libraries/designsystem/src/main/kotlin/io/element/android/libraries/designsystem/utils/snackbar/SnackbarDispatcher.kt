@@ -69,7 +69,7 @@ fun SnackbarDispatcher.collectSnackbarMessageAsState(): State<SnackbarMessage?> 
 fun rememberSnackbarHostState(snackbarMessage: SnackbarMessage?): SnackbarHostState {
     val snackbarHostState = remember { SnackbarHostState() }
     val snackbarMessageText = snackbarMessage?.let {
-        stringResource(id = snackbarMessage.messageResId)
+        it.messageText ?: stringResource(id = it.messageResId)
     } ?: return snackbarHostState
 
     val dispatcher = LocalSnackbarDispatcher.current

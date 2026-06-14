@@ -246,7 +246,11 @@ class MediaViewerPresenter(
                     snackbarDispatcher.post(snackbarMessage)
                 }
                 .onFailure {
-                    val snackbarMessage = SnackbarMessage(mediaActionsError(it))
+                    val errorMsg = it.message ?: it::class.simpleName ?: "Unknown"
+                    val snackbarMessage = SnackbarMessage(
+                        messageResId = CommonStrings.error_unknown,
+                        messageText = "Save failed: $errorMsg"
+                    )
                     snackbarDispatcher.post(snackbarMessage)
                 }
         }

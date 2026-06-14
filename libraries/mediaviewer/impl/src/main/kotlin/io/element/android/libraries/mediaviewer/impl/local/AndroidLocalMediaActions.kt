@@ -169,13 +169,30 @@ class AndroidLocalMediaActions(
             put(MediaStore.MediaColumns.DISPLAY_NAME, localMedia.safeFilename())
             put(MediaStore.MediaColumns.MIME_TYPE, localMedia.info.mimeType)
             put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
+            put(MediaStore.MediaColumns.IS_PENDING, 1)
         }
         val outputUri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, contentValues)
-            ?: error("Unable to create MediaStore download entry")
-        localMedia.openStream().use { input ->
-            resolver.openOutputStream(outputUri).use { output ->
-                input.copyTo(output ?: error("Unable to open MediaStore output stream"), DEFAULT_BUFFER_SIZE)
+            ?: error("MediaStore insert returned null — check DISPLAY_NAME=${localMedia.safeFilename()} MIME=${localMedia.info.mimeType}")
+        try {
+            localMedia.openStream().use { input ->
+                resolver.openOutputStream(outputUri, "w").use { output ->
+                    if (output == null) {
+                        resolver.delete(outputUri, null, null)
+                        error("MediaStore openOutputStream returned null for $outputUri")
+                    }
+                    input.copyTo(output, DEFAULT_BUFFER_SIZE)
+                }
             }
+            // Mark as complete
+            ContentValues().apply {
+                put(MediaStore.MediaColumns.IS_PENDING, 0)
+            }.also { cv ->
+                resolver.update(outputUri, cv, null, null)
+            }
+        } catch (e: Exception) {
+            // Clean up the pending entry on failure
+            try { resolver.delete(outputUri, null, null) } catch (_: Exception) {}
+            throw e
         }
     }
 
@@ -192,11 +209,19 @@ class AndroidLocalMediaActions(
     }
 
     private fun LocalMedia.openStream(): InputStream {
-        return when (uri.scheme) {
-            ContentResolver.SCHEME_FILE -> uri.toFile().inputStream()
-            else -> context.contentResolver.openInputStream(uri)
-                ?: error("Unable to open input stream for $uri")
+        // Try ContentResolver first (works for content://, may work for file:// on some devices)
+        context.contentResolver.openInputStream(uri)?.let { return it }
+
+        // Fall back to direct file access for file:// URIs
+        if (uri.scheme == ContentResolver.SCHEME_FILE) {
+            val file = uri.toFile()
+            if (file.exists() && file.canRead()) {
+                return file.inputStream()
+            }
+            error("File not found or not readable: ${file.absolutePath}")
         }
+
+        error("Unable to open input stream for $uri (scheme=${uri.scheme})")
     }
 
     private fun LocalMedia.safeFilename(): String {

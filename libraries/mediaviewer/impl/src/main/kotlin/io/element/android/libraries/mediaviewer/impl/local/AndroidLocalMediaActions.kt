@@ -165,15 +165,8 @@ class AndroidLocalMediaActions(
     @RequiresApi(Build.VERSION_CODES.Q)
     private fun saveOnDiskUsingMediaStore(localMedia: LocalMedia) {
         val resolver = context.contentResolver
-        val uniqueFilename = localMedia.uniqueDownloadFilename(resolver)
-        val contentValues = ContentValues().apply {
-            put(MediaStore.MediaColumns.DISPLAY_NAME, uniqueFilename)
-            put(MediaStore.MediaColumns.MIME_TYPE, localMedia.info.mimeType)
-            put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
-            put(MediaStore.MediaColumns.IS_PENDING, 1)
-        }
-        val outputUri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, contentValues)
-            ?: error("MediaStore insert returned null — check DISPLAY_NAME=${localMedia.safeFilename()} MIME=${localMedia.info.mimeType}")
+        val (outputUri, _) = localMedia.insertWithUniqueName(resolver)
+            ?: error("MediaStore insert failed after retries — base name=${localMedia.safeFilename()} MIME=${localMedia.info.mimeType}")
         try {
             localMedia.openStream().use { input ->
                 resolver.openOutputStream(outputUri, "w").use { output ->
@@ -225,41 +218,48 @@ class AndroidLocalMediaActions(
         error("Unable to open input stream for $uri (scheme=${uri.scheme})")
     }
 
-    private fun LocalMedia.uniqueDownloadFilename(resolver: ContentResolver): String {
+    /**
+     * Attempts to insert a MediaStore entry with a unique DISPLAY_NAME.
+     *
+     * Unlike a pre-query approach (which has a TOCTOU race between checking
+     * existing names and inserting), this uses the insert result itself as
+     * the collision detector.  When MediaStore rejects the insert because
+     * another file already has the chosen name, it returns null — we catch
+     * that and retry with an incremented suffix.
+     *
+     * @return Pair of (outputUri, actuallyUsedFilename), or null if all
+     *         attempts were exhausted.
+     */
+    private fun LocalMedia.insertWithUniqueName(resolver: ContentResolver): Pair<Uri, String>? {
         val baseName = safeFilename()
-        // Split into name and extension
         val dotIndex = baseName.lastIndexOf('.')
         val stem = if (dotIndex > 0) baseName.substring(0, dotIndex) else baseName
         val ext = if (dotIndex > 0) baseName.substring(dotIndex) else ""
+        val mimeType = info.mimeType
 
-        // Query existing filenames in Downloads with the same stem
-        val existingNames = mutableSetOf<String>()
-        @Suppress("DEPRECATION")
-        resolver.query(
-            MediaStore.Downloads.EXTERNAL_CONTENT_URI,
-            arrayOf(MediaStore.MediaColumns.DISPLAY_NAME),
-            "${MediaStore.MediaColumns.RELATIVE_PATH}=? AND ${MediaStore.MediaColumns.DISPLAY_NAME} LIKE ?",
-            arrayOf(Environment.DIRECTORY_DOWNLOADS, "$stem%$ext"),
-            null,
-        )?.use { cursor ->
-            val col = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DISPLAY_NAME)
-            while (cursor.moveToNext()) {
-                existingNames.add(cursor.getString(col))
-            }
-        }
-
-        // If the original name is unique, use it
-        if (baseName !in existingNames) return baseName
-
-        // Generate a unique name: "image (1).jpg", "image (2).jpg", ...
-        var counter = 1
+        // Candidate names to try in order: base, "stem (1).ext", "stem (2).ext", …
+        // Any insert returning non-null wins immediately.
+        var counter = 0
         while (true) {
-            val candidate = "$stem ($counter)$ext"
-            if (candidate !in existingNames) return candidate
+            val candidate = if (counter == 0) baseName else "$stem ($counter)$ext"
+            val cv = ContentValues().apply {
+                put(MediaStore.MediaColumns.DISPLAY_NAME, candidate)
+                put(MediaStore.MediaColumns.MIME_TYPE, mimeType)
+                put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
+                put(MediaStore.MediaColumns.IS_PENDING, 1)
+            }
+            @Suppress("DEPRECATION")
+            val uri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, cv)
+            if (uri != null) return uri to candidate
+
+            // Name collision — try next suffix
             counter++
             if (counter > 999) {
-                // Fallback: use timestamp
-                return "$stem-${System.currentTimeMillis()}$ext"
+                // Final fallback: timestamp-based unique name
+                val tsName = "$stem-${System.currentTimeMillis()}$ext"
+                cv.put(MediaStore.MediaColumns.DISPLAY_NAME, tsName)
+                val tsUri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, cv)
+                return if (tsUri != null) tsUri to tsName else null
             }
         }
     }

@@ -23,6 +23,7 @@ class InMemoryAppPreferencesStore(
     timelineMediaPreviewValue: MediaPreviewValue? = null,
     theme: String? = null,
     accentColor: String? = null,
+    liveLocationMinimumDistanceUpdate: Int = 10,
     logLevel: LogLevel = LogLevel.INFO,
     traceLockPacks: Set<TraceLogPack> = emptySet(),
 ) : AppPreferencesStore {
@@ -30,6 +31,7 @@ class InMemoryAppPreferencesStore(
     private val customElementCallBaseUrl = MutableStateFlow(customElementCallBaseUrl)
     private val theme = MutableStateFlow(theme)
     private val accentColor = MutableStateFlow(accentColor)
+    private val liveLocationMinimumDistanceUpdate = MutableStateFlow(liveLocationMinimumDistanceUpdate)
     private val logLevel = MutableStateFlow(logLevel)
     private val tracingLogPacks = MutableStateFlow(traceLockPacks)
     private val hideInviteAvatars = MutableStateFlow(hideInviteAvatars)
@@ -58,6 +60,14 @@ class InMemoryAppPreferencesStore(
 
     override fun getThemeFlow(): Flow<String?> {
         return theme
+    }
+
+    override suspend fun setLiveLocationMinimumDistanceInMetersUpdate(value: Int) {
+        liveLocationMinimumDistanceUpdate.value = value
+    }
+
+    override fun getLiveLocationMinimumDistanceInMetersUpdateFlow(): Flow<Int> {
+        return liveLocationMinimumDistanceUpdate
     }
 
     @Deprecated("Use MediaPreviewService instead. Kept only for migration.")

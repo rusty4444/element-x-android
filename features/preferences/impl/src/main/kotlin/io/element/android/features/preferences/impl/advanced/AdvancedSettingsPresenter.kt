@@ -58,6 +58,10 @@ class AdvancedSettingsPresenter(
             appPreferencesStore.getThemeFlow().mapToTheme(isBlackThemeAllowed)
         }.collectAsState(initial = Theme.System)
 
+        val liveLocationMinimumDistanceUpdate by produceState<Int?>(null) {
+            appPreferencesStore.getLiveLocationMinimumDistanceInMetersUpdateFlow().collect { value = it }
+        }
+
         val mediaPreviewConfigState = mediaPreviewConfigStateStore.state()
 
         val themeOption by remember {
@@ -140,6 +144,9 @@ class AdvancedSettingsPresenter(
                 }
                 is AdvancedSettingsEvents.SetHideInviteAvatars -> mediaPreviewConfigStateStore.setHideInviteAvatars(event.value)
                 is AdvancedSettingsEvents.SetTimelineMediaPreviewValue -> mediaPreviewConfigStateStore.setTimelineMediaPreviewValue(event.value)
+                is AdvancedSettingsEvents.SetLiveLocationMinimumDistanceUpdate -> sessionCoroutineScope.launch {
+                    appPreferencesStore.setLiveLocationMinimumDistanceInMetersUpdate(event.value)
+                }
                 is AdvancedSettingsEvents.SetCompressImages -> sessionCoroutineScope.launch {
                     sessionPreferencesStore.setOptimizeImages(event.compress)
                 }
@@ -162,6 +169,7 @@ class AdvancedSettingsPresenter(
             accentColor = accentColorOption,
             availableAccentColorOptions = availableAccentColorOptions,
             mediaPreviewConfigState = mediaPreviewConfigState,
+            liveLocationMinimumDistanceUpdate = liveLocationMinimumDistanceUpdate,
             eventSink = ::handleEvent,
         )
     }

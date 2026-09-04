@@ -12,9 +12,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.res.stringResource
 import io.element.android.compound.theme.AccentColor
+import io.element.android.features.preferences.impl.R
 import io.element.android.libraries.designsystem.components.preferences.DropdownOption
-import io.element.android.libraries.preferences.api.store.VideoCompressionPreset
 import io.element.android.libraries.ui.strings.CommonStrings
+import io.element.android.libraries.preferences.api.store.VideoCompressionPreset
 import kotlinx.collections.immutable.ImmutableList
 
 data class AdvancedSettingsState(
@@ -27,6 +28,7 @@ data class AdvancedSettingsState(
     val accentColor: AccentColorOption,
     val availableAccentColorOptions: ImmutableList<AccentColorOption>,
     val mediaPreviewConfigState: MediaPreviewConfigState,
+    val liveLocationMinimumDistanceUpdate: Int?,
     val eventSink: (AdvancedSettingsEvents) -> Unit
 )
 
@@ -47,25 +49,25 @@ enum class ThemeOption : DropdownOption {
     System {
         @Composable
         @ReadOnlyComposable
-        override fun getText(): String = stringResource(CommonStrings.common_system)
+        override fun getText(): String = stringResource(R.string.theme_system)
     },
 
     Light {
         @Composable
         @ReadOnlyComposable
-        override fun getText(): String = stringResource(CommonStrings.common_light)
+        override fun getText(): String = stringResource(R.string.theme_light)
     },
 
     Dark {
         @Composable
         @ReadOnlyComposable
-        override fun getText(): String = stringResource(CommonStrings.common_dark)
+        override fun getText(): String = stringResource(R.string.theme_dark)
     },
 
     Black {
         @Composable
         @ReadOnlyComposable
-        override fun getText(): String = stringResource(CommonStrings.common_black)
+        override fun getText(): String = stringResource(R.string.theme_black)
     }
 }
 

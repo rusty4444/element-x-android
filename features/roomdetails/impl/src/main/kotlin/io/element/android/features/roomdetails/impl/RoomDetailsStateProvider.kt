@@ -74,6 +74,7 @@ fun aDmRoomMember(
     isIgnored: Boolean = false,
     role: RoomMember.Role = RoomMember.Role.User,
     membershipChangeReason: String? = null,
+    isServiceMember: Boolean = false,
 ) = RoomMember(
     userId = userId,
     displayName = displayName,
@@ -83,7 +84,8 @@ fun aDmRoomMember(
     powerLevel = powerLevel,
     isIgnored = isIgnored,
     role = role,
-    membershipChangeReason = membershipChangeReason
+    membershipChangeReason = membershipChangeReason,
+    isServiceMember = isServiceMember,
 )
 
 fun aRoomDetailsState(
@@ -180,6 +182,7 @@ fun aDmRoomDetailsState(
     roomName = roomName,
     isPublic = false,
     isEncrypted = isEncrypted,
+    canInvite = true,
     roomType = RoomDetailsType.Dm(otherMember = aDmRoomMember(isIgnored = isDmMemberIgnored)),
     roomMemberDetailsState = aUserProfileState(
         isBlocked = AsyncData.Success(isDmMemberIgnored),

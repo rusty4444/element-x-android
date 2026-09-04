@@ -23,7 +23,6 @@ import io.element.android.libraries.matrix.api.MatrixClient
 import io.element.android.libraries.matrix.api.core.RoomId
 import io.element.android.libraries.matrix.api.notificationsettings.NotificationSettingsService
 import io.element.android.libraries.matrix.api.room.RoomMembershipState
-import io.element.android.libraries.matrix.api.room.isDm
 import io.element.android.libraries.matrix.api.roomlist.RoomList
 import io.element.android.libraries.matrix.api.roomlist.RoomListFilter
 import io.element.android.libraries.matrix.api.roomlist.RoomListService
@@ -104,9 +103,8 @@ class RoomListDataSource(
 
     val loadingState = roomList.loadingState
 
-    @OptIn(FlowPreview::class)
-    fun launchIn(coroutineScope: CoroutineScope) {
-        roomList
+    fun launchIn(coroutineScope: CoroutineScope): Job {
+        return roomList
             .summaries
             .debounce(100)
             .onEach { roomSummaries ->
@@ -282,6 +280,7 @@ class RoomListDataSource(
     private suspend fun rebuildAllRoomSummaries() {
         lock.withLock {
             roomList.summaries.replayCache.firstOrNull()?.let { roomSummaries ->
+                diffCacheUpdater.updateWith(roomSummaries)
                 buildAndEmitAllRooms(roomSummaries, useCache = false)
             }
         }

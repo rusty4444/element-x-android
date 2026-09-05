@@ -135,7 +135,8 @@ enum class FeatureFlags(
         key = "feature.unread_indicator_count",
         title = "Unread indicator count",
         description = "Show the number of unread messages on the unread indicator in the room list.",
-        defaultValue = { false },
+        // Fork: enabled by default — upstream gates the numeric unread badge behind this flag.
+        defaultValue = { true },
         isFinished = false,
     ),
     SendGalleryMessages(

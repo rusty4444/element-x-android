@@ -89,7 +89,7 @@ fun AdvancedSettingsView(
             selectedOption = state.theme,
             options = state.availableThemeOptions,
             onSelectOption = { themeOption ->
-                state.eventSink(AdvancedSettingsEvents.SetTheme(themeOption))
+                state.eventSink(AdvancedSettingsEvent.SetTheme(themeOption))
             }
         )
         PreferenceDropdown(
@@ -97,11 +97,11 @@ fun AdvancedSettingsView(
             selectedOption = state.accentColor,
             options = state.availableAccentColorOptions,
             onSelectOption = { accentOption ->
-                state.eventSink(AdvancedSettingsEvents.SetAccentColor(accentOption))
+                state.eventSink(AdvancedSettingsEvent.SetAccentColor(accentOption))
             }
         )
         ListItem(
-            headlineContent = {
+            content = {
                 Text(text = stringResource(id = CommonStrings.action_view_source))
             },
             supportingContent = {
@@ -110,10 +110,10 @@ fun AdvancedSettingsView(
             trailingContent = ListItemContent.Switch(
                 checked = state.isDeveloperModeEnabled,
             ),
-            onClick = { state.eventSink(AdvancedSettingsEvents.SetDeveloperModeEnabled(!state.isDeveloperModeEnabled)) }
+            onClick = { state.eventSink(AdvancedSettingsEvent.SetDeveloperModeEnabled(!state.isDeveloperModeEnabled)) }
         )
         ListItem(
-            headlineContent = {
+            content = {
                 Text(text = stringResource(id = R.string.screen_advanced_settings_share_presence))
             },
             supportingContent = {
@@ -122,10 +122,10 @@ fun AdvancedSettingsView(
             trailingContent = ListItemContent.Switch(
                 checked = state.isSharePresenceEnabled,
             ),
-            onClick = { state.eventSink(AdvancedSettingsEvents.SetSharePresenceEnabled(!state.isSharePresenceEnabled)) }
+            onClick = { state.eventSink(AdvancedSettingsEvent.SetSharePresenceEnabled(!state.isSharePresenceEnabled)) }
         )
         ListItem(
-            headlineContent = {
+            content = {
                 Text(text = stringResource(id = R.string.screen_advanced_settings_show_encryption_warning))
             },
             supportingContent = {
@@ -134,7 +134,7 @@ fun AdvancedSettingsView(
             trailingContent = ListItemContent.Switch(
                 checked = state.isShowEncryptionWarningEnabled,
             ),
-            onClick = { state.eventSink(AdvancedSettingsEvents.SetShowEncryptionWarning(!state.isShowEncryptionWarningEnabled)) }
+            onClick = { state.eventSink(AdvancedSettingsEvent.SetShowEncryptionWarning(!state.isShowEncryptionWarningEnabled)) }
         )
         val compressImages = state.mediaOptimizationState?.shouldCompressImages
 
@@ -142,7 +142,7 @@ fun AdvancedSettingsView(
             null -> Unit
             is MediaOptimizationState.AllMedia -> {
                 ListItem(
-                    headlineContent = {
+                    content = {
                         Text(text = stringResource(id = R.string.screen_advanced_settings_media_compression_title))
                     },
                     supportingContent = {
@@ -160,13 +160,13 @@ fun AdvancedSettingsView(
                                 Interaction.Name.MobileSettingsOptimizeMediaUploadsDisabled
                             }
                         )
-                        state.eventSink(AdvancedSettingsEvents.SetCompressMedia(newValue))
+                        state.eventSink(AdvancedSettingsEvent.SetCompressMedia(newValue))
                     }
                 )
             }
             is MediaOptimizationState.Split -> {
                 ListItem(
-                    headlineContent = {
+                    content = {
                         Text(text = stringResource(id = R.string.screen_advanced_settings_optimise_image_upload_quality_title))
                     },
                     supportingContent = {
@@ -184,14 +184,14 @@ fun AdvancedSettingsView(
                                 Interaction.Name.MobileSettingsOptimizeMediaUploadsDisabled
                             }
                         )
-                        state.eventSink(AdvancedSettingsEvents.SetCompressMedia(newValue))
+                        state.eventSink(AdvancedSettingsEvent.SetCompressMedia(newValue))
                     }
                 )
 
                 var displaySelectorDialog by remember { mutableStateOf(false) }
 
                 ListItem(
-                    headlineContent = {
+                    content = {
                         Text(text = stringResource(id = R.string.screen_advanced_settings_optimise_video_upload_quality_title))
                     },
                     supportingContent = {
@@ -213,7 +213,7 @@ fun AdvancedSettingsView(
                     VideoQualitySelectorDialog(
                         selectedPreset = state.mediaOptimizationState.videoPreset,
                         onSubmit = { preset ->
-                            state.eventSink(AdvancedSettingsEvents.SetVideoUploadQuality(preset))
+                            state.eventSink(AdvancedSettingsEvent.SetVideoUploadQuality(preset))
                             displaySelectorDialog = false
                         },
                         onDismiss = { displaySelectorDialog = false },
@@ -227,7 +227,7 @@ fun AdvancedSettingsView(
             LiveLocationUpdatesSection(
                 value = state.liveLocationMinimumDistanceUpdate,
                 onSaveValue = { value ->
-                    state.eventSink(AdvancedSettingsEvents.SetLiveLocationMinimumDistanceUpdate(value))
+                    state.eventSink(AdvancedSettingsEvent.SetLiveLocationMinimumDistanceUpdate(value))
                 },
                 onOpenAppPermissionsClick = onOpenAppSettingsClick,
             )
@@ -267,7 +267,7 @@ private fun VideoQualitySelectorDialog(
                     VideoCompressionPreset.HIGH -> stringResource(CommonStrings.common_video_quality_high_description)
                 }
                 ListItem(
-                    headlineContent = {
+                    content = {
                         Text(
                             text = title,
                             style = ElementTheme.typography.fontBodyLgMedium,
@@ -306,7 +306,7 @@ private fun ModerationAndSafety(
             title = stringResource(R.string.screen_advanced_settings_hide_invite_avatars_toggle_title),
             isChecked = state.mediaPreviewConfigState.hideInviteAvatars,
             onCheckedChange = {
-                state.eventSink(AdvancedSettingsEvents.SetHideInviteAvatars(it))
+                state.eventSink(AdvancedSettingsEvent.SetHideInviteAvatars(it))
             },
             enabled = !state.mediaPreviewConfigState.setHideInviteAvatarsAction.isLoading()
         )
@@ -321,35 +321,35 @@ private fun ModerationAndSafety(
             }
         )
         ListItem(
-            headlineContent = { Text(text = stringResource(R.string.screen_advanced_settings_show_media_timeline_always_hide)) },
+            content = { Text(text = stringResource(R.string.screen_advanced_settings_show_media_timeline_always_hide)) },
             leadingContent = ListItemContent.RadioButton(
                 selected = state.mediaPreviewConfigState.timelineMediaPreviewValue == MediaPreviewValue.Off,
                 compact = true
             ),
             onClick = {
-                state.eventSink(AdvancedSettingsEvents.SetTimelineMediaPreviewValue(MediaPreviewValue.Off))
+                state.eventSink(AdvancedSettingsEvent.SetTimelineMediaPreviewValue(MediaPreviewValue.Off))
             },
             enabled = !state.mediaPreviewConfigState.setTimelineMediaPreviewAction.isLoading()
         )
         ListItem(
-            headlineContent = { Text(text = stringResource(R.string.screen_advanced_settings_show_media_timeline_private_rooms)) },
+            content = { Text(text = stringResource(R.string.screen_advanced_settings_show_media_timeline_private_rooms)) },
             leadingContent = ListItemContent.RadioButton(
                 selected = state.mediaPreviewConfigState.timelineMediaPreviewValue == MediaPreviewValue.Private,
                 compact = true
             ),
             onClick = {
-                state.eventSink(AdvancedSettingsEvents.SetTimelineMediaPreviewValue(MediaPreviewValue.Private))
+                state.eventSink(AdvancedSettingsEvent.SetTimelineMediaPreviewValue(MediaPreviewValue.Private))
             },
             enabled = !state.mediaPreviewConfigState.setTimelineMediaPreviewAction.isLoading()
         )
         ListItem(
-            headlineContent = { Text(text = stringResource(R.string.screen_advanced_settings_show_media_timeline_always_show)) },
+            content = { Text(text = stringResource(R.string.screen_advanced_settings_show_media_timeline_always_show)) },
             leadingContent = ListItemContent.RadioButton(
                 selected = state.mediaPreviewConfigState.timelineMediaPreviewValue == MediaPreviewValue.On,
                 compact = true
             ),
             onClick = {
-                state.eventSink(AdvancedSettingsEvents.SetTimelineMediaPreviewValue(MediaPreviewValue.On))
+                state.eventSink(AdvancedSettingsEvent.SetTimelineMediaPreviewValue(MediaPreviewValue.On))
             },
             enabled = !state.mediaPreviewConfigState.setTimelineMediaPreviewAction.isLoading()
         )
@@ -430,17 +430,17 @@ private fun LiveLocationUpdatesSection(
 
 @PreviewWithLargeHeight
 @Composable
-internal fun AdvancedSettingsViewLightPreview(@PreviewParameter(AdvancedSettingsStateProvider::class) state: AdvancedSettingsState) =
+internal fun AdvancedSettingsViewLightPreview(@PreviewParameter(AdvancedSettingsStatePreviewParam::class) state: AdvancedSettingsState) =
     ElementPreviewLight { ContentToPreview(state) }
 
 @PreviewWithLargeHeight
 @Composable
-internal fun AdvancedSettingsViewDarkPreview(@PreviewParameter(AdvancedSettingsStateProvider::class) state: AdvancedSettingsState) =
+internal fun AdvancedSettingsViewDarkPreview(@PreviewParameter(AdvancedSettingsStatePreviewParam::class) state: AdvancedSettingsState) =
     ElementPreviewDark { ContentToPreview(state) }
 
 @PreviewWithLargeHeight
 @Composable
-internal fun AdvancedSettingsViewBlackPreview(@PreviewParameter(AdvancedSettingsStateProvider::class) state: AdvancedSettingsState) =
+internal fun AdvancedSettingsViewBlackPreview(@PreviewParameter(AdvancedSettingsStatePreviewParam::class) state: AdvancedSettingsState) =
     ElementPreviewBlack { ContentToPreview(state) }
 
 @ExcludeFromCoverage

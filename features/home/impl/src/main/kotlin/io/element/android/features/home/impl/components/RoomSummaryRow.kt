@@ -47,7 +47,7 @@ import io.element.android.compound.tokens.generated.CompoundIcons
 import io.element.android.features.home.impl.R
 import io.element.android.features.home.impl.model.LatestEvent
 import io.element.android.features.home.impl.model.RoomListRoomSummary
-import io.element.android.features.home.impl.model.RoomListRoomSummaryProvider
+import io.element.android.features.home.impl.model.RoomListRoomSummaryPreviewParam
 import io.element.android.features.home.impl.model.RoomSummaryDisplayType
 import io.element.android.features.home.impl.roomlist.RoomListEvent
 import io.element.android.libraries.core.extensions.orEmpty
@@ -67,6 +67,8 @@ import io.element.android.libraries.designsystem.theme.roomListRoomName
 import io.element.android.libraries.designsystem.theme.unreadIndicator
 import io.element.android.libraries.matrix.api.notification.CallIntent
 import io.element.android.libraries.matrix.api.room.RoomNotificationMode
+import io.element.android.libraries.matrix.api.user.DisplayedStatus
+import io.element.android.libraries.matrix.ui.components.DisplayNameWithStatus
 import io.element.android.libraries.matrix.ui.components.InviteSenderView
 import io.element.android.libraries.matrix.ui.model.InviteSender
 import io.element.android.libraries.ui.strings.CommonStrings
@@ -130,7 +132,8 @@ internal fun RoomSummaryRow(
                     NameAndTimestampRow(
                         name = room.name,
                         timestamp = room.timestamp,
-                        isHighlighted = room.isHighlighted
+                        isHighlighted = room.isHighlighted,
+                        dmUserStatus = room.dmUserStatus,
                     )
                     MessagePreviewAndIndicatorRow(room = room, showUnreadCount = showUnreadCount)
                 }
@@ -146,7 +149,8 @@ internal fun RoomSummaryRow(
                     NameAndTimestampRow(
                         name = room.name,
                         timestamp = null,
-                        isHighlighted = room.isHighlighted
+                        isHighlighted = room.isHighlighted,
+                        dmUserStatus = null,
                     )
                     if (room.canonicalAlias != null) {
                         Text(
@@ -222,22 +226,21 @@ private fun NameAndTimestampRow(
     name: String?,
     timestamp: String?,
     isHighlighted: Boolean,
+    dmUserStatus: DisplayedStatus?,
     modifier: Modifier = Modifier
 ) {
     Row(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = spacedBy(16.dp)
     ) {
-        Text(
-            modifier = Modifier
-                .weight(1f)
-                .clipToBounds(),
+        val displayName = name?.toSafeLength(ellipsize = true) ?: stringResource(id = CommonStrings.common_no_room_name)
+        DisplayNameWithStatus(
+            name = displayName,
+            status = dmUserStatus,
+            modifier = Modifier.weight(1f),
             style = ElementTheme.typography.fontBodyLgMedium,
-            text = name?.toSafeLength(ellipsize = true) ?: stringResource(id = CommonStrings.common_no_room_name),
-            fontStyle = FontStyle.Italic.takeIf { name == null },
-            color = ElementTheme.colors.roomListRoomName,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
+            nameColor = ElementTheme.colors.roomListRoomName,
+            nameFontStyle = FontStyle.Italic.takeIf { name == null },
         )
         if (timestamp != null) {
             Text(
@@ -494,7 +497,7 @@ private fun UnreadCountBadge(
 
 @PreviewsDayNight
 @Composable
-internal fun RoomSummaryRowPreview(@PreviewParameter(RoomListRoomSummaryProvider::class) data: RoomListRoomSummary) = ElementPreview {
+internal fun RoomSummaryRowPreview(@PreviewParameter(RoomListRoomSummaryPreviewParam::class) data: RoomListRoomSummary) = ElementPreview {
     RoomSummaryRow(
         room = data,
         hideInviteAvatars = false,

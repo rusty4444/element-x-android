@@ -22,6 +22,7 @@ data class MessageComposerState(
     val textEditorState: TextEditorState,
     val isFullScreen: Boolean,
     val mode: MessageComposerMode,
+    val isInThreadTimeline: Boolean,
     val showAttachmentSourcePicker: Boolean,
     val showTextFormatting: Boolean,
     val canShareLocation: Boolean,

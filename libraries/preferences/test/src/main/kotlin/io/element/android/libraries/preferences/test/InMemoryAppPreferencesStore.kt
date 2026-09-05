@@ -17,6 +17,7 @@ import io.element.android.libraries.preferences.api.store.NotificationSoundChann
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.updateAndGet
 
 class InMemoryAppPreferencesStore(
@@ -29,6 +30,7 @@ class InMemoryAppPreferencesStore(
     liveLocationMinimumDistanceUpdate: Int = 10,
     logLevel: LogLevel = LogLevel.INFO,
     traceLogPacks: Set<TraceLogPack> = emptySet(),
+    homeserverHistory: List<String> = emptyList(),
     messageSound: NotificationSound = NotificationSound.SystemDefault,
     messageSoundChannelVersion: Int = 0,
     messageSoundDisplayName: String? = null,
@@ -43,6 +45,7 @@ class InMemoryAppPreferencesStore(
     private val liveLocationMinimumDistanceUpdate = MutableStateFlow(liveLocationMinimumDistanceUpdate)
     private val logLevel = MutableStateFlow(logLevel)
     private val tracingLogPacks = MutableStateFlow(traceLogPacks)
+    private val homeserverHistory = MutableStateFlow(homeserverHistory)
     private val hideInviteAvatars = MutableStateFlow(hideInviteAvatars)
     private val timelineMediaPreviewValue = MutableStateFlow(timelineMediaPreviewValue)
     private val roomBackgrounds = MutableStateFlow<Map<String, String?>>(emptyMap())
@@ -135,6 +138,18 @@ class InMemoryAppPreferencesStore(
 
     override fun getTracingLogPacksFlow(): Flow<Set<TraceLogPack>> {
         return tracingLogPacks
+    }
+
+    override fun getHomeserverHistoryFlow(): Flow<List<String>> {
+        return homeserverHistory
+    }
+
+    override suspend fun addHomeserverToHistory(url: String) {
+        val normalized = url.trim().lowercase()
+        if (normalized.isEmpty()) return
+        homeserverHistory.update { current ->
+            (listOf(normalized) + current.filter { it != normalized }).take(10)
+        }
     }
 
     override fun getMessageSoundFlow(): Flow<NotificationSound> {

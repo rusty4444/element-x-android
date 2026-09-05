@@ -29,7 +29,7 @@ data class AdvancedSettingsState(
     val availableAccentColorOptions: ImmutableList<AccentColorOption>,
     val mediaPreviewConfigState: MediaPreviewConfigState,
     val liveLocationMinimumDistanceUpdate: Int?,
-    val eventSink: (AdvancedSettingsEvents) -> Unit
+    val eventSink: (AdvancedSettingsEvent) -> Unit
 )
 
 sealed interface MediaOptimizationState {

@@ -100,7 +100,7 @@ internal fun MatrixTimelineItem.Event.canBeDisplayedInBubbleBlock(): Boolean {
         // Can be grouped
         is FailedToParseMessageLikeContent,
         is MessageContent,
-        RedactedContent,
+        is RedactedContent,
         is StickerContent,
         is PollContent,
         is UnableToDecryptContent,

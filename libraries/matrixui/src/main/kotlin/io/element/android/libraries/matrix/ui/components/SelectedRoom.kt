@@ -50,7 +50,7 @@ fun SelectedRoom(
 @PreviewsDayNight
 @Composable
 internal fun SelectedRoomPreview(
-    @PreviewParameter(SelectRoomInfoProvider::class) roomInfo: SelectRoomInfo
+    @PreviewParameter(SelectRoomInfoPreviewParam::class) roomInfo: SelectRoomInfo
 ) = ElementPreview {
     SelectedRoom(
         roomInfo = roomInfo,
@@ -61,7 +61,7 @@ internal fun SelectedRoomPreview(
 @PreviewsDayNight
 @Composable
 internal fun SelectedRoomRtlPreview(
-    @PreviewParameter(SelectRoomInfoProvider::class) roomInfo: SelectRoomInfo
+    @PreviewParameter(SelectRoomInfoPreviewParam::class) roomInfo: SelectRoomInfo
 ) = CompositionLocalProvider(
     LocalLayoutDirection provides LayoutDirection.Rtl,
 ) {

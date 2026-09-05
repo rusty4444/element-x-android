@@ -120,18 +120,18 @@ class AdvancedSettingsPresenter(
             }.collect()
         }
 
-        fun handleEvent(event: AdvancedSettingsEvents) {
+        fun handleEvent(event: AdvancedSettingsEvent) {
             when (event) {
-                is AdvancedSettingsEvents.SetDeveloperModeEnabled -> sessionCoroutineScope.launch {
+                is AdvancedSettingsEvent.SetDeveloperModeEnabled -> sessionCoroutineScope.launch {
                     appPreferencesStore.setDeveloperModeEnabled(event.enabled)
                 }
-                is AdvancedSettingsEvents.SetSharePresenceEnabled -> sessionCoroutineScope.launch {
+                is AdvancedSettingsEvent.SetSharePresenceEnabled -> sessionCoroutineScope.launch {
                     sessionPreferencesStore.setSharePresence(event.enabled)
                 }
-                is AdvancedSettingsEvents.SetCompressMedia -> sessionCoroutineScope.launch {
+                is AdvancedSettingsEvent.SetCompressMedia -> sessionCoroutineScope.launch {
                     sessionPreferencesStore.setOptimizeImages(event.compress)
                 }
-                is AdvancedSettingsEvents.SetTheme -> sessionCoroutineScope.launch {
+                is AdvancedSettingsEvent.SetTheme -> sessionCoroutineScope.launch {
                     when (event.theme) {
                         ThemeOption.System -> appPreferencesStore.setTheme(Theme.System.name)
                         ThemeOption.Dark -> appPreferencesStore.setTheme(Theme.Dark.name)
@@ -139,21 +139,21 @@ class AdvancedSettingsPresenter(
                         ThemeOption.Light -> appPreferencesStore.setTheme(Theme.Light.name)
                     }
                 }
-                is AdvancedSettingsEvents.SetAccentColor -> sessionCoroutineScope.launch {
+                is AdvancedSettingsEvent.SetAccentColor -> sessionCoroutineScope.launch {
                     appPreferencesStore.setAccentColor(event.accentColor.toAccentColor().name)
                 }
-                is AdvancedSettingsEvents.SetHideInviteAvatars -> mediaPreviewConfigStateStore.setHideInviteAvatars(event.value)
-                is AdvancedSettingsEvents.SetTimelineMediaPreviewValue -> mediaPreviewConfigStateStore.setTimelineMediaPreviewValue(event.value)
-                is AdvancedSettingsEvents.SetLiveLocationMinimumDistanceUpdate -> sessionCoroutineScope.launch {
+                is AdvancedSettingsEvent.SetHideInviteAvatars -> mediaPreviewConfigStateStore.setHideInviteAvatars(event.value)
+                is AdvancedSettingsEvent.SetTimelineMediaPreviewValue -> mediaPreviewConfigStateStore.setTimelineMediaPreviewValue(event.value)
+                is AdvancedSettingsEvent.SetLiveLocationMinimumDistanceUpdate -> sessionCoroutineScope.launch {
                     appPreferencesStore.setLiveLocationMinimumDistanceInMetersUpdate(event.value)
                 }
-                is AdvancedSettingsEvents.SetCompressImages -> sessionCoroutineScope.launch {
+                is AdvancedSettingsEvent.SetCompressImages -> sessionCoroutineScope.launch {
                     sessionPreferencesStore.setOptimizeImages(event.compress)
                 }
-                is AdvancedSettingsEvents.SetVideoUploadQuality -> sessionCoroutineScope.launch {
+                is AdvancedSettingsEvent.SetVideoUploadQuality -> sessionCoroutineScope.launch {
                     sessionPreferencesStore.setVideoCompressionPreset(event.videoPreset)
                 }
-                is AdvancedSettingsEvents.SetShowEncryptionWarning -> sessionCoroutineScope.launch {
+                is AdvancedSettingsEvent.SetShowEncryptionWarning -> sessionCoroutineScope.launch {
                     sessionPreferencesStore.setShowEncryptionWarning(event.enabled)
                 }
             }

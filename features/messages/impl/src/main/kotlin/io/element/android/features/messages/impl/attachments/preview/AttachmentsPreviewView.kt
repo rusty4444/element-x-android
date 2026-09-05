@@ -457,7 +457,7 @@ private fun VideoQualitySelectorDialog(
                 val estimationMb = sizeFormatter.format(videoEstimation.sizeInBytes, true)
                 val title = "${preset.title()} ($estimationMb)"
                 ListItem(
-                    headlineContent = {
+                    content = {
                         Text(
                             text = title,
                             style = ElementTheme.typography.fontBodyLgMedium,
@@ -516,7 +516,7 @@ private fun AttachmentsPreviewBottomActions(
 // Only preview in dark, dark theme is forced on the Node.
 @Preview
 @Composable
-internal fun AttachmentsPreviewViewPreview(@PreviewParameter(AttachmentsPreviewStateProvider::class) state: AttachmentsPreviewState) = ElementPreviewDark {
+internal fun AttachmentsPreviewViewPreview(@PreviewParameter(AttachmentsPreviewStatePreviewParam::class) state: AttachmentsPreviewState) = ElementPreviewDark {
     AttachmentsPreviewView(
         state = state,
         localMediaRenderer = object : LocalMediaRenderer {

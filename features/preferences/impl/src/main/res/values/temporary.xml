@@ -19,6 +19,6 @@
     <string name="common_user_status_away">Away</string>
     <string name="common_user_status_on_a_call">On a call</string>
     <string name="common_user_status_custom">Custom…</string>
-    <string name="screen_preferences_user_status_placeholder">What's your status?</string>
+    <string name="screen_preferences_user_status_placeholder">What\'s your status?</string>
     <string name="screen_preferences_user_status_custom_hint">Custom status…</string>
 </resources>

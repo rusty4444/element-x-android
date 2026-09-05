@@ -262,7 +262,7 @@ private fun ActionListViewContent(
                         leadingContent = ListItemContent.Icon(IconSource.Resource(action.icon)),
                         style = when {
                             action.destructive -> ListItemStyle.Destructive
-                            else -> ListItemStyle.Primary
+                            else -> ListItemStyle.Default
                         }
                     )
                 }

@@ -18,17 +18,15 @@ import app.cash.turbine.test
 import com.google.common.truth.Truth.assertThat
 import io.element.android.libraries.matrix.test.core.aBuildMeta
 import io.element.android.libraries.mediaviewer.test.viewer.aLocalMedia
+import io.element.android.tests.testutils.robolectric.RobolectricTest
 import io.element.android.tests.testutils.testCoroutineDispatchers
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
-import org.junit.runner.RunWith
-import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import java.io.File
 
-@RunWith(RobolectricTestRunner::class)
-class AndroidLocalMediaActionsTest {
+class AndroidLocalMediaActionsTest : RobolectricTest() {
     @Test
     fun `present - AndroidLocalMediaAction configure`() = runTest {
         val sut = createAndroidLocalMediaActions()

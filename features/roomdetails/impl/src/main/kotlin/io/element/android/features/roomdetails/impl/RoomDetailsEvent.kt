@@ -16,4 +16,6 @@ sealed interface RoomDetailsEvent {
     data class SetFavorite(val isFavorite: Boolean) : RoomDetailsEvent
     data class SetRoomBackground(val uri: String) : RoomDetailsEvent
     data object ClearRoomBackground : RoomDetailsEvent
+    data object MarkAsRead : RoomDetailsEvent
+    data object MarkAsUnread : RoomDetailsEvent
 }

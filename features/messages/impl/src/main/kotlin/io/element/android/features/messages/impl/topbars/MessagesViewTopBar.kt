@@ -108,7 +108,8 @@ internal fun MessagesViewTopBar(
             Row(
                 modifier = Modifier
                     .clip(roundedCornerShape)
-                    .clickable { onRoomDetailsClick() },
+                    .clickable { onRoomDetailsClick() }
+                    .semantics { heading() },
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -186,10 +187,7 @@ private fun RoomAvatarAndNameRow(
         )
         Text(
             modifier = Modifier
-                .padding(start = 8.dp)
-                .semantics {
-                    heading()
-                },
+                .padding(start = 8.dp),
             text = roomName ?: stringResource(CommonStrings.common_no_room_name),
             style = ElementTheme.typography.fontBodyLgMedium,
             fontStyle = FontStyle.Italic.takeIf { roomName == null },

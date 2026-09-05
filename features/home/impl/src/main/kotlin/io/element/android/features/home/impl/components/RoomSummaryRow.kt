@@ -80,8 +80,9 @@ internal fun RoomSummaryRow(
     hideInviteAvatars: Boolean,
     isInviteSeen: Boolean,
     onClick: (RoomListRoomSummary) -> Unit,
-    eventSink: (RoomListEvent) -> Unit,
     modifier: Modifier = Modifier,
+    showUnreadCount: Boolean = false,
+    eventSink: (RoomListEvent) -> Unit,
 ) {
     Box(modifier = modifier) {
         when (room.displayType) {
@@ -131,7 +132,7 @@ internal fun RoomSummaryRow(
                         timestamp = room.timestamp,
                         isHighlighted = room.isHighlighted
                     )
-                    MessagePreviewAndIndicatorRow(room = room)
+                    MessagePreviewAndIndicatorRow(room = room, showUnreadCount = showUnreadCount)
                 }
             }
             RoomSummaryDisplayType.KNOCKED -> {
@@ -278,6 +279,7 @@ private fun InviteSubtitle(
 @Composable
 private fun MessagePreviewAndIndicatorRow(
     room: RoomListRoomSummary,
+    showUnreadCount: Boolean,
     modifier: Modifier = Modifier,
 ) {
     Row(
@@ -364,18 +366,20 @@ private fun MessagePreviewAndIndicatorRow(
                 MentionIndicatorAtom()
             }
             if (room.hasNewContent) {
-                val unreadCount = room.numberOfUnreadMessages.takeIf { it > 0 }
-                    ?: room.numberOfUnreadNotifications.takeIf { it > 0 }
-                val contentDescription = if (unreadCount != null) {
-                    stringResource(CommonStrings.a11y_notifications_new_messages) + ": $unreadCount"
+                val contentDescription = stringResource(CommonStrings.a11y_notifications_new_messages)
+                val count = if (showUnreadCount) {
+                    if (room.userDefinedNotificationMode == RoomNotificationMode.MUTE) {
+                        room.numberOfUnreadMessages
+                    } else {
+                        room.numberOfUnreadNotifications
+                    }
                 } else {
-                    stringResource(CommonStrings.a11y_notifications_new_messages)
+                    null
                 }
-                UnreadCountBadge(
-                    count = unreadCount,
+                UnreadIndicatorAtom(
                     color = tint,
+                    count = count,
                     contentDescription = contentDescription,
-                    isMarkedUnread = room.isMarkedUnread,
                 )
             }
         }

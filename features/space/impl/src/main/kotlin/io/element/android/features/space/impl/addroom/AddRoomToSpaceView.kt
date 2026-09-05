@@ -23,6 +23,8 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewParameter
@@ -56,9 +58,10 @@ import kotlinx.collections.immutable.toImmutableList
 fun AddRoomToSpaceView(
     state: AddRoomToSpaceState,
     onBackClick: () -> Unit,
-    onRoomsAdded: () -> Unit,
+    onAddRoom: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val updatedOnAddRoom by rememberUpdatedState(onAddRoom)
     fun onRoomToggled(room: SelectRoomInfo) {
         state.eventSink(AddRoomToSpaceEvent.ToggleRoom(room))
     }
@@ -77,7 +80,7 @@ fun AddRoomToSpaceView(
     // Navigate back on success
     LaunchedEffect(state.saveAction) {
         if (state.saveAction is AsyncAction.Success) {
-            onRoomsAdded()
+            updatedOnAddRoom()
         }
     }
 
@@ -244,6 +247,6 @@ internal fun AddRoomToSpaceViewPreview(
     AddRoomToSpaceView(
         state = state,
         onBackClick = {},
-        onRoomsAdded = {},
+        onAddRoom = {},
     )
 }

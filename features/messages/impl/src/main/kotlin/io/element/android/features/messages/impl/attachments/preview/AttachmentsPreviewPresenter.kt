@@ -113,7 +113,7 @@ class AttachmentsPreviewPresenter(
         // Media optimization selector uses the first attachment for settings
         val mediaOptimizationSelectorPresenter = remember(attachments) {
             val firstMedia = attachments[0] as Attachment.Media
-            mediaOptimizationSelectorPresenterFactory.create(firstMedia.localMedia)
+            mediaOptimizationSelectorPresenterFactory.create(firstMedia.localMedia, sendAsFile = false)
         }
         val mediaOptimizationSelectorState by rememberUpdatedState(mediaOptimizationSelectorPresenter.present())
 

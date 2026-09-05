@@ -150,6 +150,7 @@ fun MessagesView(
     onBackClick: () -> Unit,
     onRoomDetailsClick: () -> Unit,
     onEventContentClick: (isLive: Boolean, event: TimelineItem.Event) -> Boolean,
+    onGalleryEventItemClick: (isLive: Boolean, event: TimelineItem.Event, index: Int) -> Boolean,
     onUserDataClick: (UserId) -> Unit,
     onLinkClick: (String, Boolean) -> Unit,
     onSendLocationClick: () -> Unit,
@@ -308,6 +309,16 @@ fun MessagesView(
                         MessagesViewContent(
                             state = state,
                             onContentClick = ::onContentClick,
+                            onGalleryItemClick = { event, index ->
+                                val hideKeyboard = onGalleryEventItemClick(
+                                    state.timelineState.isLive,
+                                    event,
+                                    index,
+                                )
+                                if (hideKeyboard) {
+                                    localView.hideKeyboard()
+                                }
+                            },
                             onMessageLongClick = ::onMessageLongClick,
                             onMessageDoubleTap = ::onMessageDoubleTap,
                             onUserDataClick = {
@@ -341,10 +352,10 @@ fun MessagesView(
 
                         SuggestionsPickerView(
                             modifier = Modifier
-                                    .shadow(10.dp)
-                                    .background(ElementTheme.colors.bgCanvasDefault)
-                                    .align(Alignment.BottomStart)
-                                    .heightIn(max = 230.dp),
+                                .shadow(10.dp)
+                                .background(ElementTheme.colors.bgCanvasDefault)
+                                .align(Alignment.BottomStart)
+                                .heightIn(max = 230.dp),
                             roomId = state.roomId,
                             roomName = state.roomName,
                             roomAvatarData = state.roomAvatar,
@@ -547,6 +558,7 @@ private fun MessagesViewContent(
     onReadReceiptClick: (TimelineItem.Event) -> Unit,
     onMessageLongClick: (TimelineItem.Event) -> Unit,
     onMessageDoubleTap: (TimelineItem.Event) -> Unit,
+    onGalleryItemClick: ((TimelineItem.Event, Int) -> Unit),
     onSendLocationClick: () -> Unit,
     onCreatePollClick: () -> Unit,
     onViewAllPinnedMessagesClick: () -> Unit,
@@ -557,9 +569,9 @@ private fun MessagesViewContent(
 ) {
     Box(
         modifier = modifier
-                .fillMaxSize()
-                .navigationBarsPadding()
-                .imePadding(),
+            .fillMaxSize()
+            .navigationBarsPadding()
+            .imePadding(),
     ) {
         AttachmentsBottomSheet(
             state = state.composerState,
@@ -590,7 +602,9 @@ private fun MessagesViewContent(
                 pinnedMessagesCount = (state.pinnedMessagesBannerState as? PinnedMessagesBannerState.Visible)?.pinnedMessagesCount() ?: 0,
             )
             val density = LocalDensity.current
-            var pinnedBannerHeightDp by remember { mutableStateOf(0.dp) }
+            // Combined height of the banners overlaid above the timeline. Drives the floating
+            // date badge offset so the badge sits below whichever banners are currently showing.
+            var topBannersHeightDp by remember { mutableStateOf(0.dp) }
 
             TimelineView(
                 state = state.timelineState,
@@ -598,6 +612,7 @@ private fun MessagesViewContent(
                 onUserDataClick = onUserDataClick,
                 onLinkClick = { link -> onLinkClick(link, false) },
                 onContentClick = onContentClick,
+                onGalleryItemClick = onGalleryItemClick,
                 onMessageLongClick = onMessageLongClick,
                 onMessageDoubleTap = onMessageDoubleTap,
                 onSwipeToReply = onSwipeToReply,
@@ -607,15 +622,16 @@ private fun MessagesViewContent(
                 onReadReceiptClick = onReadReceiptClick,
                 forceJumpToBottomVisibility = forceJumpToBottomVisibility,
                 nestedScrollConnection = scrollBehavior.nestedScrollConnection,
-                floatingDateTopOffset = pinnedBannerHeightDp,
+                floatingDateTopOffset = topBannersHeightDp,
                 roomBackgroundUri = state.roomBackgroundUri,
             )
 
             if (state.timelineState.timelineMode !is Timeline.Mode.Thread) {
-                Column {
+                Column(
+                    modifier = Modifier.onSizeChanged { topBannersHeightDp = with(density) { it.height.toDp() } },
+                ) {
                     AnimatedVisibility(
                         visible = state.pinnedMessagesBannerState is PinnedMessagesBannerState.Visible && scrollBehavior.isVisible,
-                        modifier = Modifier.onSizeChanged { pinnedBannerHeightDp = with(density) { it.height.toDp() } },
                         enter = expandVertically(),
                         exit = shrinkVertically(),
                     ) {
@@ -688,9 +704,9 @@ private fun MessagesViewComposerBottomSheetContents(
 private fun CantSendMessageBanner() {
     Row(
         modifier = Modifier
-                .fillMaxWidth()
-                .background(ElementTheme.colors.bgSubtleSecondary)
-                .padding(16.dp),
+            .fillMaxWidth()
+            .background(ElementTheme.colors.bgSubtleSecondary)
+            .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center
     ) {
@@ -727,6 +743,7 @@ internal fun MessagesViewPreview(@PreviewParameter(MessagesStateProvider::class)
         onBackClick = {},
         onRoomDetailsClick = {},
         onEventContentClick = { _, _ -> false },
+        onGalleryEventItemClick = { _, _, _ -> false },
         onUserDataClick = {},
         onLinkClick = { _, _ -> },
         onSendLocationClick = {},
@@ -784,6 +801,7 @@ internal fun MessagesViewA11yPreview() = ElementPreview {
         onBackClick = {},
         onRoomDetailsClick = {},
         onEventContentClick = { _, _ -> false },
+        onGalleryEventItemClick = { _, _, _ -> false },
         onUserDataClick = {},
         onLinkClick = { _, _ -> },
         onSendLocationClick = {},

@@ -65,6 +65,7 @@ internal fun TimelineItemRow(
     onLinkClick: (Link) -> Unit,
     onLinkLongClick: (Link) -> Unit,
     onContentClick: (TimelineItem.Event) -> Unit,
+    onGalleryItemClick: (TimelineItem.Event, Int) -> Unit,
     onLongClick: (TimelineItem.Event) -> Unit,
     onDoubleTap: (TimelineItem.Event) -> Unit,
     inReplyToClick: (EventId) -> Unit,
@@ -82,12 +83,13 @@ internal fun TimelineItemRow(
                 hideMediaContent = timelineProtectionState.hideMediaContent(event.eventId, event.isMine),
                 onShowContentClick = { timelineProtectionState.eventSink(TimelineProtectionEvent.ShowContent(event.eventId)) },
                 onContentClick = { onContentClick(event) },
+                onGalleryItemClick = { index -> onGalleryItemClick(event, index) },
                 onLongClick = { onLongClick(event) },
                 onLinkClick = onLinkClick,
                 onLinkLongClick = onLinkLongClick,
                 eventSink = eventSink,
                 modifier = contentModifier,
-                onContentLayoutChange = onContentLayoutChange
+                onContentLayoutChange = onContentLayoutChange,
             )
         },
 ) {
@@ -181,6 +183,7 @@ internal fun TimelineItemRow(
                             onMoreReactionsClick = onMoreReactionsClick,
                             onReadReceiptClick = onReadReceiptClick,
                             onSwipeToReply = { onSwipeToReply(timelineItem) },
+                            onGalleryItemClick = { index -> onGalleryItemClick(timelineItem, index) },
                             eventSink = eventSink,
                             eventContentView = { contentModifier, onContentLayoutChange ->
                                 eventContentView(timelineItem, contentModifier, onContentLayoutChange)
@@ -239,6 +242,7 @@ internal fun TimelineItemRow(
                     isLastOutgoingMessage = isLastOutgoingMessage,
                     displayThreadSummaries = displayThreadSummaries,
                     onEventClick = { onContentClick(baseEvent) },
+                    onGalleryItemClick = { index -> timelineItem.events.getOrNull(index)?.let { onGalleryItemClick(it, index) } },
                     onLongClick = { onLongClick(baseEvent) },
                     onDoubleTap = { onDoubleTap(baseEvent) },
                     onLinkClick = onLinkClick,

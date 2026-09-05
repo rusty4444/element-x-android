@@ -113,7 +113,7 @@ class AttachmentsPreviewPresenter(
         // Media optimization selector uses the first attachment for settings
         val mediaOptimizationSelectorPresenter = remember(attachments) {
             val firstMedia = attachments[0] as Attachment.Media
-            mediaOptimizationSelectorPresenterFactory.create(firstMedia.localMedia, sendAsFile = false)
+            mediaOptimizationSelectorPresenterFactory.create(index = 0, localMedia = firstMedia.localMedia, sendAsFile = false)
         }
         val mediaOptimizationSelectorState by rememberUpdatedState(mediaOptimizationSelectorPresenter.present())
 
@@ -139,6 +139,9 @@ class AttachmentsPreviewPresenter(
         fun handleEvent(event: AttachmentsPreviewEvent) {
             when (event) {
                 is AttachmentsPreviewEvent.SelectIndex -> {
+                    selectedIndex = event.index
+                }
+                is AttachmentsPreviewEvent.SetCurrentCarouselIndex -> {
                     selectedIndex = event.index
                 }
                 is AttachmentsPreviewEvent.SendAttachments -> {

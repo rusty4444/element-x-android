@@ -35,7 +35,6 @@ import io.element.android.features.location.api.LocationService
 import io.element.android.features.messages.impl.MessagesNavigator
 import io.element.android.features.messages.impl.R
 import io.element.android.features.messages.impl.attachments.Attachment
-import io.element.android.features.messages.impl.attachments.Attachment.Media
 import io.element.android.features.messages.impl.attachments.preview.error.sendAttachmentError
 import io.element.android.features.messages.impl.draft.ComposerDraftService
 import io.element.android.features.messages.impl.messagecomposer.suggestions.RoomAliasSuggestionsDataSource
@@ -49,6 +48,8 @@ import io.element.android.libraries.core.mimetype.MimeTypes
 import io.element.android.libraries.designsystem.utils.snackbar.SnackbarDispatcher
 import io.element.android.libraries.designsystem.utils.snackbar.SnackbarMessage
 import io.element.android.libraries.di.annotations.SessionCoroutineScope
+import io.element.android.libraries.featureflag.api.FeatureFlagService
+import io.element.android.libraries.featureflag.api.FeatureFlags
 import io.element.android.libraries.matrix.api.core.EventId
 import io.element.android.libraries.matrix.api.core.ThreadId
 import io.element.android.libraries.matrix.api.core.UserId
@@ -135,6 +136,7 @@ class MessageComposerPresenter(
     private val mediaOptimizationConfigProvider: MediaOptimizationConfigProvider,
     private val notificationConversationService: NotificationConversationService,
     private val slashCommandService: SlashCommandService,
+    private val featureFlagService: FeatureFlagService,
 ) : Presenter<MessageComposerState> {
     @AssistedFactory
     interface Factory {
@@ -276,7 +278,7 @@ class MessageComposerPresenter(
                 is MessageComposerEvent.SendUri -> {
                     val inReplyToEventId = (messageComposerContext.composerMode as? MessageComposerMode.Reply)?.eventId
                     sessionCoroutineScope.sendAttachment(
-                        attachment = Media(
+                        attachment = Attachment.Media(
                             localMedia = localMediaFactory.createFromUri(
                                 uri = event.uri,
                                 mimeType = null,
@@ -287,14 +289,13 @@ class MessageComposerPresenter(
                         inReplyToEventId = inReplyToEventId,
                     )
 
-                    // Reset composer since the attachment has been sent
-                    messageComposerContext.composerMode = MessageComposerMode.Normal
+                    resetComposerModeAfterAttaching()
                 }
                 is MessageComposerEvent.SendUris -> {
                     val inReplyToEventId = (messageComposerContext.composerMode as? MessageComposerMode.Reply)?.eventId
                     event.uris.forEach { uri ->
                         sessionCoroutineScope.sendAttachment(
-                            attachment = Media(
+                            attachment = Attachment.Media(
                                 localMedia = localMediaFactory.createFromUri(
                                     uri = uri,
                                     mimeType = null,
@@ -652,8 +653,39 @@ class MessageComposerPresenter(
         val inReplyToEventId = (messageComposerContext.composerMode as? MessageComposerMode.Reply)?.eventId
         navigator.navigateToPreviewAttachments(persistentListOf(mediaAttachment), inReplyToEventId)
 
-        // Reset composer since the attachment will be sent in a separate flow
-        messageComposerContext.composerMode = MessageComposerMode.Normal
+        resetComposerModeAfterAttaching()
+    }
+
+    private fun handlePickedMediaList(
+        uris: List<Uri>,
+        sendAsFile: Boolean = false,
+    ) {
+        if (uris.isEmpty()) return
+        if (uris.size == 1) {
+            handlePickedMedia(uris.first(), sendAsFile = sendAsFile)
+            return
+        }
+        val attachments = uris.map { uri ->
+            val localMedia = localMediaFactory.createFromUri(
+                uri = uri,
+                mimeType = null,
+                name = null,
+                formattedFileSize = null,
+            )
+            Attachment.Media(localMedia, sendAsFile = sendAsFile)
+        }.toImmutableList()
+        val inReplyToEventId = (messageComposerContext.composerMode as? MessageComposerMode.Reply)?.eventId
+        navigator.navigateToPreviewAttachments(attachments, inReplyToEventId)
+
+        resetComposerModeAfterAttaching()
+    }
+
+    private fun resetComposerModeAfterAttaching() {
+        // An attachment is sent as its own message, so a Reply/Normal mode is consumed and reset.
+        // An in-progress edit must survive: the typed text still edits the original on the next send.
+        if (!messageComposerContext.composerMode.isEditing) {
+            messageComposerContext.composerMode = MessageComposerMode.Normal
+        }
     }
 
     private fun handlePickedMultipleUris(uris: List<Uri>) {

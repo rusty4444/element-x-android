@@ -17,6 +17,7 @@ import io.element.android.features.messages.impl.timeline.model.ReadReceiptData
 import io.element.android.features.messages.impl.timeline.model.TimelineItem
 import io.element.android.features.messages.impl.timeline.model.TimelineItemReadReceipts
 import io.element.android.features.messages.impl.timeline.model.event.TimelineItemImageContent
+import io.element.android.features.messages.impl.timeline.model.event.TimelineItemRedactedContent
 import io.element.android.features.messages.impl.timeline.model.event.TimelineItemStateEventContent
 import io.element.android.features.messages.impl.timeline.model.event.aTimelineItemImageContent
 import io.element.android.features.messages.impl.timeline.model.virtual.aTimelineItemDaySeparatorModel
@@ -172,6 +173,33 @@ class TimelineItemGrouperTest {
         val actualGroupId = sut.group(groupableItems).first().identifier()
         // Then
         assertThat(actualGroupId).isEqualTo(expectedGroupId)
+    }
+
+    @Test
+    fun `a run of three or more redacted events is collapsed into a single group as a final step`() {
+        val r0 = aGroupableItem.copy(id = UniqueId("r0"), content = TimelineItemRedactedContent)
+        val r1 = aGroupableItem.copy(id = UniqueId("r1"), content = TimelineItemRedactedContent)
+        val r2 = aGroupableItem.copy(id = UniqueId("r2"), content = TimelineItemRedactedContent)
+        val result = sut.group(listOf(r0, r1, r2))
+        assertThat(result).isEqualTo(
+            listOf(
+                TimelineItem.GroupedEvents(
+                    id = computeGroupIdWith(r2),
+                    // Stored oldest-first (the input is newest-first) with the id keyed by the
+                    // oldest member through the shared registry, like the other groups.
+                    events = listOf(r2, r1, r0).toImmutableList(),
+                    aggregatedReadReceipts = emptyList<ReadReceiptData>().toImmutableList(),
+                )
+            )
+        )
+    }
+
+    @Test
+    fun `a run of fewer than three redacted events is left untouched`() {
+        val r0 = aGroupableItem.copy(id = UniqueId("r0"), content = TimelineItemRedactedContent)
+        val r1 = aGroupableItem.copy(id = UniqueId("r1"), content = TimelineItemRedactedContent)
+        val result = sut.group(listOf(r0, r1))
+        assertThat(result).isEqualTo(listOf(r0, r1))
     }
 
     @Test

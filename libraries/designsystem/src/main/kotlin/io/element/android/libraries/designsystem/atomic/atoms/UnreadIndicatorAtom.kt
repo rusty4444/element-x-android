@@ -48,7 +48,9 @@ fun UnreadIndicatorAtom(
                 }
                 .then(if (border != null) Modifier.border(border, CircleShape) else Modifier),
             containerColor = color,
-            contentColor = ElementTheme.colors.bgCanvasDefault,
+            // Fork: white text on the unread badge in dark theme (dark bgCanvasDefault text
+            // is unreadable on coloured accents like purple).
+            contentColor = if (ElementTheme.isLightTheme) ElementTheme.colors.bgCanvasDefault else Color.White,
             textStyle = ElementTheme.typography.fontBodySmMedium,
         )
         else -> Box(
